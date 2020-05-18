@@ -1,10 +1,17 @@
 <html>
  <head>
    <script type="text/javascript" src="script.js"></script>
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/7.0.0/math.js" integrity="sha256-i+Mzv15oc+EbTPipuhLg4FkRqEEXbZZgw9iHTZruH6s=" crossorigin="anonymous"></script>
  </head>
  <body>
+   <div align="center">
+     <label for="order">Order of Polynomial.</label>
+     <input type="text" id="terms"></input>
+     <input type="text" id="equation"></input>
+     <input type="button" id="submit" value="Submit" onclick="onInput()"></input>
+     <p></p>
+   </div>
     <a rel="license" href="http://creativecommons.org/licenses/by-nc/3.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc/3.0/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc/3.0/">Creative Commons Attribution-NonCommercial 3.0 Unported License</a>.
-    <div id="total_cases" style="width: 900px; height: 500px"></div>
-   <div id="new_cases" style="width: 900px; height: 500px"></div>
+
  </body>
 </html>
