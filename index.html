@@ -6,11 +6,32 @@
  </head>
  <body>
    <div align="center">
-     <label for="order">Order of Polynomial.</label>
-     <input type="text" id="terms"></input>
+     <label for="equation">Polynomial form (ex. 1+2x^2+4x^5)</label>
      <input type="text" id="equation"></input>
-     <input type="button" id="submit" value="Submit" onclick="onInput()"></input>
+     <input type="button" nane="submit" value="Submit" onclick="onInput(0)"></input>
      <p></p>
+     <label for="factors">Factored form (ex. (1+x)(1-x)(2+x))</label>
+     <input type="text" id="factors"></input>
+     <input type="button" name="submit" value="Submit" onclick="onInput(1)"></input>
+     <p></p>
+     <label for="variable">Variable: (x by default)</label>
+     <input type="text" id="variable" value='x'></input>
+     <p></p>
+     <p></p>
+     Examples:
+     <p></p>
+     (1-3x)(1+x)(1+2x)
+     <p></p>
+     -6*x^3-7*x^2+1
+     <p></p>
+     -6x^3-7x^2+1
+     <p></p>
+  </div>
+  <div align="left">
+     <p id="coef"></p>
+     <p id="powers"></p>
+     <p id="polyTerms"></p>
+     <p id="polynomialform"></p>
    </div>
     <a rel="license" href="http://creativecommons.org/licenses/by-nc/3.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc/3.0/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc/3.0/">Creative Commons Attribution-NonCommercial 3.0 Unported License</a>.
 
