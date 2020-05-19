@@ -2,20 +2,54 @@
  <head>
    <script type="text/javascript" src="script.js"></script>
    <script src="http://nerdamer.com/js/nerdamer.core.js"></script>
-   <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/7.0.0/math.js" integrity="sha256-i+Mzv15oc+EbTPipuhLg4FkRqEEXbZZgw9iHTZruH6s=" crossorigin="anonymous"></script>
+   <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/7.0.0/math.js" integrity="sha256-i+Mzv15oc+EbTPipuhLg4FkRqEEXbZZgw9iHTZruH6s=" crossorigin="anonymous"></script>
+--><script src="https://unpkg.com/d3@3/d3.min.js"></script>
+  <script src="https://unpkg.com/function-plot@1/dist/function-plot.js"></script>
+  <script>
+  functionPlot({
+  title: 'y = x * x',
+  target: '#quadratic-with-options',
+  width: 580,
+  height: 400,
+  disableZoom: true,
+  xAxis: {
+    label: 'x - axis',
+    domain: [-6, 6]
+  },
+  yAxis: {
+    label: 'y - axis'
+  },
+  data: [{
+    fn: 'x^2'
+  }]
+})
+</script>
  </head>
  <body>
-   <div align="center">
-     <label for="equation">Polynomial form (ex. 1+2x^2+4x^5)</label>
-     <input type="text" id="equation"></input>
+   <div align="left">
+     Polynomial form (ex. 1+2x^2+4x^5)
+     <p></p>
+     <label for="polynomial">Numerator:</label>
+     <input type="text" id="polynomial"></input>
+     <p></p>
+     <label for="polynomial2">Denominator:</label>
+     <input type="text" id="polynomial2" value="1"></input>
      <input type="button" nane="submit" value="Submit" onclick="onInput(0)"></input>
      <p></p>
-     <label for="factors">Factored form (ex. (1+x)(1-x)(2+x))</label>
-     <input type="text" id="factors"></input>
+     <p></p>
+     Roots form (ex. (1+x)(1-x)(2+x))
+     <p></p>
+     <label for="roots">Numerator: </label>
+     <input type="text" id="roots"></input>
+     <p></p>
+     <label for="roots2">Denominator</label>
+     <input type="text" id="roots2" value="1"></input>
      <input type="button" name="submit" value="Submit" onclick="onInput(1)"></input>
      <p></p>
      <label for="variable">Variable: (x by default)</label>
+     <p></p>
      <input type="text" id="variable" value='x'></input>
+
      <p></p>
      <p></p>
      Examples:
@@ -28,10 +62,20 @@
      <p></p>
   </div>
   <div align="left">
+    <p id="numerator"></p>
+    <p id="poly/roots"></p><!--Contains polynomial or roots-->
      <p id="coef"></p>
      <p id="powers"></p>
      <p id="polyTerms"></p>
      <p id="polynomialform"></p>
+     <p id="numerator"></p>
+     <p></p>
+     <p id="denominator"></p>
+     <p id="poly/roots2"></p><!--Contains polynomial or roots-->
+      <p id="coef2"></p>
+      <p id="powers2"></p>
+      <p id="polyTerms2"></p>
+      <p id="polynomialform2"></p>
    </div>
     <a rel="license" href="http://creativecommons.org/licenses/by-nc/3.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc/3.0/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc/3.0/">Creative Commons Attribution-NonCommercial 3.0 Unported License</a>.
 

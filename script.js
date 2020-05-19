@@ -1,18 +1,49 @@
 var polyInput = [];
 
 function onInput(input) {
-  console.log(terms);
-  var factors;
-  var y;
-  if (input == 1) {//factors
-    factors = document.getElementById('factors').value;//'(1-3x)(1+x)(1+2x)';
-    y = nerdamer('expand(' + factors + ')');
+  console.log(nerdamer('factor(x^2-4x+4)'));
+  var roots, roots2;
+  var y, y2;
+  if (input == 1) {//input is factors/roots
+    roots = document.getElementById('roots').value;//'(1-3x)(1+x)(1+2x)';
+    y = nerdamer('expand(' + roots + ')');
+    roots2 = document.getElementById('roots2').value;//'(1-3x)(1+x)(1+2x)';
+    y2 = nerdamer('expand(' + roots2 + ')');
   }
-  else if (input == 0) {
-     y = document.getElementById('equation').value;
+  else if (input == 0) {//input is in polynomial form.
+     y = document.getElementById('polynomial').value;
+     roots = nerdamer('factor(' + y.toString() + ')');
+     //console.log('roots: ' + roots);
+     y2 = document.getElementById('polynomial2').value;
+     roots2 = nerdamer('factor(' + y2.toString() + ')');
+     /*console.log('roots: ' + roots2);
+     var z = nerdamer('factor(x^2-3x-10)');
+     console.log('z: ' + z);*/
   }
   var polynomialform = y.toString();
+  var polynomialform2 = y2.toString();
+  var numAns = finder(polynomialform);//numerator answers
+  var denomAns = finder(polynomialform2);//denominator answers
 
+  labels = ['polynomial: ','roots of polynomial: ','polynomial coefficients: ','powers of variables corresponding to each coefficient: ','variable term for each coefficient: '];
+  if (input == 1) {//factored form
+    document.getElementById('poly/roots').innerHTML = labels[0] + polynomialform;
+  }
+  else if (input == 0) {
+    document.getElementById('poly/roots').innerHTML = labels[1] + roots;
+  }
+  document.getElementById('numerator').innerHTML = "Numerator";
+  document.getElementById('coef').innerHTML = labels[2] + numAns["coef"];
+  document.getElementById('powers').innerHTML = labels[3] + numAns["powers"];
+  document.getElementById('polyTerms').innerHTML = labels[4] + numAns["polyTerms"];
+
+  document.getElementById('denominator').innerHTML = "Denominator";
+  document.getElementById('coef2').innerHTML = labels[2] + denomAns["coef"];
+  document.getElementById('powers2').innerHTML = labels[3] + denomAns["powers"];
+  document.getElementById('polyTerms2').innerHTML = labels[4] + denomAns["polyTerms"];
+
+}
+function finder (polynomialform) {
   var terms = 1;
   var signs = [];//+ & - signs.
   var poly = polynomialform.trim();//get rid of whitespace
@@ -26,26 +57,14 @@ function onInput(input) {
       signs.push('-');
     }
   }
-  console.log('terms ' + terms);
-  console.log('signs ' + signs);
   var coef2 = poly.split('+');
-  console.log('1: ' + coef2);
   coef2 = coef2.map(v=>v.split('-'));
   var variable = document.getElementById('variable').value;
-  console.log('variable: ' + variable);
-  /*if (variable != 'x') {
-    coef2 = coef2.map(v=>(v.toString()).replace(variable,'x'));
-  }*/
-  /*if/ (poly[0] == '-' || poly[0] == '+') {
-    coef2.shift();//remove first element to get rid of extra ,
-  }*/
-  console.log('1.5: ' + coef2);
   //loop through and after pliting and make each element that has - equal to itself + '-'
   coef = [];
   for(let i = 0; i < coef2.length; i++){
       coef = coef.concat(coef2[i]);
   }//cocat 2d array into 1d.
-  console.log(coef);
   if (poly[0] == '-' || poly[0] == '+') {
     coef.shift();//remove first element to get rid of extra ,
   }
@@ -54,7 +73,6 @@ function onInput(input) {
       coef[i] = '-' + coef[i];
     }
   }
-  console.log('2: ' + coef);
   //coef = coef.map(v=>v.replace('*',''));
   var powers = [];//array to contain the corresponding powers of x for each coefficient.
   var polyTerms = [];//array to contain polynomial terms (1, x^2, x^3, etc.);
@@ -63,7 +81,6 @@ function onInput(input) {
   var xInd = -1;//index of x, or whatever variable is chosen
   for (let i=0; i<coef.length; i++) {
     ind = coef[i].indexOf('*');
-    console.log('ind : ' + ind.toString());
     if (ind != -1) {
       coef[i] = coef[i].replace(coef[i].slice(ind,ind+1),'');//replace * with nothing
       xInd = coef[i].indexOf(variable);
@@ -81,16 +98,6 @@ function onInput(input) {
       polyTerms.push(variable +'^0');
     }
   }
-  //coef = coef.map(v=>v.replace(/^\*+|\*+$/g, ''));
-  console.log('3: ' + coef)
-  console.log('powers of variable ('+ variable + '): ' + powers);
-  console.log('polyTerms: ' + polyTerms);
-  if (input == 1) {//factored form
-    document.getElementById('polynomialform').innerHTML = poly;
-  }
-  labels = ['polynomial coefficients: ','powers of variables corresponding to each coefficient: ','variable term for each coefficient: '];
-  document.getElementById('coef').innerHTML = labels[0] + coef;
-  document.getElementById('powers').innerHTML = labels[1] + powers;
-  document.getElementById('polyTerms').innerHTML = labels[2] + polyTerms;
-  console.log("why isn't this working?");
+  var result = {"coef":coef,"powers":powers,"polyTerms":polyTerms};
+  return result;
 }
