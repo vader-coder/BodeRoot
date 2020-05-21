@@ -1,36 +1,43 @@
-function onInput(input) {
-  var roots, roots2;
+//capital strings refer to input ids, lowercase refres to output id.
+function onClick() {
+  var roots, roots2;//actual roots. I would like to check...
+  //var rootsInput, rootsInput2;//roots inputted
   var factors, factors2;
   var y, y2;//[-2,5],(-2+x)^2
-  if (input == 0) {//input is in polynomial form.
-     y = document.getElementById('polynomial').value;
-     factors = nerdamer('factor(' + y.toString() + ')');
+  var polyCheck = document.getElementById('polyCheck').checked;//check which checkbox was checked
+  var factorCheck = document.getElementById('factorCheck').checked;
+  if (polyCheck && !factorCheck) {//input is in polynomial form.
+     y = document.getElementById('Polynomial').value;
+     //factors = nerdamer('factor(' + y.toString() + ')');
+     //rootsInput = document.getElementById('Roots').value;
      //console.log('roots: ' + roots);
-     y2 = document.getElementById('polynomial2').value;
-     factors2 = nerdamer('factor(' + y2.toString() + ')');
+     y2 = document.getElementById('Polynomial2').value;
+     //factors2 = nerdamer('factor(' + y2.toString() + ')');
+     //rootsInput2 = document.getElementById('Roots2').value;
      //console.log('roots: ' + roots2);
   }
-  else if (input == 1) {//input is factors
-    factors = document.getElementById('factors').value;//'(1-3x)(1+x)(1+2x)';
+  else if (factorCheck && !polyCheck) {//input is factors
+    factors = document.getElementById('Polynomial').value;//'(1-3x)(1+x)(1+2x)';
     y = nerdamer('expand(' + factors + ')');
+    //rootsInput = document.getElementById('Roots').value;
     //roots = nerdamer('roots('+ y.toString() +')');
-    factors2 = document.getElementById('factors2').value;//'(1-3x)(1+x)(1+2x)';
+    factors2 = document.getElementById('Polynomial2').value;//'(1-3x)(1+x)(1+2x)';
     y2 = nerdamer('expand(' + factors2 + ')');
+    //rootsInput2 = document.getElementById('Roots2').value;
     //roots2 = nerdamer('roots(' + y2.toString() + ')');
     //console.log('roots: ' + roots + ' roots2: ' + roots2);
   }
-  else if (input == 2) {//input is roots
-    roots = document.getElementById('roots').value;
-    y = nerdamer('somefunc()');
-    roots2 = document.getElementById('roots2').value;
-    y2 = nerdamer('somefunc()');
+  else if ((factorCheck && polyCheck) || (!factorCheck && !polyCheck)){
+    alert('You need to check one box and only one box.');
+    return;//stop execution of stript.
   }
   var polynomialform = y.toString();//numerator
   var polynomialform2 = y2.toString();//denominator
+  console.log('polynomialform' + polynomialform);
   var numAns = finder(polynomialform);//numerator answers
   var denomAns = finder(polynomialform2);//denominator answers
 
-  labels = ['polynomial form: ', 'factors: ', 'roots: ', 'polynomial coefficients: ','powers of variables corresponding to each coefficient: ',
+  labels = ['expanded form: ', 'factors: ', 'roots by calling nerdamer on polynomial form: ', 'roots by factoring individual factors: ', 'polynomial coefficients: ','powers of variables corresponding to each coefficient: ',
   'variable term for each coefficient: ','order: ', 'number of terms: '];
   //['poly', 'factors', 'roots', 'coef', 'powers', 'variable', 'order', 'numTerms']
   /*document.getElementById('polynomial').innerHTML = 'polynomial: ' + polynomialform;
@@ -39,18 +46,23 @@ function onInput(input) {
   add .2
   */
   //['poly', 'factors', 'roots', 'coef', 'powers', 'polyTerms', 'order', 'numTerms']
-  var ans = ['poly', 'factors', 'roots', 'coef', 'powers', 'polyTerms', 'order', 'numTerms'];//numerator
-  var ans2 = ['poly2', 'factors2', 'roots2', 'coef2', 'powers2', 'polyTerms2', 'order2', 'numTerms2'];//denominator
+  var ans = ['poly', 'factors', 'roots', 'factorRoots', 'coef', 'powers', 'polyTerms', 'order', 'numTerms'];//numerator
+  var ans2 = ['poly2', 'factors2', 'roots2', 'factorRoots2', 'coef2', 'powers2', 'polyTerms2', 'order2', 'numTerms2'];//denominator
   //['poly', 'factors', 'roots',
   //'coef', 'powers', 'polyTerms',
   //'order', 'numTerms']
-
+  console.log(numAns[ans[1]].toString());
+  console.log('roots: ' + numAns[ans[2]]);
+  console.log(typeof(numAns[ans[2]]));
+  //document.getElementById(ans[2]).innerHTML = ans[2] +  [1, 1].toString();
   for (let i=0; i<ans.length; i++) {
-    document.getElementById(ans[i]).innerHTML = labels[i] + numAns[ans[i]];
-    document.getElementById(ans2[i]).innerHTML = labels[i] + denomAns[ans[i]];
+    document.getElementById(ans[i]).innerHTML = labels[i] + numAns[ans[i]].toString();
+    document.getElementById(ans2[i]).innerHTML = labels[i] + denomAns[ans[i]].toString();
   }
   document.getElementById('numerator').innerHTML = "Numerator";
   document.getElementById('denominator').innerHTML = "Denominator";
+  /*document.getElementById('factors').innerHTML = labels[1] + "((x-1)^2)";
+  document.getElementById('roots').innerHTML = labels[2] +  numAns['roots'].toString();*/
 }
 function finder (polynomialform) {
   var numTerms = 0;
@@ -60,15 +72,24 @@ function finder (polynomialform) {
   var coef = nerdamer('coeffs('+ poly + ',' + variable + ')');
   var factors = nerdamer('factor('+ poly + ')');
   var roots = nerdamer('roots('+ poly + ')');
+  var factorRoots = [];//roots based on the factors.
+  console.log("roots: " + roots.toString());
+  console.log("onlyOnce: " + onlyOnce([1, 2, 5, 5, 3, 1]).toString());
   var order;//nerdamer returns coefficients of x^0 to x^order
   var powers = [];//powers corresponding to each coefficent
   var polyTerms = [];//x-terms corresponding to each coefficient
   //console.log("coef.length: " + coef.length.toString());
   //objects don't haave length, can't do coef.length
   //coef = coef.toString();
-  console.log('coef before: ' + coef.toString());//
   coef = objectToArray(coef);
-  console.log('coef after: ' + coef.toString());
+  roots = roots.toString();
+  roots = roots.split(',');
+  factors = factorsArr(factors.toString());
+  for (let i=0; i<factors.length; i++) {
+    factorRoots.push(nerdamer('roots(' + factors[i] +')').toString());
+  }
+  //roots = objectToArray(roots);
+  //roots = onlyOnce(roots);//we only need each root once.
   //Object.keys(coef).length
   for (let i=0; i<coef.length; i++) {
     powers.push(i);
@@ -78,7 +99,7 @@ function finder (polynomialform) {
     }
   }
   order = coef.length - 1;//powers.length - 1 also would have worked.
-  var result = {"poly":poly, "factors": factors, "roots":roots,
+  var result = {"poly":poly, "factors": factors, "roots":roots, "factorRoots":factorRoots,
   "coef":coef, "powers":powers,"polyTerms":polyTerms,
   "order": order, "numTerms": numTerms};
   return result;
@@ -126,4 +147,44 @@ function rem(arr, target) {
     }
   }
   return arr;
+}
+
+function onlyOnce(arr) {
+  var found = [];
+  var indecies = [];
+  for (let i=arr.length-1; i>=0; i--) {
+    found.push(arr[i]);
+    if (times(found, arr[i]) > 1) {//if we have already seen it, chop it off the original array
+      found.pop();
+      arr.splice(i, 1);//only remove 1 item. default take off all the way to the end.
+    }
+  }
+  return arr;
+}
+//returns times something occurs in an array
+function times(array,value){
+    var n = 0;
+    for(i = 0; i < array.length; i++){
+        if(array[i] == value){n++}
+    }
+    return n;
+}
+//given a string with list of factors, puts each factor in an array as an item
+function factorsArr(str) {
+  var openIndex = [];
+  var closedIndex = [];
+  var factorsList = [];
+  for (let i=0; i<str.length; i++) {
+    if (str[i] == '(') {
+      openIndex.push(i);
+    }
+    else if (str[i] == ')') {
+      closedIndex.push(i);
+    }
+  }
+  for (let i=0; i<openIndex.length; i++) {
+    factor = str.slice(openIndex[i], closedIndex[i]+1);
+    factorsList.push(str.slice(openIndex[i]+1, closedIndex[i]))
+  }
+  return factorsList;
 }
