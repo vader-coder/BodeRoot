@@ -188,3 +188,4 @@ function factorsArr(str) {
   }
   return factorsList;
 }
+//function to check if numerator order is > deonominator order. 
