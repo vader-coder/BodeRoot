@@ -1,7 +1,10 @@
-<html>
+<html><!-- Maybe we should fork nerdamer in case if the code changes.-->
  <head>
    <script type="text/javascript" src="script.js"></script>
-   <script src="http://nerdamer.com/js/nerdamer.core.js"></script>
+   <!--<script src="http://nerdamer.com/js/nerdamer.core.js"></script>
+   <script src="http://nerdamer.com/js/Algebra.js"></script>-->
+   <script src="https://vader-coder.github.io/nerdamer/nerdamer.core.js"></script>
+   <script src="https://vader-coder.github.io/nerdamer/Algebra.js"></script>
    <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/7.0.0/math.js" integrity="sha256-i+Mzv15oc+EbTPipuhLg4FkRqEEXbZZgw9iHTZruH6s=" crossorigin="anonymous"></script>
 --><script src="https://unpkg.com/d3@3/d3.min.js"></script>
   <script src="https://unpkg.com/function-plot@1/dist/function-plot.js"></script>
@@ -27,27 +30,35 @@
  </head>
  <body>
    <div align="left">
-     Polynomial form (ex. 1+2x^2+4x^5)
+     Enter a polynomial in one of these three forms:
+     (1) Polynomial form (ex. 1+2x^2+4x^5)
      <p></p>
      <label for="polynomial">Numerator:</label>
-     <input type="text" id="polynomial"></input>
+     <input type="text" id="polynomial" value="1"></input>
      <p></p>
      <label for="polynomial2">Denominator:</label>
      <input type="text" id="polynomial2" value="1"></input>
      <input type="button" nane="submit" value="Submit" onclick="onInput(0)"></input>
      <p></p>
      <p></p>
-     Roots form (ex. (1+x)(1-x)(2+x))
+     (2) Factors form (ex. (1+x)(1-x)(2+x))
      <p></p>
-     <label for="roots">Numerator: </label>
-     <input type="text" id="roots"></input>
+     <label for="factors">Numerator: </label>
+     <input type="text" id="factors" value="1"></input>
      <p></p>
-     <label for="roots2">Denominator</label>
-     <input type="text" id="roots2" value="1"></input>
+     <label for="factors2">Denominator</label>
+     <input type="text" id="factors2" value="1"></input>
      <input type="button" name="submit" value="Submit" onclick="onInput(1)"></input>
      <p></p>
      <label for="variable">Variable: (x by default)</label>
      <p></p>
+     (3) Roots form:
+     <label for="roots">Numerator: </label>
+     <input type="text" id="roots" value="1"></input>
+     <p></p>
+     <label for="roots2">Denominator</label>
+     <input type="text" id="roots2" value="1"></input>
+     <input type="button" name="submit" value="Submit" onclick="onInput(2)"></input>
      <input type="text" id="variable" value='x'></input>
 
      <p></p>
@@ -63,18 +74,25 @@
   </div>
   <div align="left">
     <p id="numerator"></p>
-    <p id="poly/roots"></p><!--Contains polynomial or roots-->
+    <p id="poly"></p><!--Contains polynomial-->
+    <p id="factors"></p>
+    <p id="roots"></p>
      <p id="coef"></p>
      <p id="powers"></p>
      <p id="polyTerms"></p>
      <p id="polynomialform"></p>
-     <p id="numerator"></p>
+     <p id="order"></p>
+     <p id="numTerms"></p>
      <p></p>
      <p id="denominator"></p>
-     <p id="poly/roots2"></p><!--Contains polynomial or roots-->
+     <p id="poly2"></p><!--Contains polynomial-->
+     <p id="factors2"></p>
+     <p id="roots2"></p>
       <p id="coef2"></p>
       <p id="powers2"></p>
       <p id="polyTerms2"></p>
+      <p id="order2"></p>
+      <p id="numTerms2"></p>
       <p id="polynomialform2"></p>
    </div>
     <a rel="license" href="http://creativecommons.org/licenses/by-nc/3.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc/3.0/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc/3.0/">Creative Commons Attribution-NonCommercial 3.0 Unported License</a>.
