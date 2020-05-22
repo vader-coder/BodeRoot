@@ -1,12 +1,14 @@
 //capital strings refer to input ids, lowercase refres to output id.
 function onClick() {
   var roots, roots2;//actual roots. I would like to check...
-  //var rootsInput, rootsInput2;//roots inputted
+  var rootsInput, rootsInput2;//roots inputted
   var factors, factors2;
   var y, y2;//[-2,5],(-2+x)^2
+  var order;
   var polyCheck = document.getElementById('polyCheck').checked;//check which checkbox was checked
   var factorCheck = document.getElementById('factorCheck').checked;
-  if (polyCheck && !factorCheck) {//input is in polynomial form.
+  var rootCheck = document.getElementById('rootCheck').checked;
+  if (polyCheck && !factorCheck && !rootCheck) {//input is in polynomial form.
      y = document.getElementById('Polynomial').value;
      //factors = nerdamer('factor(' + y.toString() + ')');
      //rootsInput = document.getElementById('Roots').value;
@@ -16,7 +18,7 @@ function onClick() {
      //rootsInput2 = document.getElementById('Roots2').value;
      //console.log('roots: ' + roots2);
   }
-  else if (factorCheck && !polyCheck) {//input is factors
+  else if (factorCheck && !polyCheck && !rootCheck) {//input is factors
     factors = document.getElementById('Polynomial').value;//'(1-3x)(1+x)(1+2x)';
     y = nerdamer('expand(' + factors + ')');
     //rootsInput = document.getElementById('Roots').value;
@@ -27,7 +29,16 @@ function onClick() {
     //roots2 = nerdamer('roots(' + y2.toString() + ')');
     //console.log('roots: ' + roots + ' roots2: ' + roots2);
   }
-  else if ((factorCheck && polyCheck) || (!factorCheck && !polyCheck)){
+  else if (rootCheck && !polyCheck && !rootCheck) {//must be seperated by commas
+    rootsInput = document.getElementById('Polynomial').value;
+    order = document.getElementById('Order').value;
+    y = rootToPoly(rootsInput, order);
+
+    rootsInput2 = document.getElementById('Polynomial2').value;
+    order2 = document.getElementById('Order2').value;
+    y2 = rootToPoly(rootsInput2, order2);
+  }
+  else {
     alert('You need to check one box and only one box.');
     return;//stop execution of stript.
   }
@@ -188,4 +199,32 @@ function factorsArr(str) {
   }
   return factorsList;
 }
-//function to check if numerator order is > deonominator order. 
+//function to check if numerator order is > deonominator order.
+//if you want to find polynomial by roots, will have to enter the order of the polynomial.
+//otherwise, couldn't tell x^5+1 vs x^7+1.
+//roots will be string seperated by commas.
+function rootToPoly(roots, order) {
+  var y;
+  var factors = [];
+  var factorStr = '';
+  roots = roots.split(',');//one root in each
+  if (roots.length == order) {
+    for (let i=0; i<order; i++) {
+      factorStr.concat('(' + (parseInt(roots[i],10)*-1).toString() + 'x' + ')');
+    }
+    y = nerdamer('expand(' + factorStr + ')');
+  }
+}
+//rootSelect() & polySelect() change html text to make it more comprehensible when a button is clicked.
+function rootSelect() {
+  document.getElementById('Order').value = '0';
+  document.getElementById('Order2').value = '0';
+  document.getElementById('numerLabel').innerHTML = 'Numerator Roots/Zeros: ';
+  document.getElementById('denomLabel').innerHTML = 'Denominator Roots/Poles: ';
+}
+function polySelect() {
+  document.getElementById('Order').value = 'Not needed';
+  document.getElementById('Order2').value = 'Not needed';
+  document.getElementById('numerLabel').innerHTML = 'Numerator: ';
+  document.getElementById('denomLabel').innerHTML = 'Denominator: ';
+}

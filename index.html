@@ -33,20 +33,27 @@
      Enter a polynomial in one of these two forms:
      <p></p>
      <label for="polyCheck"><b>Expanded form (ex. 1+2x^2+4x^5)</b></label>
-     <input type="checkbox" id="polyCheck"></input>
+     <input type="checkbox" id="polyCheck" onclick="polySelect()"></input>
      <p></p>
      <label for="factorCheck"><b>Factors form (ex. (1+x)(1-x)(2+x))</b></label>
-     <input type="checkbox" id="factorCheck"></input>
+     <input type="checkbox" id="factorCheck" onclick="polySelect()"></input>
      <p></p>
-     <label for="Polynomial">Numerator:</label>
+     <label for="rootCheck"><b>Roots & Order</b></label>
+     <input type="checkbox" id="rootCheck" onclick="rootSelect()"></input>
+     <p></p>
+     <label for="Polynomial" id="numerLabel">Numerator:</label>
      <input type="text" id="Polynomial" value="1"></input>
+     <label for="Order">Order: </label>
+     <input type="text" id="Order" value="0"></input>
      <!--<label for="checkRoots">I know the numerator's roots.</label>
      <input type="checkbox" id="checkRoots"></input>-->
      <!--<label for="Roots">Roots</label>
      <input type="text" id="Roots" value="1"></input>-->
      <p></p>
-     <label for="Polynomial2">Denominator:</label>
+     <label for="Polynomial2" id="denomLabel">Denominator:</label>
      <input type="text" id="Polynomial2" value="1"></input>
+     <label for="Order2">Order: </label>
+     <input type="text" id="Order2" value="0"></input>
      <!--<label for="checkRoots2">I know the denominator's roots.</label>
      <input type="checkbox" id="checkRoots2"></input>-->
      <!--<label for="Roots2">Roots</label>
