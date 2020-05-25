@@ -31,7 +31,20 @@ function onClick() {
   document.getElementById('denominator').innerHTML = "Denominator";
   /*document.getElementById('factors').innerHTML = labels[1] + "((x-1)^2)";
   document.getElementById('roots').innerHTML = labels[2] +  numAns['roots'].toString();*/
+  var rPlot = document.getElementById('rootLocus').getContext('2d');
+  var rootLocusPlot = new Chart(rPlot, {
+      type: 'scatter',
+      data: {
+          datasets: [{
+              label: 'Scatter Dataset',
+              data: [{x: -10,y: 0},{x: 0,y: 10}, {x: 10,y: 5}]}]},
+              //should create and push this data: vertical axis as complex plane.
+      options: {
+          scales: {xAxes: [{ type: 'linear',position: 'bottom'}]}
+      }
+  });
 }
+//returns list contaniing polynomial form, coefficients, roots, order, etc.
 function finder (polynomialform) {
   var numTerms = 0;
   var signs = [];//+ & - signs.
