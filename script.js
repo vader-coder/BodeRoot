@@ -5,77 +5,23 @@ console.log("root to Poly: " + rootToPoly('-6, -5, 2', 3).toString());//(x+6)(x+
 //test stuff with node.js*/
 function onClick() {
   var roots, roots2;//actual roots. I would like to check...
-  var rootsInput, rootsInput2;//roots inputted
-  var factors, factors2;
-  var y, y2;//[-2,5],(-2+x)^2
-  var order;
-  //console.log("root to Poly: " + rootToPoly('-6, -5, 2', 3).toString());//(x+6)(x+5)(x-2) = x^3 -8x^2 -3x +90
-  /*console.log("poly[-1, 1]: " + poly([-1, 1]).toString());
-  console.log("poly([1,-1]): " + poly([1, -1]).toString());
-  console.log("poly([2, 2]): " + poly([2, 2]).toString());*///(x-2)(x-2), [1, -4, 4]
-  //console.log("poly([2, 4+i, 4-i]): " + poly(['2', '4+i', '4-i'], 0).toString());
-  //console.log("arrMult(): " + arrMult(['4+i', '4+i'], ['4', '4-i'], 0).toString());
-  //console.log("arrSub(): "  + arrSub(['4+i', '4+i'], ['4', '4-i'], 0).toString());
-  var polyCheck = document.getElementById('polyCheck').checked;//check which checkbox was checked
-  var factorCheck = document.getElementById('factorCheck').checked;
-  var rootCheck = document.getElementById('rootCheck').checked;
-  if (polyCheck && !factorCheck && !rootCheck) {//input is in polynomial form.
-     y = document.getElementById('Polynomial').value;
-     //factors = nerdamer('factor(' + y.toString() + ')');
-     //rootsInput = document.getElementById('Roots').value;
-     //console.log('roots: ' + roots);
-     y2 = document.getElementById('Polynomial2').value;
-     //factors2 = nerdamer('factor(' + y2.toString() + ')');
-     //rootsInput2 = document.getElementById('Roots2').value;
-     //console.log('roots: ' + roots2);
-  }
-  else if (factorCheck && !polyCheck && !rootCheck) {//input is factors
-    factors = document.getElementById('Polynomial').value;//'(1-3x)(1+x)(1+2x)';
-    y = nerdamer('expand(' + factors + ')');
-    //rootsInput = document.getElementById('Roots').value;
-    //roots = nerdamer('roots('+ y.toString() +')');
-    factors2 = document.getElementById('Polynomial2').value;//'(1-3x)(1+x)(1+2x)';
-    y2 = nerdamer('expand(' + factors2 + ')');
-    //rootsInput2 = document.getElementById('Roots2').value;
-    //roots2 = nerdamer('roots(' + y2.toString() + ')');
-    //console.log('roots: ' + roots + ' roots2: ' + roots2);
-  }
-  else if (rootCheck && !polyCheck && !factorCheck) {//must be seperated by commas
-    rootsInput = document.getElementById('Polynomial').value;
-    order = document.getElementById('Order').value;
-    y = rootToPoly(rootsInput, order);
-
-    rootsInput2 = document.getElementById('Polynomial2').value;
-    order2 = document.getElementById('Order2').value;
-    y2 = rootToPoly(rootsInput2, order2);
-  }
-  else {
-    alert('You need to check one box and only one box.');
-    return;//stop execution of stript.
-  }
-  var polynomialform = y.toString();//numerator
-  var polynomialform2 = y2.toString();//denominator
+  var polyCheck = document.getElementById('polyCheck1').checked;//check which checkbox was checked
+  var factorCheck = document.getElementById('factorCheck1').checked;
+  var rootCheck = document.getElementById('rootCheck1').checked;
+  var polyCheck2 = document.getElementById('polyCheck2').checked;//check which checkbox was checked
+  var factorCheck2 = document.getElementById('factorCheck2').checked;
+  var rootCheck2 = document.getElementById('rootCheck2').checked;
+  var polynomialform = getPoly(polyCheck, factorCheck, rootCheck, '1');//numerator
+  var polynomialform2 = getPoly(polyCheck2, factorCheck2, rootCheck2, '2');//denominator
   console.log('polynomialform' + polynomialform);
   var numAns = finder(polynomialform);//numerator answers
   var denomAns = finder(polynomialform2);//denominator answers
 
   labels = ['expanded form: ', 'factors: ', 'roots: ', 'polynomial coefficients: ','powers of variables corresponding to each coefficient: ',
   'variable term for each coefficient: ','order: ', 'number of terms: '];
-  //['poly', 'factors', 'roots', 'coef', 'powers', 'variable', 'order', 'numTerms']
-  /*document.getElementById('polynomial').innerHTML = 'polynomial: ' + polynomialform;
-  document.getElementById('factors').innerHTML = 'factors of polynomial: ' + factors;
-  document.getElementById('roots').innerHTML = 'roots of polynomial: ' + roots;
-  add .2
-  */
-  //['poly', 'factors', 'roots', 'coef', 'powers', 'polyTerms', 'order', 'numTerms']
   var ans = ['poly', 'factors', 'roots', 'coef', 'powers', 'polyTerms', 'order', 'numTerms'];//numerator
-  var ans2 = ['poly2', 'factors2', 'roots2', 'factorRoots2', 'coef2', 'powers2', 'polyTerms2', 'order2', 'numTerms2'];//denominator
-  //['poly', 'factors', 'roots',
-  //'coef', 'powers', 'polyTerms',
-  //'order', 'numTerms']
-  console.log(numAns[ans[1]].toString());
-  console.log('roots: ' + numAns[ans[2]]);
-  console.log(typeof(numAns[ans[2]]));
+  var ans2 = ['poly2', 'factors2', 'roots2', 'coef2', 'powers2', 'polyTerms2', 'order2', 'numTerms2'];//denominator
+
   //document.getElementById(ans[2]).innerHTML = ans[2] +  [1, 1].toString();
   for (let i=0; i<ans.length; i++) {
     document.getElementById(ans[i]).innerHTML = labels[i] + numAns[ans[i]].toString();
@@ -128,19 +74,8 @@ function finder (polynomialform) {
 }
 function objectToArray(obj) {
   var arr = obj.toString().trim().split(',');//was '' before, needs to change.
-  //take care of misplaced '-' signs
-  for (let i=arr.length-1; i>=0; i--) {
-    if (arr[i] == '-') {
-      arr[i+1] = '-' + arr[i+1];
-      arr.splice(i,1);
-    }
-  }
-
-  if (arr[arr.length-1] == ';') { arr.pop() };//removes ;
-  arr.pop();//removes ]
-  arr.shift();//removes [
-
-  arr = rem(arr, ',');//remove ','
+  //split(',') vs split('') means not every character is in a different array.
+  arr = rem(arr, ['[', ']', ',', ';']);
   return arr;
 }
 function printEach(arr) {
@@ -159,13 +94,17 @@ function rep (arr, original, new_item) {
   }
   return arr;
 }
-//removes target from array, returns array
+//removes each item in target from array, returns array
 function rem(arr, target) {
   //console.log("arr = " + printEach(arr));
-  for (let i=arr.length-1; i>=0; i--) {
-    if (arr[i]==target) {
-      arr.splice(i,1);
-      //console.log("arr = " + printEach(arr));
+  var index;
+  for (let i=0; i<arr.length; i++) {
+    for (let j=0; j<target.length; j++) {
+      //for each index, check it for every item in target.
+      index = arr[i].indexOf(target[j]);
+      if (index != -1) {
+        arr[i] = arr[i].replace(target[j], '');
+      }
     }
   }
   return arr;
@@ -214,7 +153,7 @@ function factorsArr(str) {
 //if you want to find polynomial by roots, will have to enter the order of the polynomial.
 //otherwise, couldn't tell x^5+1 vs x^7+1.
 //roots will be string seperated by commas.
-function rootToPoly(roots, order) {
+function rootToPoly(roots) {
   var y = '';
   var coef;
   var real = 1;
@@ -251,17 +190,25 @@ function rootToPoly(roots, order) {
   return y;
 }
 //rootSelect() & polySelect() change html text to make it more comprehensible when a button is clicked.
-function rootSelect() {
-  document.getElementById('Order').value = '0';
-  document.getElementById('Order2').value = '0';
-  document.getElementById('numerLabel').innerHTML = 'Numerator Roots/Zeros: ';
-  document.getElementById('denomLabel').innerHTML = 'Denominator Roots/Poles: ';
+function rootSelect(num) {
+  /*document.getElementById('Order').value = '0';
+  document.getElementById('Order2').value = '0';*/
+  if (num == 1) {//numerator
+    document.getElementById('numerLabel').innerHTML = 'Numerator Roots/Zeros: ';
+  }
+  else if (num == 2) {//denominator
+    document.getElementById('denomLabel').innerHTML = 'Denominator Roots/Poles: ';
+  }
 }
-function polySelect() {
-  document.getElementById('Order').value = 'Not needed';
-  document.getElementById('Order2').value = 'Not needed';
-  document.getElementById('numerLabel').innerHTML = 'Numerator: ';
-  document.getElementById('denomLabel').innerHTML = 'Denominator: ';
+function polySelect(num) {
+  /*document.getElementById('Order').value = 'Not needed';
+  document.getElementById('Order2').value = 'Not needed';*/
+  if (num == 1) {
+    document.getElementById('numerLabel').innerHTML = 'Numerator: ';
+  }
+  else if (num == 2) {
+    document.getElementById('denomLabel').innerHTML = 'Denominator: ';
+  }
 }
 //this is a js equivalent of the GNU Octave poly function
 //returns list of coefficients for powers.
@@ -372,4 +319,27 @@ function complexSub (str, str2) {
   var real = nerdamer('realpart(' + str + ')');
   var real2 = nerdamer('realpart(' + str2 +')');
   return (real-real2).toString() + ' + ' + (imag-imag2).toString() + 'i';
+}
+//figures out the polynomial form depending on which box was checked.
+//num specifies numerator or denominator ('1' or '2')
+function getPoly (polyCheck, factorCheck, rootCheck, num) {
+  var factors,rootsInput, y;
+  if (polyCheck && !factorCheck && !rootCheck) {//input is in polynomial form.
+     y = document.getElementById('Polynomial'+num).value;
+  }
+  else if (factorCheck && !polyCheck && !rootCheck) {//input is factors
+    factors = document.getElementById('Polynomial'+num).value;//'(1-3x)(1+x)(1+2x)';
+    y = nerdamer('expand(' + factors + ')');
+  }
+  else if (rootCheck && !polyCheck && !factorCheck) {//must be seperated by commas
+    rootsInput = document.getElementById('Polynomial'+num).value;
+    y = rootToPoly(rootsInput);
+    console.log("y: " + y.toString());
+  }
+  else {
+    alert('You must check one box for the numerator and one for the denominator.');
+    throw new Error('You must check one box for the numerator and one for the denominator.');
+    return;//stop execution of stript.
+  }
+  return y.toString();
 }

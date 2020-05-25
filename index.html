@@ -11,37 +11,40 @@
  </head>
  <body>
    <div align="left">
-     Enter a polynomial in one of these two forms:
+     Enter numerator polynomial in one of these two forms:
      <p></p>
      <label for="polyCheck"><b>Expanded form (ex. 1+2x^2+4x^5)</b></label>
-     <input type="checkbox" id="polyCheck" onclick="polySelect()"></input>
+     <input type="checkbox" id="polyCheck1" onclick="polySelect(1)"></input>
      <p></p>
      <label for="factorCheck"><b>Factors form (ex. (1+x)(1-x)(2+x))</b></label>
-     <input type="checkbox" id="factorCheck" onclick="polySelect()"></input>
+     <input type="checkbox" id="factorCheck1" onclick="polySelect(1)"></input>
      <p></p>
      <label for="rootCheck"><b>Roots (seperate roots by comma; make sure to include ALL the roots)</b></label>
-     <input type="checkbox" id="rootCheck" onclick="rootSelect()"></input>
+     <input type="checkbox" id="rootCheck1" onclick="rootSelect(1)"></input>
      <p></p>
-     <label for="Polynomial" id="numerLabel">Numerator:</label>
-     <input type="text" id="Polynomial" value="1"></input>
-     <label for="Order">Order: </label>
-     <input type="text" id="Order" value="0"></input>
-     <!--<label for="checkRoots">I know the numerator's roots.</label>
-     <input type="checkbox" id="checkRoots"></input>-->
-     <!--<label for="Roots">Roots</label>
-     <input type="text" id="Roots" value="1"></input>-->
+     <label for="Polynomial1" id="numerLabel">Numerator:</label>
+     <input type="text" id="Polynomial1" value="1"></input>
+     <!--<label for="Order">Order: </label>
+     <input type="text" id="Order" value="0"></input> -->
+     <p></p>
+     Enter numerator polynomial in one of these two forms:
+     <p></p>
+     <label for="polyCheck2"><b>Expanded form (ex. 1+2x^2+4x^5)</b></label>
+     <input type="checkbox" id="polyCheck2" onclick="polySelect(2)"></input>
+     <p></p>
+     <label for="factorCheck2"><b>Factors form (ex. (1+x)(1-x)(2+x))</b></label>
+     <input type="checkbox" id="factorCheck2" onclick="polySelect(2)"></input>
+     <p></p>
+     <label for="rootCheck2"><b>Roots (seperate roots by comma; make sure to include ALL the roots)</b></label>
+     <input type="checkbox" id="rootCheck2" onclick="rootSelect(2)"></input>
      <p></p>
      <label for="Polynomial2" id="denomLabel">Denominator:</label>
      <input type="text" id="Polynomial2" value="1"></input>
-     <label for="Order2">Order: </label>
-     <input type="text" id="Order2" value="0"></input>
-     <!--<label for="checkRoots2">I know the denominator's roots.</label>
-     <input type="checkbox" id="checkRoots2"></input>-->
-     <!--<label for="Roots2">Roots</label>
-     <input type="text" id="Roots2" value="1"></input>-->
+     <!--<label for="Order2">Order: </label>
+     <input type="text" id="Order2" value="0"></input>-->
      <input type="button" nane="submit" value="Submit" onclick="onClick()"></input>
      <p></p>
-     <label for="varialbe">Variable (x by default) </label>
+     <label for="variable">Variable (x by default) </label>
      <input type="text" id="variable" value="x"></input>
      <p></p>
      <p></p>
@@ -59,7 +62,6 @@
     <p id="poly"></p><!--Contains polynomial-->
     <p id="factors"></p>
     <p id="roots"></p>
-    <p id="factorRoots"></p>
      <p id="coef"></p>
      <p id="powers"></p>
      <p id="polyTerms"></p>
@@ -71,7 +73,6 @@
      <p id="poly2"></p><!--Contains polynomial-->
      <p id="factors2"></p>
      <p id="roots2"></p>
-     <p id="factorRoots2"></p><!-- roots according to factoring the individual factors -->
       <p id="coef2"></p>
       <p id="powers2"></p>
       <p id="polyTerms2"></p>
