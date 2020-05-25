@@ -5,28 +5,9 @@
    <script src="http://nerdamer.com/js/Algebra.js"></script>-->
    <script src="https://vader-coder.github.io/nerdamer/nerdamer.core.js"></script>
    <script src="https://vader-coder.github.io/nerdamer/Algebra.js"></script>
-   <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/7.0.0/math.js" integrity="sha256-i+Mzv15oc+EbTPipuhLg4FkRqEEXbZZgw9iHTZruH6s=" crossorigin="anonymous"></script>
---><script src="https://unpkg.com/d3@3/d3.min.js"></script>
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/7.0.0/math.js" integrity="sha256-i+Mzv15oc+EbTPipuhLg4FkRqEEXbZZgw9iHTZruH6s=" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/d3@3/d3.min.js"></script>
   <script src="https://unpkg.com/function-plot@1/dist/function-plot.js"></script>
-  <script>
-  functionPlot({
-  title: 'y = x * x',
-  target: '#quadratic-with-options',
-  width: 580,
-  height: 400,
-  disableZoom: true,
-  xAxis: {
-    label: 'x - axis',
-    domain: [-6, 6]
-  },
-  yAxis: {
-    label: 'y - axis'
-  },
-  data: [{
-    fn: 'x^2'
-  }]
-})
-</script>
  </head>
  <body>
    <div align="left">
@@ -38,7 +19,7 @@
      <label for="factorCheck"><b>Factors form (ex. (1+x)(1-x)(2+x))</b></label>
      <input type="checkbox" id="factorCheck" onclick="polySelect()"></input>
      <p></p>
-     <label for="rootCheck"><b>Roots & Order</b></label>
+     <label for="rootCheck"><b>Roots (seperate roots by comma; make sure to include ALL the roots)</b></label>
      <input type="checkbox" id="rootCheck" onclick="rootSelect()"></input>
      <p></p>
      <label for="Polynomial" id="numerLabel">Numerator:</label>
