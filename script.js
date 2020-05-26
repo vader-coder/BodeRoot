@@ -358,14 +358,6 @@ function getPoly (polyCheck, factorCheck, rootCheck, num) {
 function mkPlot(numRootStr, denomRootStr) {
   var numRoots = rootsStrArrToChartFormat(numRootStr);
   var denomRoots = rootsStrArrToChartFormat(denomRootStr);
-  console.log('numRoots '+numRoots.toString());
-  console.log('denomRoots '+denomRoots.toString());
-  console.log(nerdamer('imagpart(4+i)').text());
-  console.log(nerdamer('imagpart(4-i)').text());
-  console.log('numRoots: ' + numRoots.toString());
-  console.log(typeof(numRoots));
-  console.log(numRoots[0][0]);
-  console.log(numRoots[0]);
   Highcharts.chart('container', {
     chart: {
         type: 'scatter',
