@@ -31,7 +31,8 @@ function onClick() {
   document.getElementById('denominator').innerHTML = "Denominator";
   /*document.getElementById('factors').innerHTML = labels[1] + "((x-1)^2)";
   document.getElementById('roots').innerHTML = labels[2] +  numAns['roots'].toString();*/
-  var rPlot = document.getElementById('rootLocus').getContext('2d');
+  mkPlot(numAns, denomAns);
+  var rPlot = document.getElementById('rootLocus');
   var rootLocusPlot = new Chart(rPlot, {
       type: 'scatter',
       data: {
@@ -355,4 +356,90 @@ function getPoly (polyCheck, factorCheck, rootCheck, num) {
     return;//stop execution of stript.
   }
   return y.toString();
+}
+//function to make plot
+function mkPlot(numAns, denomAns) {
+  Highcharts.chart('container', {
+    chart: {
+        type: 'scatter',
+        zoomType: 'xy'
+    },
+    title: {
+        text: 'Height Versus Weight of 507 Individuals by Gender'
+    },
+    subtitle: {
+        text: 'Source: Heinz  2003'
+    },
+    xAxis: {
+        title: {
+            enabled: true,
+            text: 'Height (cm)'
+        },
+        startOnTick: true,
+        endOnTick: true,
+        showLastLabel: true
+    },
+    yAxis: {
+        title: {
+            text: 'Weight (kg)'
+        }
+    },
+    legend: {
+        layout: 'vertical',
+        align: 'left',
+        verticalAlign: 'top',
+        x: 100,
+        y: 70,
+        floating: true,
+        backgroundColor: Highcharts.defaultOptions.chart.backgroundColor,
+        borderWidth: 1
+    },
+    plotOptions: {
+        scatter: {
+            marker: {
+                radius: 5,
+                states: {
+                    hover: {
+                        enabled: true,
+                        lineColor: 'rgb(100,100,100)'
+                    }
+                }
+            },
+            states: {
+                hover: {
+                    marker: {
+                        enabled: false
+                    }
+                }
+            },
+            tooltip: {
+                headerFormat: '<b>{series.name}</b><br>',
+                pointFormat: '{point.x} cm, {point.y} kg'
+            }
+        }
+    },
+    series: [{
+        name: 'Female',
+        color: 'rgba(223, 83, 83, .5)',
+        data:[[161.2, 51.6], [167.5, 59.0]]}, {[[174.0, 65.6], [175.3, 71.8]]
+        name: 'Male',
+        color: 'rgba(119, 152, 191, .5)',
+        data:  [[174.0, 65.6], [175.3, 71.8]}]
+});
+  /*
+  var rPlot = document.getElementById('rootLocus');
+  var rootLocusPlot = new Chart(rPlot, {
+      type: 'scatter',
+      data: {
+          datasets: [{
+              label: 'Scatter Dataset',
+              data: [{x: -10,y: 0},{x: 0,y: 10}, {x: 10,y: 5}]}]},
+              //should create and push this data: vertical axis as complex plane.
+      pointBorderColor: 'rgba(0, 0, 0.5, 0.5)',
+      pointBackgroundColor: 'rgba(0.5, 0, 0, 0.5)',
+      backgroundColor: 'rgba(0, 0.5, 0, 0.5)',
+      options: {
+          scales: {xAxes: [{ type: 'linear',position: 'bottom'}]}
+      }
+  });*/
 }
