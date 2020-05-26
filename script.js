@@ -1,8 +1,4 @@
 //capital strings refer to input ids, lowercase refres to output id.
-/*var nerdamer = require('nerdamer');
-require('nerdamer/Algebra.js');
-console.log("root to Poly: " + rootToPoly('-6, -5, 2', 3).toString());//(x+6)(x+5)(x-2) = x^3 -8x^2 -3x +90
-//test stuff with node.js*/
 function onClick() {
   var roots, roots2;//actual roots. I would like to check...
   var polyCheck = document.getElementById('polyCheck1').checked;//check which checkbox was checked
@@ -13,7 +9,6 @@ function onClick() {
   var rootCheck2 = document.getElementById('rootCheck2').checked;
   var polynomialform = getPoly(polyCheck, factorCheck, rootCheck, '1');//numerator
   var polynomialform2 = getPoly(polyCheck2, factorCheck2, rootCheck2, '2');//denominator
-  console.log('polynomialform' + polynomialform);
   var numAns = finder(polynomialform);//numerator answers
   var denomAns = finder(polynomialform2);//denominator answers
 
@@ -31,19 +26,7 @@ function onClick() {
   document.getElementById('denominator').innerHTML = "Denominator";
   /*document.getElementById('factors').innerHTML = labels[1] + "((x-1)^2)";
   document.getElementById('roots').innerHTML = labels[2] +  numAns['roots'].toString();*/
-  mkPlot(numAns, denomAns);
-  var rPlot = document.getElementById('rootLocus');
-  var rootLocusPlot = new Chart(rPlot, {
-      type: 'scatter',
-      data: {
-          datasets: [{
-              label: 'Scatter Dataset',
-              data: [{x: -10,y: 0},{x: 0,y: 10}, {x: 10,y: 5}]}]},
-              //should create and push this data: vertical axis as complex plane.
-      options: {
-          scales: {xAxes: [{ type: 'linear',position: 'bottom'}]}
-      }
-  });
+  mkPlot(numAns["roots"], denomAns["roots"]);
 }
 //returns list contaniing polynomial form, coefficients, roots, order, etc.
 function finder (polynomialform) {
@@ -55,24 +38,15 @@ function finder (polynomialform) {
   var factors = nerdamer('factor('+ poly + ')');
   var roots = [];
   //var factorRoots = [];//roots based on the factors.
-  console.log("roots: " + roots.toString());
-  console.log("onlyOnce: " + onlyOnce([1, 2, 5, 5, 3, 1]).toString());
   var order;//nerdamer returns coefficients of x^0 to x^order
   var powers = [];//powers corresponding to each coefficent
   var polyTerms = [];//x-terms corresponding to each coefficient
-  //console.log("coef.length: " + coef.length.toString());
-  //objects don't haave length, can't do coef.length
-  //coef = coef.toString();
+
   coef = objectToArray(coef);//splits up all digits.
-  /*roots = roots.toString();
-  roots = roots.split(',');*/
   factors = factorsArr(factors.toString());
   for (let i=0; i<factors.length; i++) {
     roots.push(nerdamer('roots(' + factors[i] +')').toString());
   }
-  //roots = objectToArray(roots);
-  //roots = onlyOnce(roots);//we only need each root once.
-  //Object.keys(coef).length
   for (let i=0; i<coef.length; i++) {
     powers.push(i);
     polyTerms.push("x^" + i.toString());
@@ -110,7 +84,6 @@ function rep (arr, original, new_item) {
 }
 //removes each item in target from array, returns array
 function rem(arr, target) {
-  //console.log("arr = " + printEach(arr));
   var index;
   for (let i=0; i<arr.length; i++) {
     for (let j=0; j<target.length; j++) {
@@ -209,19 +182,40 @@ function rootSelect(num) {
   document.getElementById('Order2').value = '0';*/
   if (num == 1) {//numerator
     document.getElementById('numerLabel').innerHTML = 'Numerator Roots/Zeros: ';
+    document.getElementById('polyCheck1').checked = 0;
+    document.getElementById('factorCheck1').checked = 0;//if one is selected, the others can't be.
+
   }
   else if (num == 2) {//denominator
     document.getElementById('denomLabel').innerHTML = 'Denominator Roots/Poles: ';
+    document.getElementById('polyCheck2').checked = 0;
+    document.getElementById('factorCheck2').checked = 0;//if one is selected, the others can't be.
   }
 }
-function polySelect(num) {
+function polySelect(num, expOrFactors) {
   /*document.getElementById('Order').value = 'Not needed';
   document.getElementById('Order2').value = 'Not needed';*/
   if (num == 1) {
     document.getElementById('numerLabel').innerHTML = 'Numerator: ';
+    if (!expOrFactors) {//if expanded is selected
+      document.getElementById('factorCheck1').checked = 0;
+      document.getElementById('rootCheck1').checked = 0;//if one is selected, the others can't be.
+    }
+    else {
+      document.getElementById('polyCheck1').checked = 0;
+      document.getElementById('rootCheck1').checked = 0;//if one is selected, the others can't be.
+    }
   }
   else if (num == 2) {
     document.getElementById('denomLabel').innerHTML = 'Denominator: ';
+    if (!expOrFactors) {//if expanded is selected
+      document.getElementById('factorCheck2').checked = 0;
+      document.getElementById('rootCheck2').checked = 0;//if one is selected, the others can't be.
+    }
+    else {
+      document.getElementById('polyCheck2').checked = 0;
+      document.getElementById('rootCheck2').checked = 0;//if one is selected, the others can't be.
+    }
   }
 }
 //this is a js equivalent of the GNU Octave poly function
@@ -348,7 +342,6 @@ function getPoly (polyCheck, factorCheck, rootCheck, num) {
   else if (rootCheck && !polyCheck && !factorCheck) {//must be seperated by commas
     rootsInput = document.getElementById('Polynomial'+num).value;
     y = rootToPoly(rootsInput);
-    console.log("y: " + y.toString());
   }
   else {
     alert('You must check one box for the numerator and one for the denominator.');
@@ -358,22 +351,43 @@ function getPoly (polyCheck, factorCheck, rootCheck, num) {
   return y.toString();
 }
 //function to make plot
-function mkPlot(numAns, denomAns) {
+function mkPlot(numRootStr, denomRootStr) {
+  numRootStr = rem(numRootStr, ['[', ']']);
+  for (let i=0; i<numRootStr.length; i++) {
+    numRootStr[i].split(',');
+  }
+  console.log("numRootStr: " + numRootStr.toString());
+  var last = numRootStr.length-1;
+  console.log("numRootStr[last]: " + numRootStr[last].toString());
+  /*numRoots = [];
+  denomRoots = [];
+  latest = [];
+  for (let i=0; i<numAns["roots"].length; i++) {
+    latest.push(nerdamer('realpart('+numRoots["roots"][i]+')'));
+    latest.push(nerdamer('imagpart('+numRoots["roots"][i]+')'));
+    numRoots.push(latest);
+    latest = [];
+  }
+  for (let i=0; i<numAns["roots"].length; i++) {
+    latest.push(nerdamer('realpart('+denomAns["roots"][i]+')'));
+    latest.push(nerdamer('imagpart('+denomAns["roots"][i]+')'));
+    denomRoots.push(latest);
+    latest = [];
+  }
+  console.log("numRoots: " + numRoots.toString());
+  console.log("denomRoots: " + denomRoots.toString());*/
   Highcharts.chart('container', {
     chart: {
         type: 'scatter',
         zoomType: 'xy'
     },
     title: {
-        text: 'Height Versus Weight of 507 Individuals by Gender'
-    },
-    subtitle: {
-        text: 'Source: Heinz  2003'
+        text: 'Plot of Roots on Imaginary and Real Axis'
     },
     xAxis: {
         title: {
             enabled: true,
-            text: 'Height (cm)'
+            text: 'Real'
         },
         startOnTick: true,
         endOnTick: true,
@@ -381,7 +395,7 @@ function mkPlot(numAns, denomAns) {
     },
     yAxis: {
         title: {
-            text: 'Weight (kg)'
+            text: 'Imaginary'
         }
     },
     legend: {
@@ -419,27 +433,14 @@ function mkPlot(numAns, denomAns) {
         }
     },
     series: [{
-        name: 'Female',
-        color: 'rgba(223, 83, 83, .5)',
-        data:[[161.2, 51.6], [167.5, 59.0]]}, {[[174.0, 65.6], [175.3, 71.8]]
-        name: 'Male',
+        name: 'Numerator',
+        color: 'rgba(223, 83, 83, .5)',//data is [x, y];
+        data: [[2, 0], [4, 1], [4, -1]]
+
+    }, {
+        name: 'Denominator',
         color: 'rgba(119, 152, 191, .5)',
-        data:  [[174.0, 65.6], [175.3, 71.8]}]
+        data: [[-2, 0], [4, -2], [-4, 1]]
+    }]
 });
-  /*
-  var rPlot = document.getElementById('rootLocus');
-  var rootLocusPlot = new Chart(rPlot, {
-      type: 'scatter',
-      data: {
-          datasets: [{
-              label: 'Scatter Dataset',
-              data: [{x: -10,y: 0},{x: 0,y: 10}, {x: 10,y: 5}]}]},
-              //should create and push this data: vertical axis as complex plane.
-      pointBorderColor: 'rgba(0, 0, 0.5, 0.5)',
-      pointBackgroundColor: 'rgba(0.5, 0, 0, 0.5)',
-      backgroundColor: 'rgba(0, 0.5, 0, 0.5)',
-      options: {
-          scales: {xAxes: [{ type: 'linear',position: 'bottom'}]}
-      }
-  });*/
 }
