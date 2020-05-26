@@ -42,7 +42,10 @@ function finder (polynomialform) {
   var powers = [];//powers corresponding to each coefficent
   var polyTerms = [];//x-terms corresponding to each coefficient
 
+  //think about using coef.text() instead of objectToArray.
+  //console.log(coef.text());
   coef = objectToArray(coef);//splits up all digits.
+  //console.log(coef[coef.length-1]); was ']'
   factors = factorsArr(factors.toString());
   for (let i=0; i<factors.length; i++) {
     roots.push(nerdamer('roots(' + factors[i] +')').toString());
@@ -351,31 +354,18 @@ function getPoly (polyCheck, factorCheck, rootCheck, num) {
   return y.toString();
 }
 //function to make plot
+//copyright policy on code from demos?
 function mkPlot(numRootStr, denomRootStr) {
-  numRootStr = rem(numRootStr, ['[', ']']);
-  for (let i=0; i<numRootStr.length; i++) {
-    numRootStr[i].split(',');
-  }
-  console.log("numRootStr: " + numRootStr.toString());
-  var last = numRootStr.length-1;
-  console.log("numRootStr[last]: " + numRootStr[last].toString());
-  /*numRoots = [];
-  denomRoots = [];
-  latest = [];
-  for (let i=0; i<numAns["roots"].length; i++) {
-    latest.push(nerdamer('realpart('+numRoots["roots"][i]+')'));
-    latest.push(nerdamer('imagpart('+numRoots["roots"][i]+')'));
-    numRoots.push(latest);
-    latest = [];
-  }
-  for (let i=0; i<numAns["roots"].length; i++) {
-    latest.push(nerdamer('realpart('+denomAns["roots"][i]+')'));
-    latest.push(nerdamer('imagpart('+denomAns["roots"][i]+')'));
-    denomRoots.push(latest);
-    latest = [];
-  }
-  console.log("numRoots: " + numRoots.toString());
-  console.log("denomRoots: " + denomRoots.toString());*/
+  var numRoots = rootsStrArrToChartFormat(numRootStr);
+  var denomRoots = rootsStrArrToChartFormat(denomRootStr);
+  console.log('numRoots '+numRoots.toString());
+  console.log('denomRoots '+denomRoots.toString());
+  console.log(nerdamer('imagpart(4+i)').text());
+  console.log(nerdamer('imagpart(4-i)').text());
+  console.log('numRoots: ' + numRoots.toString());
+  console.log(typeof(numRoots));
+  console.log(numRoots[0][0]);
+  console.log(numRoots[0]);
   Highcharts.chart('container', {
     chart: {
         type: 'scatter',
@@ -428,19 +418,45 @@ function mkPlot(numRootStr, denomRootStr) {
             },
             tooltip: {
                 headerFormat: '<b>{series.name}</b><br>',
-                pointFormat: '{point.x} cm, {point.y} kg'
+                pointFormat: '{point.x} + {point.y}i'
             }
         }
     },
     series: [{
         name: 'Numerator',
         color: 'rgba(223, 83, 83, .5)',//data is [x, y];
-        data: [[2, 0], [4, 1], [4, -1]]
+        data: numRoots//[[2, 0], [4, 1], [4, -1]]
 
     }, {
         name: 'Denominator',
         color: 'rgba(119, 152, 191, .5)',
-        data: [[-2, 0], [4, -2], [-4, 1]]
+        data: denomRoots//[[-1, 0], [1, 0]]
     }]
 });
+}
+//converts string array to format that can use.
+function rootsStrArrToChartFormat(roots) {
+  var temp;
+  roots = rem(roots, ['[', ']']);
+  var len = roots.length;
+  var ogLen = len;//original length
+  for (let i=0; i<len; i++) {
+    if (i < ogLen) {//if i<originial length, still going through strings.
+      if (roots[i].indexOf(',') != -1) {//if there is a
+        temp = roots[i].split(',');
+        roots[i] = temp[0];//make original have 1st item from array.
+        for (let j=1; j<temp.length; j++) {
+          roots.push(temp[j]);//push rest of items to end of array
+          len++;
+        }
+      }
+    }
+    if (roots[i].indexOf('i') == -1) {//no i, isn't irrational.
+      roots[i] = [parseInt(roots[i], 10), 0];
+    }
+    else {//it is imaginary.
+      roots[i] = [parseInt(nerdamer('realpart('+roots[i]+')').text(), 10), parseInt(nerdamer('imagpart('+roots[i]+')').text(), 10)];
+    }
+  }
+  return roots;
 }
