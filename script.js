@@ -27,6 +27,15 @@ function onClick() {
   /*document.getElementById('factors').innerHTML = labels[1] + "((x-1)^2)";
   document.getElementById('roots').innerHTML = labels[2] +  numAns['roots'].toString();*/
   mkPlot(numAns["roots"], denomAns["roots"]);
+  var constGain = [1, [[1, 20*Math.log10(0.25)], [20, 20*Math.log10(0.25)]]];
+  var zOrigin = [1, [[0, -20], [1, 0], [10, 20]]];
+  var pOrigin = [1, [[0, 20], [1, 0], [10, -20]]];
+  mkBode(constGain, zOrigin, pOrigin);
+  /*var nUnity = unity(numAns["coef"], numAns["powers"]);
+  var dUnity = unity(denomAns["coef"], denomAns["powers"]);
+  var const = dUnity['divisor']/nUnity['divisor'];//constant out front.
+  var constdB = dB([const, 0]);//log scale.
+  var constPhase = phase([const, 0]);*/
 }
 //returns list contaniing polynomial form, coefficients, roots, order, etc.
 function finder (polynomialform) {
@@ -417,12 +426,12 @@ function mkPlot(numRootStr, denomRootStr) {
     series: [{
         name: 'Numerator',
         color: 'rgba(223, 83, 83, .5)',//data is [x, y];
-        data: numRoots//[[2, 0], [4, 1], [4, -1]]
+        data: [[2, 0], [4, 1], [4, -1]]//numRoots
 
     }, {
         name: 'Denominator',
         color: 'rgba(119, 152, 191, .5)',
-        data: denomRoots//[[-1, 0], [1, 0]]
+        data: [[-1, 0], [1, 0]]//denomRoots
     }]
 });
 }
@@ -454,16 +463,220 @@ function rootsStrArrToChartFormat(roots) {
 }
 //takes array of coeffs for denominator and numerator (largest to smallest power)
 //as input, form with smallest decimal as unity in the back.
-function unity(nCoef, dCoef) {//10:36
+function unity(coef, power) {//10:36
   //what if coef x includes a power? should we get it from poly()?
   //by dividing every coefficient by the last coefficient, we ensure that the last one equals 1.
-  var nDivisor = nCoef[nCoef.length-1];
-  var dDivisor = dCoef[dCoef.length-1];
-  if (nDivisor != 0) {
-    nCoef = nCoef.map(v=>v/nDivisor);
+  var index = power.indexOf(0);
+  if (power[index] == 0) {
+    coef = coef.map(v=>parseInt(v, 10));
+    var divisor = coef[index];
+    if (divisor != 0) {
+      coef = coef.map(v=>v/divisor);
+    }
+  return {'coef':coef, 'divisor':divisor};
   }
-  if (dDivisor != 0) {
-    dCoef = dCoef.map(v=>v/dDivisor);
+  else {
+    return 0;
   }
-  return {"nCoef":nCoef, "dCoef":dCoef}
+}
+//converts a number like our constant out front to the decibal log scale.
+//number inputs as [real, imaginary]
+//https://www.rohde-schwarz.com/us/faq/converting-the-real-and-imaginary-numbers-to-magnitude-in-db-and-phase-in-degrees.-faq_78704-30465.html
+//should we use if statements to filter out cases? does a sqrt take longer than an if?
+//type = [0, 1, 2, 3]
+//[const, zero, pole, etc.]
+//returns coordinates to map DB.
+function dB (num, type) {
+  var x;
+  var y;
+  if (num[0] == 0 && num[1] == 0 &&  type == 1) {//zero at origin
+    return [[1, 0], [10, 20], [0, -20]];
+  }
+  else if(num[0] == 0 && num[1] == 0 && type == 2) {
+    return [[0, 20], [0, 1], [10, -20]];
+  }
+  //x = math.sqrt(Math.pow(num[0], 2) + Math.pow(num[1], 2));
+  else if (type == 0) {//const
+    x = num[0];//constant gain?
+    x = 20*(math.log10(x));//nerdamer('log10('+num.toString()+')');
+    return [[0, x], [1, x]];//frequency, dB. only need 2 points for a straight line
+  }
+}
+//phase = arctan(Im/Real)
+function phase (num) {
+  if (num[0] != 0) {
+    return math.atan2(num[1], num[0]);
+  }
+  else if (num[0] == 0 && num[1] == 0) {
+    return 0;
+  }
+}//atan2 can be more precise.
+//what should we do for just imaginary #s?
+//will have to do less coding if understand what you're doing first!
+function mkBode (constGain, zOrigin, pOrigin){
+
+if (constGain[0]) {
+  constGain = constGain[1];
+}
+else {
+  constGain = 0;
+}
+if (zOrigin[0]) {
+  zOrigin = zOrigin[1];
+}
+else {
+  zOrigin = 0;
+}
+if (pOrigin[0]) {
+  pOrigin = pOrigin[1];
+}
+else {
+  pOrigin = 0;
+}
+  Highcharts.chart('bode', {
+    chart: {
+        type: 'line',
+        zoomType: 'xy'
+    },
+    title: {
+        text: 'Bode Plot'
+    },
+    xAxis: {
+      type: 'logarithmic',
+        title: {
+            enabled: true,
+            text: 'Frequency ω'
+        },
+        startOnTick: true,
+        endOnTick: true,
+        showLastLabel: true
+    },
+    type: 'logarithmic',
+    yAxis: {
+        title: {
+            text: 'Magnitude dB'
+        }
+    },
+    legend: {
+        layout: 'vertical',
+        align: 'left',
+        verticalAlign: 'top',
+        x: 100,
+        y: 70,
+        floating: true,
+        backgroundColor: Highcharts.defaultOptions.chart.backgroundColor,
+        borderWidth: 1
+    },
+    plotOptions: {
+        scatter: {
+            marker: {
+                radius: 5,
+                states: {
+                    hover: {
+                        enabled: true,
+                        lineColor: 'rgb(100,100,100)'
+                    }
+                }
+            },
+            states: {
+                hover: {
+                    marker: {
+                        enabled: false
+                    }
+                }
+            },
+            tooltip: {
+                headerFormat: '<b>{series.name}</b><br>',
+                pointFormat: '{point.x}, {point.y}'
+            }
+        }
+    },
+    series: [{
+        name: 'Constant',
+        color: 'rgba(223, 83, 83, .5)',//data is [x, y];
+        data: constGain
+
+    }, {
+        name: 'Zero at Origin',
+        color: 'rgba(119, 152, 191, .5)',
+        data: zOrigin//denomRoots
+    }, {
+        name: 'Pole at Origin',
+        color: 'rgba(20, 191, 20, .5)',
+        data: pOrigin//denomRoots
+    }]
+  });
+}
+//function to make plot
+//copyright policy on code from demos?
+function mkPlot(numRootStr, denomRootStr) {
+  var numRoots = rootsStrArrToChartFormat(numRootStr);
+  var denomRoots = rootsStrArrToChartFormat(denomRootStr);
+  Highcharts.chart('container', {
+    chart: {
+        type: 'scatter',
+        zoomType: 'xy'
+    },
+    title: {
+        text: 'Plot of Roots on Imaginary and Real Axis'
+    },
+    xAxis: {
+        title: {
+            enabled: true,
+            text: 'Real'
+        },
+        startOnTick: true,
+        endOnTick: true,
+        showLastLabel: true
+    },
+    yAxis: {
+        title: {
+            text: 'Imaginary'
+        }
+    },
+    legend: {
+        layout: 'vertical',
+        align: 'left',
+        verticalAlign: 'top',
+        x: 100,
+        y: 70,
+        floating: true,
+        backgroundColor: Highcharts.defaultOptions.chart.backgroundColor,
+        borderWidth: 1
+    },
+    plotOptions: {
+        scatter: {
+            marker: {
+                radius: 5,
+                states: {
+                    hover: {
+                        enabled: true,
+                        lineColor: 'rgb(100,100,100)'
+                    }
+                }
+            },
+            states: {
+                hover: {
+                    marker: {
+                        enabled: false
+                    }
+                }
+            },
+            tooltip: {
+                headerFormat: '<b>{series.name}</b><br>',
+                pointFormat: '{point.x} + {point.y}i'
+            }
+        }
+    },
+    series: [{
+        name: 'Numerator',
+        color: 'rgba(223, 83, 83, .5)',//data is [x, y];
+        data: [[2, 0], [4, 1], [4, -1]]//numRoots
+
+    }, {
+        name: 'Denominator',
+        color: 'rgba(119, 152, 191, .5)',
+        data: [[-1, 0], [1, 0]]//denomRoots
+    }]
+});
 }
