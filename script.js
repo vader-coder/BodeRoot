@@ -452,3 +452,18 @@ function rootsStrArrToChartFormat(roots) {
   }
   return roots;
 }
+//takes array of coeffs for denominator and numerator (largest to smallest power)
+//as input, form with smallest decimal as unity in the back.
+function unity(nCoef, dCoef) {//10:36
+  //what if coef x includes a power? should we get it from poly()?
+  //by dividing every coefficient by the last coefficient, we ensure that the last one equals 1.
+  var nDivisor = nCoef[nCoef.length-1];
+  var dDivisor = dCoef[dCoef.length-1];
+  if (nDivisor != 0) {
+    nCoef = nCoef.map(v=>v/nDivisor);
+  }
+  if (dDivisor != 0) {
+    dCoef = dCoef.map(v=>v/dDivisor);
+  }
+  return {"nCoef":nCoef, "dCoef":dCoef}
+}
