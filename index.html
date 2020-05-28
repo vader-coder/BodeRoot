@@ -6,6 +6,7 @@
    <script src="http://nerdamer.com/js/Algebra.js"></script>-->
    <script src="https://vader-coder.github.io/nerdamer/nerdamer.core.js"></script>
    <script src="https://vader-coder.github.io/nerdamer/Algebra.js"></script>
+   <!-- See how many of these you can fork over to github.-->
    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/7.0.0/math.js" integrity="sha256-i+Mzv15oc+EbTPipuhLg4FkRqEEXbZZgw9iHTZruH6s=" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/d3@3/d3.min.js"></script>
   <script src="https://unpkg.com/function-plot@1/dist/function-plot.js"></script>
@@ -18,6 +19,13 @@
   <script src="https://unpkg.com/d3@3/d3.min.js"></script>
   <script src="https://unpkg.com/function-plot@1/dist/function-plot.js"></script>
   <script src="https://www.desmos.com/api/v1.5/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6"></script>
+  <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/jsxgraph/1.00.0/jsxgraphcore.js"></script>
+  <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/jsxgraph/1.00.0/jsxgraph.css">
+  https://cdnjs.cloudflare.com/ajax/libs/jsxgraph/0.99.7/jsxgraphcore.js
+  -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsxgraph/0.99.7/jsxgraphcore.js"></script>
+  <link rel="stylesheet" type="text/css" href="https://jsxgraph.org/distrib/jsxgraph.css">
+
  </head>
  <body>
    <div align="left">
@@ -114,6 +122,13 @@
     <canvas id="myChart" width="400" height="400"></canvas>-->
  </div>
     <a rel="license" href="http://creativecommons.org/licenses/by-nc/3.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc/3.0/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc/3.0/">Creative Commons Attribution-NonCommercial 3.0 Unported License</a>.
-
+    <div id="bodeFacts">
+      <p id="constant"></p>
+      <p id="zOrigin"></p>
+      <p id="pOrigin"></p>
+      <p id="zReal"></p>
+      <p id="pReal"></p>
+    </div>
+    <div id="jxgbox" class="jxgbox" style="width:500px; height:500px"></div>
  </body>
 </html>

@@ -32,6 +32,8 @@ function onClick() {
   var pOrigin = [1, [[0, 20], [1, 0], [10, -20]]];
   mkBode(constGain, zOrigin, pOrigin);
   desmos(0.25);
+  jsxg(0.25, 0, 0, [1, [2, 4]], [0, [0]]);
+
   /*var nUnity = unity(numAns["coef"], numAns["powers"]);
   var dUnity = unity(denomAns["coef"], denomAns["powers"]);
   var const = dUnity['divisor']/nUnity['divisor'];//constant out front.
@@ -684,8 +686,76 @@ function mkPlot(numRootStr, denomRootStr) {
 function desmos(constant) {
   var elt = document.getElementById('desmos');
   var calculator = Desmos.GraphingCalculator(elt);
-  calculator.setExpression({ id: 'graph1', latex: 'y = 20log(x)' });
-  calculator.setExpression({ id: 'graph2', latex: 'y = -20log(x)' });
+  calculator.setExpression({ id: 'graph1', latex: 'f(x)=\log_{10}(x)' });
+  calculator.setExpression({ id: 'graph2', latex: 'g\left(x\right)=-20\log\left(x\right)' });
   calculator.setExpression({ id: 'graph3', latex: 'y = '+constant.toString() });
-
+}
+//constant is the constant const gain
+//zOrigin & pOrigin specify whether there is a zero or pole (respectively) at the origin or not (1|0).
+//zReal[0] & pReal[0] specify whether there is a zero or pole (respectively) at the origin or not (1|0).
+//zReal[1] & pReal[1] are the list of real zeros or poles.
+//worry about repeated zeros later.
+function jsxg(constant, zOrigin, pOrigin, zReal, pReal) {
+  // Create a function graph for f(x) = 0.5*x*x-2*x
+  var uBound = 40;
+  var lBound = -40;
+  const board = JXG.JSXGraph.initBoard('jxgbox', {
+    boundingbox: [lBound, uBound, uBound, lBound], axis:true
+});
+   if (constant) {
+     var graph1 = board.create('functiongraph',
+     [function(x){
+       return constant;
+     }, lBound, uBound]
+     );
+     document.getElementById('constant').innerHtml = "constant: dB = " + constant.toString();
+   }
+   if (zOrigin) {
+     var graph2 = board.create('functiongraph',
+  [ function(x){
+      return 20*Math.log10(x);
+    }, lBound, uBound]
+  );
+  document.getElementById('zOrigin').innerHtml = "Zero at Origin: dB = 20*log(ω)";
+  }
+  if (pOrigin) {
+  var graph3 = board.create('functiongraph',
+  [function(x){
+    return -20*Math.log10(x);
+  }, lBound, uBound]
+  );
+  document.getElementById('pOrigin').innerHtml = "Pole at Origin: dB = -20*log(ω)";
+  }
+  if (zReal[0]) {
+    var len = zReal[1].length;
+    var graph4 = [];
+    var html = "";
+    for (let i=0; i<len; i++) {
+      let w0 = -1*zReal[1][i];
+      graph4.push(i);//necessary?
+      graph4[i] = board.create('functiongraph',
+      [function(x){
+        return 20*Math.log10(x);
+      }, w0, uBound]
+      );
+      html = html + "Real Zero: dB = {20*log(ω) if ω >= "+ w0.toString() +"; 0 if ω <= "+w0+"}<br>";
+    }
+    document.getElementById('zReal').innerHtml = html;
+  }
+  if (pReal[0]) {
+    var len = pReal[1].length;
+    var graph5 = [];
+    var html = "";
+    for (let i=0; i<len; i++) {
+      var w0 = -1*pReal[1][i];
+      graph5.push(i);//necessary?
+      graph5[i] = board.create('functiongraph',
+      [function(x){
+        return -20*Math.log10(x);
+      }, w0, uBound]
+      );
+      html = html + "Real Pole: dB = {20*log(ω) if ω >= "+ w0.toString() +"; 0 if ω <= "+w0+"}<br>";
+    }
+    document.getElementById('pReal').innerHtml = html;
+  }
 }
