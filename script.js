@@ -26,13 +26,13 @@ function onClick() {
   document.getElementById('denominator').innerHTML = "Denominator";
   /*document.getElementById('factors').innerHTML = labels[1] + "((x-1)^2)";
   document.getElementById('roots').innerHTML = labels[2] +  numAns['roots'].toString();*/
-  mkPlot(numAns["roots"], denomAns["roots"]);
+  /*mkPlot(numAns["roots"], denomAns["roots"]);
   var constGain = [1, [[1, 20*Math.log10(0.25)], [20, 20*Math.log10(0.25)]]];
   var zOrigin = [1, [[0, -20], [1, 0], [10, 20]]];
   var pOrigin = [1, [[0, 20], [1, 0], [10, -20]]];
-  mkBode(constGain, zOrigin, pOrigin);
+  mkBode(constGain, zOrigin, pOrigin);*/
   desmos(0.25);
-  jsxg(0.25, 0, 0, [1, [2, 4]], [0, [0]]);
+  jsxg(0, 0, 0, [0, [0, 0]], [0, [0, 0]], [1,[1, 1]], [1,[1, 2]]);
 
   /*var nUnity = unity(numAns["coef"], numAns["powers"]);
   var dUnity = unity(denomAns["coef"], denomAns["powers"]);
@@ -695,12 +695,15 @@ function desmos(constant) {
 //zReal[0] & pReal[0] specify whether there is a zero or pole (respectively) at the origin or not (1|0).
 //zReal[1] & pReal[1] are the list of real zeros or poles.
 //worry about repeated zeros later.
-function jsxg(constant, zOrigin, pOrigin, zReal, pReal) {
+function jsxg(constant, zOrigin, pOrigin, zReal, pReal, zComp, pComp) {
   // Create a function graph for f(x) = 0.5*x*x-2*x
   var uBound = 40;
   var lBound = -40;
   const board = JXG.JSXGraph.initBoard('jxgbox', {
     boundingbox: [lBound, uBound, uBound, lBound], axis:true
+});
+const board1 = JXG.JSXGraph.initBoard('jxgbox1', {
+  boundingbox: [lBound, uBound, uBound, lBound], axis:true
 });
    if (constant) {
      var graph1 = board.create('functiongraph',
@@ -712,7 +715,7 @@ function jsxg(constant, zOrigin, pOrigin, zReal, pReal) {
    }
    if (zOrigin) {
      var graph2 = board.create('functiongraph',
-  [ function(x){
+  [function(x){
       return 20*Math.log10(x);
     }, lBound, uBound]
   );
@@ -730,15 +733,24 @@ function jsxg(constant, zOrigin, pOrigin, zReal, pReal) {
     var len = zReal[1].length;
     var graph4 = [];
     var html = "";
+    let w0;
     for (let i=0; i<len; i++) {
-      let w0 = -1*zReal[1][i];
+      w0 = Math.abs(zReal[1][i]);// s/(w0) + 1 = 0.
       graph4.push(i);//necessary?
+      //will graph each one.
+      //might want to give options to turn each one on & off.
       graph4[i] = board.create('functiongraph',
       [function(x){
-        return 20*Math.log10(x);
-      }, w0, uBound]
+        if (x>=w0) {
+          return 20*Math.log10(x-(w0-1));
+        }
+        else {
+          return 0;
+        }
+      }, lBound, uBound]
       );
-      html = html + "Real Zero: dB = {20*log(ω) if ω >= "+ w0.toString() +"; 0 if ω <= "+w0+"}<br>";
+      //ask if -w0 is correct; it is a way to change the function such that it joins
+      html = html + "Real Zero: dB = {20*log(w-"+w0+") if w >= "+ w0.toString() +"; 0 if w <= "+w0+"}<br>";
     }
     document.getElementById('zReal').innerHtml = html;
   }
@@ -746,16 +758,66 @@ function jsxg(constant, zOrigin, pOrigin, zReal, pReal) {
     var len = pReal[1].length;
     var graph5 = [];
     var html = "";
+    let w0;
     for (let i=0; i<len; i++) {
-      var w0 = -1*pReal[1][i];
+      w0 = Math.abs(pReal[1][i]);// s/(w0) + 1 = 0.
       graph5.push(i);//necessary?
-      graph5[i] = board.create('functiongraph',
+      graph5[i] = board1.create('functiongraph',
       [function(x){
-        return -20*Math.log10(x);
-      }, w0, uBound]
+        if (x>=w0) {
+          return -20*Math.log10(x-(w0-1));
+        }
+        else {
+          return 0;
+        }
+      }, lBound, uBound]
       );
-      html = html + "Real Pole: dB = {20*log(ω) if ω >= "+ w0.toString() +"; 0 if ω <= "+w0+"}<br>";
+      html = html + "Real Pole: dB = {20*log(w-"+w0+") if w >= "+ w0.toString() +"; 0 if ω <= "+w0+"}<br>";
     }
     document.getElementById('pReal').innerHtml = html;
+  }
+  if (zComp[0]) {
+    var len = zComp[1].length;
+    var graph6 = [];
+    var html = "";
+    let w0;
+    for (let i=0; i<len; i++) {
+      w0 = 1;// s/(w0) + 1 = 0.
+      graph6.push(i);//necessary?
+      graph6[i] = board.create('functiongraph',
+      [function(x){
+        if (x>=w0) {
+          return 40*Math.log10(x-(w0-1));
+        }
+        else {
+          return 0;
+        }
+      }, lBound, uBound]
+      );
+      html = html + "Complex Zero: dB = {40*log(w-"+w0+") if w >= "+ w0.toString() +"; 0 if ω <= "+w0+"}<br>";
+    }
+    document.getElementById('zComp').innerHtml = html;
+  }
+  if (pComp[0]) {
+    var len = pReal[1].length;
+    var graph7 = [];
+    var html = "";
+    let w0;
+    for (let i=0; i<len; i++) {
+      w0 = 1;// s/(w0) + 1 = 0.
+      graph7.push(i);//necessary?
+      graph7[i] = board1.create('functiongraph',
+      [function(x){
+        if (x>=w0) {
+          return -40*Math.log10(x);
+        }
+        else {
+          return 0;
+        }
+      }, lBound, uBound]
+      );
+      //html = html + "Real Pole: dB = {-40*log(w) if w >= ; 0 if ω <= "+w0+"}<br>";
+    }
+    //document.getElementById('pComp').innerHtml = html;
   }
 }
