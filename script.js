@@ -31,6 +31,7 @@ function onClick() {
   var zOrigin = [1, [[0, -20], [1, 0], [10, 20]]];
   var pOrigin = [1, [[0, 20], [1, 0], [10, -20]]];
   mkBode(constGain, zOrigin, pOrigin);
+  desmos(0.25);
   /*var nUnity = unity(numAns["coef"], numAns["powers"]);
   var dUnity = unity(denomAns["coef"], denomAns["powers"]);
   var const = dUnity['divisor']/nUnity['divisor'];//constant out front.
@@ -542,7 +543,7 @@ else {
         text: 'Bode Plot'
     },
     xAxis: {
-      type: 'logarithmic',
+      type: 'linear',//'logarithmic'
         title: {
             enabled: true,
             text: 'Frequency ω'
@@ -551,7 +552,7 @@ else {
         endOnTick: true,
         showLastLabel: true
     },
-    type: 'logarithmic',
+    type: 'linear',//'logarithmic'
     yAxis: {
         title: {
             text: 'Magnitude dB'
@@ -636,7 +637,7 @@ function mkPlot(numRootStr, denomRootStr) {
     },
     legend: {
         layout: 'vertical',
-        align: 'left',
+        align: 'right',//originally 'left'
         verticalAlign: 'top',
         x: 100,
         y: 70,
@@ -679,4 +680,12 @@ function mkPlot(numRootStr, denomRootStr) {
         data: [[-1, 0], [1, 0]]//denomRoots
     }]
 });
+}
+function desmos(constant) {
+  var elt = document.getElementById('desmos');
+  var calculator = Desmos.GraphingCalculator(elt);
+  calculator.setExpression({ id: 'graph1', latex: 'y = 20log(x)' });
+  calculator.setExpression({ id: 'graph2', latex: 'y = -20log(x)' });
+  calculator.setExpression({ id: 'graph3', latex: 'y = '+constant.toString() });
+
 }
