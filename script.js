@@ -694,26 +694,29 @@ function desmos(constant) {
 //zOrigin & pOrigin specify whether there is a zero or pole (respectively) at the origin or not (1|0).
 //zReal[0] & pReal[0] specify whether there is a zero or pole (respectively) at the origin or not (1|0).
 //zReal[1] & pReal[1] are the list of real zeros or poles.
+//zReal [2] & pReal[1] are a list of the # of times each zero appears (its order).
 //worry about repeated zeros later.
-function jsxg(constant, zOrigin, pOrigin, zReal, pReal, zComp, pComp) {
+function bodeApprox(constant, zOrigin, pOrigin, zReal, pReal, zComp, pComp) {
+  //add array to specify which ones want graphed. could have each if testing if which[whatever] is 0 or 1.
+  //actually not needed since already have these. would just need another function to call this one.
   // Create a function graph for f(x) = 0.5*x*x-2*x
-  var uBound = 40;
+  var uBound = 40;//upper and lower bound of graph
   var lBound = -40;
-  const board = JXG.JSXGraph.initBoard('jxgbox', {
+  const board = JXG.JSXGraph.initBoard('bodeApprox', {
     boundingbox: [lBound, uBound, uBound, lBound], axis:true
 });
 const board1 = JXG.JSXGraph.initBoard('jxgbox1', {
   boundingbox: [lBound, uBound, uBound, lBound], axis:true
 });
-   if (constant) {
+   if (constant) {//graphing constant K out front
      var graph1 = board.create('functiongraph',
      [function(x){
-       return constant;
+       return 20*Math.log(constant);
      }, lBound, uBound]
      );
-     document.getElementById('constant').innerHtml = "constant: dB = " + constant.toString();
+     document.getElementById('constant').innerHtml = "constant: dB = " + "20*log("+constant.toString()+")";
    }
-   if (zOrigin) {
+   if (zOrigin) {//graphing a zero at the origin
      var graph2 = board.create('functiongraph',
   [function(x){
       return 20*Math.log10(x);
@@ -734,15 +737,19 @@ const board1 = JXG.JSXGraph.initBoard('jxgbox1', {
     var graph4 = [];
     var html = "";
     let w0;
+    let power;//power of a zero, N in a textbook. default is 1.
     for (let i=0; i<len; i++) {
       w0 = Math.abs(zReal[1][i]);// s/(w0) + 1 = 0.
+      power = zReal[2][i];
       graph4.push(i);//necessary?
       //will graph each one.
       //might want to give options to turn each one on & off.
       graph4[i] = board.create('functiongraph',
       [function(x){
-        if (x>=w0) {
-          return 20*Math.log10(x-(w0-1));
+        if (x>w0) {
+          return 20*power*(Math.log(x)-Math.log(w0));
+          //add N for powers! how determine power of 1 zero? # times it appears.
+          //originally if x>=w0, 20*Math.log10(x-(w0-1));
         }
         else {
           return 0;
@@ -750,7 +757,7 @@ const board1 = JXG.JSXGraph.initBoard('jxgbox1', {
       }, lBound, uBound]
       );
       //ask if -w0 is correct; it is a way to change the function such that it joins
-      html = html + "Real Zero: dB = {20*log(w-"+w0+") if w >= "+ w0.toString() +"; 0 if w <= "+w0+"}<br>";
+      html = html + "Real Zero: dB = {20*N*log(w-"+w0+") if w >= "+ w0.toString() +"; 0 if w <= "+w0+"}<br>";
     }
     document.getElementById('zReal').innerHtml = html;
   }
@@ -759,14 +766,16 @@ const board1 = JXG.JSXGraph.initBoard('jxgbox1', {
     var graph5 = [];
     var html = "";
     let w0;
+    let power;
     for (let i=0; i<len; i++) {
       w0 = Math.abs(pReal[1][i]);// s/(w0) + 1 = 0.
+      power = pReal[2][i];
       graph5.push(i);//necessary?
-      graph5[i] = board1.create('functiongraph',
+      graph5[i] = board.create('functiongraph',
       [function(x){
         if (x>=w0) {
-          return -20*Math.log10(x-(w0-1));
-        }
+          return -20*power*(Math.log(x)-Math.log(w0))// before book: -20*Math.log10(x-(w0-1));
+        }//does this count as an approximation or a definite? they use ~= to refer to  it. seems like original was straight line.
         else {
           return 0;
         }
@@ -806,7 +815,7 @@ const board1 = JXG.JSXGraph.initBoard('jxgbox1', {
     for (let i=0; i<len; i++) {
       w0 = 1;// s/(w0) + 1 = 0.
       graph7.push(i);//necessary?
-      graph7[i] = board1.create('functiongraph',
+      graph7[i] = board.create('functiongraph',
       [function(x){
         if (x>=w0) {
           return -40*Math.log10(x);
@@ -820,4 +829,127 @@ const board1 = JXG.JSXGraph.initBoard('jxgbox1', {
     }
     //document.getElementById('pComp').innerHtml = html;
   }
+}
+//graphs exact versions from text.
+function bodeExact (constant, zOrigin, pOrigin, zReal, pReal, zComp, pComp) {
+  var uBound = 40;
+  var lBound = -40;
+  const board = JXG.JSXGraph.initBoard('bodeExact', {
+    boundingbox: [lBound, uBound, uBound, lBound], axis:true
+  });
+     if (constant) {
+       var graph1 = board.create('functiongraph',
+       [function(x){
+         return constant;
+       }, lBound, uBound]
+       );
+       document.getElementById('constant').innerHtml = "constant: dB = " + constant.toString();
+     }
+     if (zOrigin) {
+       var graph2 = board.create('functiongraph',
+    [function(x){
+        return 20*Math.log10(x);
+      }, lBound, uBound]
+    );
+    document.getElementById('zOrigin').innerHtml = "Zero at Origin: dB = 20*log(ω)";
+    }
+    if (pOrigin) {
+    var graph3 = board.create('functiongraph',
+    [function(x){
+      return -20*Math.log10(x);
+    }, lBound, uBound]
+    );
+    document.getElementById('pOrigin').innerHtml = "Pole at Origin: dB = -20*log(ω)";
+    }
+    if (zReal[0]) {
+      var len = zReal[1].length;
+      var graph4 = [];
+      var html = "";
+      let w0;
+      for (let i=0; i<len; i++) {
+        w0 = Math.abs(zReal[1][i]);// s/(w0) + 1 = 0.
+        graph4.push(i);//necessary?
+        //will graph each one.
+        //might want to give options to turn each one on & off.
+        graph4[i] = board.create('functiongraph',
+        [function(x){
+          if (x>=w0) {
+            return 20*Math.log10(x-(w0-1));
+          }
+          else {
+            return 0;
+          }
+        }, lBound, uBound]
+        );
+        //ask if -w0 is correct; it is a way to change the function such that it joins
+        html = html + "Real Zero: dB = {20*log(w-"+w0+") if w >= "+ w0.toString() +"; 0 if w <= "+w0+"}<br>";
+      }
+      document.getElementById('zReal').innerHtml = html;
+    }
+    if (pReal[0]) {
+      var len = pReal[1].length;
+      var graph5 = [];
+      var html = "";
+      let w0;
+      for (let i=0; i<len; i++) {
+        w0 = Math.abs(pReal[1][i]);// s/(w0) + 1 = 0.
+        graph5.push(i);//necessary?
+        graph5[i] = board.create('functiongraph',
+        [function(x){
+          if (x>=w0) {
+            return -20*Math.log10(x-(w0-1));
+          }
+          else {
+            return 0;
+          }
+        }, lBound, uBound]
+        );
+        html = html + "Real Pole: dB = {20*log(w-"+w0+") if w >= "+ w0.toString() +"; 0 if ω <= "+w0+"}<br>";
+      }
+      document.getElementById('pReal').innerHtml = html;
+    }
+    if (zComp[0]) {
+      var len = zComp[1].length;
+      var graph6 = [];
+      var html = "";
+      let w0;
+      for (let i=0; i<len; i++) {
+        w0 = 1;// s/(w0) + 1 = 0.
+        graph6.push(i);//necessary?
+        graph6[i] = board.create('functiongraph',
+        [function(x){
+          if (x>=w0) {
+            return 40*Math.log10(x-(w0-1));
+          }
+          else {
+            return 0;
+          }
+        }, lBound, uBound]
+        );
+        html = html + "Complex Zero: dB = {40*log(w-"+w0+") if w >= "+ w0.toString() +"; 0 if ω <= "+w0+"}<br>";
+      }
+      document.getElementById('zComp').innerHtml = html;
+    }
+    if (pComp[0]) {
+      var len = pReal[1].length;
+      var graph7 = [];
+      var html = "";
+      let w0;
+      for (let i=0; i<len; i++) {
+        w0 = 1;// s/(w0) + 1 = 0.
+        graph7.push(i);//necessary?
+        graph7[i] = board.create('functiongraph',
+        [function(x){
+          if (x>=w0) {
+            return -40*Math.log10(x);
+          }
+          else {
+            return 0;
+          }
+        }, lBound, uBound]
+        );
+        //html = html + "Real Pole: dB = {-40*log(w) if w >= ; 0 if ω <= "+w0+"}<br>";
+      }
+      //document.getElementById('pComp').innerHtml = html;
+    }
 }
