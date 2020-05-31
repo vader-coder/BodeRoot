@@ -12,10 +12,10 @@ function onClick() {
   var numAns = finder(polynomialform);//numerator answers
   var denomAns = finder(polynomialform2);//denominator answers
 
-  labels = ['expanded form: ', 'factors: ', 'roots: ', 'polynomial coefficients: ','powers of variables corresponding to each coefficient: ',
+  labels = ['expanded form: ', 'factors: ', 'roots: ', 'exponet of factors & roots: ', 'polynomial coefficients: ','powers of variables corresponding to each coefficient: ',
   'variable term for each coefficient: ','order: ', 'number of terms: '];
-  var ans = ['poly', 'factors', 'roots', 'coef', 'powers', 'polyTerms', 'order', 'numTerms'];//numerator
-  var ans2 = ['poly2', 'factors2', 'roots2', 'coef2', 'powers2', 'polyTerms2', 'order2', 'numTerms2'];//denominator
+  var ans = ['poly', 'factors', 'roots', 'factorExp', 'coef', 'powers', 'polyTerms', 'order', 'numTerms'];//numerator
+  var ans2 = ['poly2', 'factors2', 'roots2', 'factorExp2', 'coef2', 'powers2', 'polyTerms2', 'order2', 'numTerms2'];//denominator
 
   //document.getElementById(ans[2]).innerHTML = ans[2] +  [1, 1].toString();
   for (let i=0; i<ans.length; i++) {
@@ -30,8 +30,8 @@ function onClick() {
   var constGain = [1, [[1, 20*Math.log10(0.25)], [20, 20*Math.log10(0.25)]]];
   var zOrigin = [1, [[0, -20], [1, 0], [10, 20]]];
   var pOrigin = [1, [[0, 20], [1, 0], [10, -20]]];*/
-  var bdata = bodeData(numAns, denomAns);
-  mkBode(bdata[0], bdata[1], bdata[2], 1);//plot data for first time.
+  //var bdata = bodeData(numAns, denomAns);
+  //mkBode(bdata[0], bdata[1], bdata[2], 1);//plot data for first time.
   //desmos(0.25);
   //bodeApprox(constant, zOrigin, pOrigin, zReal, pReal, zComp, pComp)
   //bodeApprox(1, 0, 0, [0], [0], [0], [0]);
@@ -46,6 +46,7 @@ function onClick() {
 //returns list contaniing polynomial form, coefficients, roots, order, etc.
 function finder (polynomialform) {
   var numTerms = 0;
+  var ret;//return value
   var signs = [];//+ & - signs.
   var poly = polynomialform.trim();//get rid of whitespace
   var variable = document.getElementById('variable').value;
@@ -61,7 +62,9 @@ function finder (polynomialform) {
   //console.log(coef.text());
   coef = objectToArray(coef);//splits up all digits.
   //console.log(coef[coef.length-1]); was ']'
-  factors = factorsArr(factors.toString());
+  ret = factorsArr(factors.toString());//array of factors & their exponets.
+  factors = ret[0];
+  factorExp = ret[1];//can also view these as # of times that a root appears, since each root is calculated form a factor.
   for (let i=0; i<factors.length; i++) {
     roots.push(nerdamer('roots(' + factors[i] +')').toString());
   }
@@ -73,7 +76,7 @@ function finder (polynomialform) {
     }
   }
   order = coef.length - 1;//powers.length - 1 also would have worked.
-  var result = {"poly":poly, "factors": factors, "roots":roots,
+  var result = {"poly":poly, "factors": factors, "roots":roots, "factorExp": factorExp,
   "coef":coef, "powers":powers,"polyTerms":polyTerms,
   "order": order, "numTerms": numTerms};//, "factorPowers": factorPowers};
   return result;
@@ -110,6 +113,8 @@ function factorsArr(str) {
   var openIndex = [];
   var closedIndex = [];
   var factorsList = [];
+  var expIndex = [];//index of '^'
+  var factorExp = []; //exponets of factors.
   for (let i=0; i<str.length; i++) {
     if (str[i] == '(') {
       openIndex.push(i);
@@ -117,12 +122,29 @@ function factorsArr(str) {
     else if (str[i] == ')') {
       closedIndex.push(i);
     }
+    /*else if (str[i] == '^') {
+      expIndex.push(i);
+    }*/
   }
   for (let i=0; i<openIndex.length; i++) {
     factor = str.slice(openIndex[i], closedIndex[i]+1);
     factorsList.push(str.slice(openIndex[i]+1, closedIndex[i]))
+    if (str[closedIndex[i]+1] == '^') { //if char after closed is ^. //expIndex.indexOf(closedIndex[i]+1) != -1) {
+      if (i == openIndex.length-1) {//if we are at last open index, then exponet will be from after ')' to end.
+        factorExp.push(str.slice(closedIndex[i]+2));
+      }
+      else {//if we are not at the last open index, then we can use the next one to determine the boundaries of exponets.
+        factorExp.push(str.slice(closedIndex[i]+2, openIndex[i+1]))//exponet will be from after '^' to before '('
+      }
+    }
+    else {
+      factorExp.push(1);//default is 1 if no exponet is found.
+    }
   }
-  return factorsList;
+  console.log(factorsList);
+  console.log(factorExp);
+  factorExp = factorExp.map(v=>v.replace('*', ''));
+  return [factorsList, factorExp];
 }
 //function to check if numerator order is > deonominator order.
 //if you want to find polynomial by roots, will have to enter the order of the polynomial.
@@ -499,7 +521,8 @@ function times (arr, item) {
   return times;
 }
 //takes numAns, denomAns & returns list of data for bode plot
-function bodeData (numAns, denomAns) {
+//each root will only occur once, and its exponet will be listed in numAns['factorExp'] or denomAns['factorExp'];
+function bodeData (numAns, denomAns) {//add pReal & zReal next
   var nRoot = rootsStrArrToChartFormat(numAns['roots']);
   var dRoot = rootsStrArrToChartFormat(denomAns['roots']);
   var n = unity(numAns['coef'], numAns['powers']);//make x^0's coefficeint 1
@@ -511,10 +534,10 @@ function bodeData (numAns, denomAns) {
   else {//x^0 coefficient is 0 in numerator.
     consT = 1;//if multiply anything by 1, is still itself.
   }
-  var zOrigin = 0, pOrigin = 0;
-  var consT_data = [], zOrigin_data = [], pOrigin_data = [];
-  var zReal = [];// list of real zeros & # of times they occur.
-  var pReal = [];//list of real zeros & # of times they occur.
+  var zOrigin = 0, pOrigin = 0, zReal = 0, pReal = 0;//false by default.
+  var consT_data = [], zOrigin_data = [], pOrigin_data = [], zReal_data = [], pReal_data = [];
+  var zRealList = [];// list of real zeros & # of times they occur.
+  var pRealList = [];//list of real zeros & # of times they occur.
   consT = 20*Math.log10(consT);
   var w;//for omega, frequency.
   for (let i=1; i<100; i++) {
@@ -524,28 +547,29 @@ function bodeData (numAns, denomAns) {
   for (let i=0;i<nRoot.length; i++) {
     if (nRoot[i][0] == 0 && nRoot[i][1] == 0) {
       zOrigin = 1;
-      break;
     }
+    if (nRoot[i][0] != 0 && nRoot[i][1] == 0) {//real number zero
+      zRealList.push(nRoot[i][0]);
+    }//lets figure out a good way to track how many of each root there are.
   }
   for (let i=0;i<dRoot.length; i++) {
     if (dRoot[i][0] == 0 && dRoot[i][1] == 0) {
       pOrigin = 1;
-      break;
     }
   }
   if (zOrigin) {
     for (let i=0; i<100; i++) {
       w = roundDecimal(1.0 + i*0.1, 1);
-      zOrigin_data.push([w, 20*Math.log10(w)]);
+      zOrigin_data.push([w, 20*zOriginCount*Math.log10(w)]);
     }
   }
-  if (pOrigin) {
+  if (pOrigin) {//ask to make sure we need pOriginCount for poles. I think so.
     for (let i=0; i<100; i++) {
       w = roundDecimal(1.0 + i*0.1, 1);
-      pOrigin_data.push([w, -20*Math.log10(w)]);
+      pOrigin_data.push([w, -20*pOriginCount*Math.log10(w)]);
     }
   }
-  return [consT_data, zOrigin_data, pOrigin_data];
+  return [consT_data, zOrigin_data, pOrigin_data, zReal_data, pReal_data];
 }
 //function rounds a number to a decimal # of decimal places.
 function roundDecimal (num, decimal) {
@@ -559,7 +583,7 @@ function roundDecimal (num, decimal) {
 //first is whether it is the first time graphing plot.
 //pass in data for plot. data itself will only be generated once, mkBode
 //will choose which of data to plot based on user's decisions.
-function mkBode (consT_data, zOrigin_data, pOrigin_data){
+function mkBode (consT_data, zOrigin_data, pOrigin_data, zReal_data, pReal_data){
   //at some point, numAns or denomAns will need to be able to tell us
   //how many times each root occurs (1 at minimum)
   Highcharts.chart('bode', {
