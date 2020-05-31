@@ -527,6 +527,8 @@ function bodeData (numAns, denomAns) {//add pReal & zReal next
   var dRoot = rootsStrArrToChartFormat(denomAns['roots']);
   var n = unity(numAns['coef'], numAns['powers']);//make x^0's coefficeint 1
   var d = unity(denomAns['coef'], numAns['powers']);
+  var nFactorExp = numAns['factorExp'];
+  var dFactorExp = denomAns['factorExp'];
   var consT;
   if (n['divisor']) {
     consT = d['divisor']/n['divisor'];
@@ -546,27 +548,30 @@ function bodeData (numAns, denomAns) {//add pReal & zReal next
   }
   for (let i=0;i<nRoot.length; i++) {
     if (nRoot[i][0] == 0 && nRoot[i][1] == 0) {
-      zOrigin = 1;
+      for (let j=0; j<100; j++) {
+        w = roundDecimal(1.0 + j*0.1, 1);
+        zOrigin_data.push([w, 20*nFactorExp[i]*Math.log10(w)]);
+      }
     }
     if (nRoot[i][0] != 0 && nRoot[i][1] == 0) {//real number zero
-      zRealList.push(nRoot[i][0]);
+      for (let j=0; j<100; j++) {
+        w = roundDecimal(1.0 + j*0.1, 1);
+        zReal_data.push([w, 20*nFactorExp[i]*Math.log10(w)]);
+      }
     }//lets figure out a good way to track how many of each root there are.
   }
   for (let i=0;i<dRoot.length; i++) {
-    if (dRoot[i][0] == 0 && dRoot[i][1] == 0) {
-      pOrigin = 1;
+    if (dRoot[i][0] == 0 && dRoot[i][1] == 0) {//zero pole
+      for (let j=0; j<100; j++) {
+        w = roundDecimal(1.0 + j*0.1, 1);
+        pOrigin_data.push([w, -20*dFactorExp[i]*Math.log10(w)]);
+      }
     }
-  }
-  if (zOrigin) {
-    for (let i=0; i<100; i++) {
-      w = roundDecimal(1.0 + i*0.1, 1);
-      zOrigin_data.push([w, 20*zOriginCount*Math.log10(w)]);
-    }
-  }
-  if (pOrigin) {//ask to make sure we need pOriginCount for poles. I think so.
-    for (let i=0; i<100; i++) {
-      w = roundDecimal(1.0 + i*0.1, 1);
-      pOrigin_data.push([w, -20*pOriginCount*Math.log10(w)]);
+    if (dRoot[i][0] != 0 && dRoot[i][1] == 0) {//real pole
+      for (let j=0; j<100; j++) {
+        w = roundDecimal(1.0 + j*0.1, 1);
+        pReal_data.push([w, -20*dFactorExp[i]*Math.log10(w)]);
+      }
     }
   }
   return [consT_data, zOrigin_data, pOrigin_data, zReal_data, pReal_data];
