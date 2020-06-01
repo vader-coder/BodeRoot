@@ -57,9 +57,23 @@
      <label for="rootCheck2"><b>Roots (seperate roots by comma; make sure to include ALL the roots)</b></label>
      <p></p>
      <label for="Polynomial2" id="denomLabel">Denominator:</label>
-     <input type="text" id="Polynomial2" value="1"></input>
+     <input type="text" id="Polynomial2" value="1"></input><br>
      <!--<label for="Order2">Order: </label>
      <input type="text" id="Order2" value="0"></input>-->
+     <!--<input type="checkbox" id="constant" checked></input>
+     <label for="constant">Constant term</label><br>
+     <input type="checkbox" id="zOrigin" checked></input>
+     <label for="zOrigin">Zero at Origin</label><br>
+     <input type="checkbox" id="pOrigin" checked></input>
+     <label for="pOrigin">Pole at Origin</label><br>
+     <input type="checkbox" id="zReal" checked></input>
+     <label for="zReal">Real Zero(s)</label><br>
+     <input type="checkbox" id="pReal" checked></input>
+     <label for="pReal">Real Pole(s)</label><br>
+     <input type="checkbox" id="zComp" checked></input>
+     <label for="zComp">Complex Zero(s)</label><br>
+     <input type="checkbox" id="pComp" checked></input>
+     <label for="pComp">Complex Pole(s)</label>-->
      <input type="button" nane="submit" value="Submit" onclick="onClick()"></input>
      <p></p>
      <label for="variable">Variable (x by default) </label>
@@ -115,8 +129,6 @@
      <p></p>
      <canvas id="myChart" width="400" height="400"></canvas>-->
   </div>
-  <div align="right">
-    <figure class="highcharts-figure">
    <div id="bode"></div>
  </figure>
     <!--<canvas id="rootLocus" width="200" height="200"></canvas>
@@ -132,13 +144,6 @@
     <br>
     <input type="checkbox" id="pOriginCheck"></input>
     <label for="rootCheck" id="pOriginLabel"></label>-->
-    <p id="constant"></p>
-    <p id="zOrigin"></p>
-    <p id="pOrigin"></p>
-    <p id="zReal"></p>
-    <p id="pReal"></p>
-    <p id="zComp"></p>
-    <p id="pComp"></p><br>
     Just writing some text.
     <div id="bodeApprox" class="bodeApprox" style="width:500px; height:500px"></div>
     <div id="bodeExact" class="bodeExact" style="width:500px; height:500px"></div>

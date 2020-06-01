@@ -24,24 +24,15 @@ function onClick() {
   }
   document.getElementById('numerator').innerHTML = "Numerator";
   document.getElementById('denominator').innerHTML = "Denominator";
-  /*document.getElementById('factors').innerHTML = labels[1] + "((x-1)^2)";
-  document.getElementById('roots').innerHTML = labels[2] +  numAns['roots'].toString();*/
-  /*mkPlot(numAns["roots"], denomAns["roots"]);
-  var constGain = [1, [[1, 20*Math.log10(0.25)], [20, 20*Math.log10(0.25)]]];
-  var zOrigin = [1, [[0, -20], [1, 0], [10, 20]]];
-  var pOrigin = [1, [[0, 20], [1, 0], [10, -20]]];*/
-  //var bdata = bodeData(numAns, denomAns);
-  //mkBode(bdata[0], bdata[1], bdata[2], 1);//plot data for first time.
-  //desmos(0.25);
-  //bodeApprox(constant, zOrigin, pOrigin, zReal, pReal, zComp, pComp)
-  //bodeApprox(1, 0, 0, [0], [0], [0], [0]);
-  //bodeApprox(0, 1, 0, [0], [0], [0], [0]);
 
-  /*var nUnity = unity(numAns["coef"], numAns["powers"]);
-  var dUnity = unity(denomAns["coef"], denomAns["powers"]);
-  var const = dUnity['divisor']/nUnity['divisor'];//constant out front.
-  var constdB = dB([const, 0]);//log scale.
-  var constPhase = phase([const, 0]);*/
+  /*var opt = [];//options
+  var ids = ['constant', 'zOrigin', 'pOrigin', 'zReal', 'pReal'];
+  for (let i=0; i<ids.length; i++) {
+    opt.push(document.getElementById(ids[i]).checked);//1 or 0 depending on whether it is checked.
+  }*/
+  var bdata = bodeData(numAns, denomAns);
+  mkBode(bdata[0], bdata[1], bdata[2], bdata[3], bdata[4], bdata[5], bdata[6], bdata[7], [1, 1, 1, 1, 1])//, 1);//plot data for first time.
+  //we actualy don't need options checkboxes because we can already choose wheich ones to show w/ js.
 }
 //returns list contaniing polynomial form, coefficients, roots, order, etc.
 function finder (polynomialform) {
@@ -62,7 +53,8 @@ function finder (polynomialform) {
   //console.log(coef.text());
   coef = objectToArray(coef);//splits up all digits.
   //console.log(coef[coef.length-1]); was ']'
-  ret = factorsArr(factors.toString());//array of factors & their exponets.
+  factors = factors.toString();
+  ret = factorsArr(factors);//array of factors & their exponets.
   factors = ret[0];
   factorExp = ret[1];//can also view these as # of times that a root appears, since each root is calculated form a factor.
   for (let i=0; i<factors.length; i++) {
@@ -115,37 +107,45 @@ function factorsArr(str) {
   var factorsList = [];
   var expIndex = [];//index of '^'
   var factorExp = []; //exponets of factors.
-  for (let i=0; i<str.length; i++) {
-    if (str[i] == '(') {
-      openIndex.push(i);
-    }
-    else if (str[i] == ')') {
-      closedIndex.push(i);
-    }
+  if (str.indexOf('(') != -1) {//if there are opening/closing parentheses.
+    for (let i=0; i<str.length; i++) {
+      if (str[i] == '(') {
+        openIndex.push(i);
+      }
+      else if (str[i] == ')') {
+        closedIndex.push(i);
+      }
     /*else if (str[i] == '^') {
       expIndex.push(i);
     }*/
-  }
-  for (let i=0; i<openIndex.length; i++) {
-    factor = str.slice(openIndex[i], closedIndex[i]+1);
-    factorsList.push(str.slice(openIndex[i]+1, closedIndex[i]))
-    if (str[closedIndex[i]+1] == '^') { //if char after closed is ^. //expIndex.indexOf(closedIndex[i]+1) != -1) {
-      if (i == openIndex.length-1) {//if we are at last open index, then exponet will be from after ')' to end.
-        factorExp.push(str.slice(closedIndex[i]+2));
+    }
+    for (let i=0; i<openIndex.length; i++) {
+      factor = str.slice(openIndex[i], closedIndex[i]+1);
+      factorsList.push(str.slice(openIndex[i]+1, closedIndex[i]))
+      if (str[closedIndex[i]+1] == '^') { //if char after closed is ^. //expIndex.indexOf(closedIndex[i]+1) != -1) {
+        if (i == openIndex.length-1) {//if we are at last open index, then exponet will be from after ')' to end.
+          factorExp.push(str.slice(closedIndex[i]+2));
+        }
+        else {//if we are not at the last open index, then we can use the next one to determine the boundaries of exponets.
+          factorExp.push(str.slice(closedIndex[i]+2, openIndex[i+1]))//exponet will be from after '^' to before '('
+        }
       }
-      else {//if we are not at the last open index, then we can use the next one to determine the boundaries of exponets.
-        factorExp.push(str.slice(closedIndex[i]+2, openIndex[i+1]))//exponet will be from after '^' to before '('
+      else {
+        factorExp.push(1);//default is 1 if no exponet is found.
       }
     }
-    else {
-      factorExp.push(1);//default is 1 if no exponet is found.
-    }
   }
-  console.log(factorsList);
-  console.log(factorExp);
-  factorExp = factorExp.map(v=>v.replace('*', ''));
+  else if (str.indexOf('x') != -1){//if no parentheses & is an x, must be 1 factor.
+    factorsList.push(str);
+    factorExp.push(1);
+  }
+  factorExp = factorExp.map(v=>v.toString().replace('*', ''));
   return [factorsList, factorExp];
 }
+/*function repMult(item) {
+  item = item.replace('*', '');
+  return item;
+}*/
 //function to check if numerator order is > deonominator order.
 //if you want to find polynomial by roots, will have to enter the order of the polynomial.
 //otherwise, couldn't tell x^5+1 vs x^7+1.
@@ -522,7 +522,7 @@ function times (arr, item) {
 }
 //takes numAns, denomAns & returns list of data for bode plot
 //each root will only occur once, and its exponet will be listed in numAns['factorExp'] or denomAns['factorExp'];
-function bodeData (numAns, denomAns) {//add pReal & zReal next
+function bodeData (numAns, denomAns) {//add pReal & zReal nextx
   var nRoot = rootsStrArrToChartFormat(numAns['roots']);
   var dRoot = rootsStrArrToChartFormat(denomAns['roots']);
   var n = unity(numAns['coef'], numAns['powers']);//make x^0's coefficeint 1
@@ -538,9 +538,9 @@ function bodeData (numAns, denomAns) {//add pReal & zReal next
   }
   var zOrigin = 0, pOrigin = 0, zReal = 0, pReal = 0;//false by default.
   var consT_data = [], zOrigin_data = [], pOrigin_data = [], zReal_data = [], pReal_data = [];
-  var zRealList = [];// list of real zeros & # of times they occur.
-  var pRealList = [];//list of real zeros & # of times they occur.
-  consT = 20*Math.log10(consT);
+  var zRealCount = 0;//# of real zeros
+  var pRealCount = 0;//# of real poles
+  consT = 20*Math.log10(Math.abs(consT));
   var w;//for omega, frequency.
   for (let i=1; i<100; i++) {
     w = roundDecimal(1.0 + i*0.1, 1);
@@ -554,10 +554,12 @@ function bodeData (numAns, denomAns) {//add pReal & zReal next
       }
     }
     if (nRoot[i][0] != 0 && nRoot[i][1] == 0) {//real number zero
+      zReal_data.push([nRoot[i][0], []]);//each zero is included with it's array of data.
       for (let j=0; j<100; j++) {
         w = roundDecimal(1.0 + j*0.1, 1);
-        zReal_data.push([w, 20*nFactorExp[i]*Math.log10(w)]);
+        zReal_data[zRealCount][1].push([w, 20*nFactorExp[i]*Math.log10(w)]);//add data to array.
       }
+      zRealCount++;
     }//lets figure out a good way to track how many of each root there are.
   }
   for (let i=0;i<dRoot.length; i++) {
@@ -568,27 +570,84 @@ function bodeData (numAns, denomAns) {//add pReal & zReal next
       }
     }
     if (dRoot[i][0] != 0 && dRoot[i][1] == 0) {//real pole
+      pReal_data.push([dRoot[i][0], []]);//push a 2D array to pReal_data. second item will become data for graphing every real root.
       for (let j=0; j<100; j++) {
         w = roundDecimal(1.0 + j*0.1, 1);
-        pReal_data.push([w, -20*dFactorExp[i]*Math.log10(w)]);
+        pReal_data[pRealCount][1].push([w, -20*dFactorExp[i]*Math.log10(w)]);
       }
+      pRealCount++;
     }
   }
-  return [consT_data, zOrigin_data, pOrigin_data, zReal_data, pReal_data];
+  return [consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pReal_data, zRealCount, pRealCount];
 }
 //function rounds a number to a decimal # of decimal places.
 function roundDecimal (num, decimal) {
   var a = Math.pow(10, decimal);
   return (Math.round(num*a)/a)
 }
+//executes when graph is clicked.
+/*function onGraphClick () {
+  var opt = [];//options
+  var ids = ['constant', 'zOrigin', 'pOrigin', 'zReal', 'pReal'];
+  for (let i=0; i<ids.length; i++) {
+    opt.push(document.getElementById(ids[i])).checked);//1 or 0 depending on whether it is checked.
+  }
+  mkBode(, opt);
+}*/
 //atan2 can be more precise.
 //what should we do for just imaginary #s?
 //will have to do less coding if understand what you're doing first!
 //format of list w/ each # a+bi as [a, b]
 //first is whether it is the first time graphing plot.
 //pass in data for plot. data itself will only be generated once, mkBode
-//will choose which of data to plot based on user's decisions.
-function mkBode (consT_data, zOrigin_data, pOrigin_data, zReal_data, pReal_data){
+
+function mkBode (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pReal_data, zRealCount, pRealCount, options){
+  console.log(consT_data);
+  console.log(zReal_data);
+  console.log(pReal_data);
+  var series = [];
+  if (options[0]) {
+    series.push(
+    {//if something is to not be graphed, it's data will be empty.
+        name: 'Constant ' + consT,
+        color: 'rgba(223, 83, 83, .5)',//data is [x, y];
+        data: consT_data
+
+    });
+  }
+  if (zOrigin_data.length && options[1]) {//if no z at origin, will just be 0.
+    series.push({
+        name: 'Zero at Origin',
+        color: 'rgba(119, 152, 191, .5)',
+        data: zOrigin_data
+    });
+  }
+  if (zOrigin_data.length && options[2]) {//if no pole at origin, will just be 0.
+    series.push({
+        name: 'Pole at Origin',
+        color: 'rgba(20, 191, 20, 1)',
+        data: pOrigin_data
+    });
+  }
+  if (zRealCount && options[3]) {//[]
+    for (let i=0; i<zRealCount; i++) {
+      series.push({
+          name: 'Real Zero '+zReal_data[i][0].toString(),
+          color: 'rgba(119, 152, 191, 1)',
+          data: zReal_data[i][1]//data for relevant real zero.
+      });
+    }
+  }
+  if (pRealCount && options[4]) {
+    for (let i=0; i<pRealCount; i++) {
+      series.push({
+          name: 'Real Pole '+pReal_data[i][0].toString(),
+          color: 'rgba(119, 152, 191, 1)',
+          data: pReal_data[i][1]//data for relevant real zero.
+      });
+    }
+  }
+
   //at some point, numAns or denomAns will need to be able to tell us
   //how many times each root occurs (1 at minimum)
   Highcharts.chart('bode', {
@@ -603,7 +662,7 @@ function mkBode (consT_data, zOrigin_data, pOrigin_data, zReal_data, pReal_data)
       type: 'linear',//'logarithmic'
         title: {
             enabled: true,
-            text: 'Frequency &#x03C9;'//ω
+            text: 'Frequency ω'//ω, &#x03C9;
         },
         startOnTick: true,
         endOnTick: true,
@@ -649,104 +708,8 @@ function mkBode (consT_data, zOrigin_data, pOrigin_data, zReal_data, pReal_data)
             }
         }
     },
-    series: [{//if something is to not be graphed, it's data will be empty.
-        name: 'Constant',
-        color: 'rgba(223, 83, 83, .5)',//data is [x, y];
-        data: consT_data
-
-    }, {
-        name: 'Zero at Origin',
-        color: 'rgba(119, 152, 191, .5)',
-        data: zOrigin_data
-    }, {
-        name: 'Pole at Origin',
-        color: 'rgba(20, 191, 20, .5)',
-        data: pOrigin_data
-    },
-    {
-        name: 'Real Zero',
-        color: 'rgba(152, 152, 15, .5)',
-        data: zReal_data
-    },
-    {
-        name: 'Real Pole',
-        color: 'rgba(152, 152, 15, .5)',
-        data: pReal_data//will have to append key-value pairs to this somehow.
-    }]
+    series: series
   });
-}
-//function to make plot
-//copyright policy on code from demos?
-function mkPlot(numRootStr, denomRootStr) {
-  var numRoots = rootsStrArrToChartFormat(numRootStr);
-  var denomRoots = rootsStrArrToChartFormat(denomRootStr);
-  Highcharts.chart('container', {
-    chart: {
-        type: 'scatter',
-        zoomType: 'xy'
-    },
-    title: {
-        text: 'Plot of Roots on Imaginary and Real Axis'
-    },
-    xAxis: {
-        title: {
-            enabled: true,
-            text: 'Real'
-        },
-        startOnTick: true,
-        endOnTick: true,
-        showLastLabel: true
-    },
-    yAxis: {
-        title: {
-            text: 'Imaginary'
-        }
-    },
-    legend: {
-        layout: 'vertical',
-        align: 'right',//originally 'left'
-        verticalAlign: 'top',
-        x: 100,
-        y: 70,
-        floating: true,
-        backgroundColor: Highcharts.defaultOptions.chart.backgroundColor,
-        borderWidth: 1
-    },
-    plotOptions: {
-        scatter: {
-            marker: {
-                radius: 5,
-                states: {
-                    hover: {
-                        enabled: true,
-                        lineColor: 'rgb(100,100,100)'
-                    }
-                }
-            },
-            states: {
-                hover: {
-                    marker: {
-                        enabled: false
-                    }
-                }
-            },
-            tooltip: {
-                headerFormat: '<b>{series.name}</b><br>',
-                pointFormat: '{point.x} + {point.y}i'
-            }
-        }
-    },
-    series: [{
-        name: 'Numerator',
-        color: 'rgba(223, 83, 83, .5)',//data is [x, y];
-        data: [[2, 0], [4, 1], [4, -1]]//numRoots
-
-    }, {
-        name: 'Denominator',
-        color: 'rgba(119, 152, 191, .5)',
-        data: [[-1, 0], [1, 0]]//denomRoots
-    }]
-});
 }
 function desmos(constant) {
   var elt = document.getElementById('desmos');
