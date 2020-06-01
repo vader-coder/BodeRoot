@@ -31,7 +31,7 @@ function onClick() {
     opt.push(document.getElementById(ids[i]).checked);//1 or 0 depending on whether it is checked.
   }*/
   var bdata = bodeData(numAns, denomAns);
-  mkBode(bdata[0], bdata[1], bdata[2], bdata[3], bdata[4], bdata[5], bdata[6], bdata[7], bode[8], [1, 1, 1, 1, 1])//, 1);//plot data for first time.
+  mkBode(bdata[0], bdata[1], bdata[2], bdata[3], bdata[4], bdata[5], bdata[6], bdata[7], bdata[8], [1, 1, 1, 1, 1])//, 1);//plot data for first time.
   //we actualy don't need options checkboxes because we can already choose wheich ones to show w/ js.
 }
 //returns list contaniing polynomial form, coefficients, roots, order, etc.
@@ -598,15 +598,15 @@ function bodeData (numAns, denomAns) {//add pReal & zReal nextx
     }
     if (zReal) {
       for (let j=0; j<zRealCount; j++) {//is htere any way you can work this into the rest?
-        calc += zReal[i][1][j];
+        calc += zRealArr[j][i];
       }
     }
     if (pReal) {
-      for (let j=0; j<zRealCount; j++) {//is htere any way you can work this into the rest?
-        calc += pReal[i][1][j];
+      for (let j=0; j<pRealCount; j++) {//is htere any way you can work this into the rest?
+        calc += pRealArr[j][i];
       }
     }
-    allFreq_data.push([w[j], calc]);
+    allFreq_data.push([w[i], calc]);
   }
   return [consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pReal_data, zRealCount, pRealCount, allFreq_data];
 }
@@ -679,7 +679,7 @@ function mkBode (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pRea
   }
   if (allFreq_data.length) {
     series.push({
-        name: 'Real Pole '+pReal_data[i][0].toString(),
+        name: 'Total Bode',
         color: 'rgba(119, 152, 191, 1)',
         data: allFreq_data//data for relevant real zero.
     });
