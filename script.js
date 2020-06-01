@@ -31,7 +31,7 @@ function onClick() {
     opt.push(document.getElementById(ids[i]).checked);//1 or 0 depending on whether it is checked.
   }*/
   var bdata = bodeData(numAns, denomAns);
-  mkBode(bdata[0], bdata[1], bdata[2], bdata[3], bdata[4], bdata[5], bdata[6], bdata[7], [1, 1, 1, 1, 1])//, 1);//plot data for first time.
+  mkBode(bdata[0], bdata[1], bdata[2], bdata[3], bdata[4], bdata[5], bdata[6], bdata[7], bode[8], [1, 1, 1, 1, 1])//, 1);//plot data for first time.
   //we actualy don't need options checkboxes because we can already choose wheich ones to show w/ js.
 }
 //returns list contaniing polynomial form, coefficients, roots, order, etc.
@@ -529,7 +529,7 @@ function bodeData (numAns, denomAns) {//add pReal & zReal nextx
   var d = unity(denomAns['coef'], numAns['powers']);
   var nFactorExp = numAns['factorExp'];
   var dFactorExp = denomAns['factorExp'];
-  var consT;
+  var consT, calc;
   if (n['divisor']) {
     consT = d['divisor']/n['divisor'];
   }
@@ -537,48 +537,78 @@ function bodeData (numAns, denomAns) {//add pReal & zReal nextx
     consT = 1;//if multiply anything by 1, is still itself.
   }
   var zOrigin = 0, pOrigin = 0, zReal = 0, pReal = 0;//false by default.
-  var consT_data = [], zOrigin_data = [], pOrigin_data = [], zReal_data = [], pReal_data = [];
+  var consT_data = [], zOrigin_data = [], pOrigin_data = [], zReal_data = [], pReal_data = [], allFreq_data = [];
+  var zRealArr = [], pRealArr = [];
   var zRealCount = 0;//# of real zeros
   var pRealCount = 0;//# of real poles
   consT = 20*Math.log10(Math.abs(consT));
-  var w;//for omega, frequency.
-  for (let i=1; i<100; i++) {
-    w = roundDecimal(1.0 + i*0.1, 1);
+  var w = [];//for omega, frequency.
+  for (let i=0; i<100; i++) {
+    w.push(roundDecimal(1.0 + i*0.1, 1));
     consT_data.push([w, consT]);
   }
   for (let i=0;i<nRoot.length; i++) {
     if (nRoot[i][0] == 0 && nRoot[i][1] == 0) {
+      zOrigin = 1;
       for (let j=0; j<100; j++) {
-        w = roundDecimal(1.0 + j*0.1, 1);
-        zOrigin_data.push([w, 20*nFactorExp[i]*Math.log10(w)]);
+        zOrigin_data.push([w[j], 20*nFactorExp[i]*Math.log10(w[j])]);
       }
     }
     if (nRoot[i][0] != 0 && nRoot[i][1] == 0) {//real number zero
+      zReal = 1;
       zReal_data.push([nRoot[i][0], []]);//each zero is included with it's array of data.
       for (let j=0; j<100; j++) {
-        w = roundDecimal(1.0 + j*0.1, 1);
-        zReal_data[zRealCount][1].push([w, 20*nFactorExp[i]*Math.log10(w)]);//add data to array.
+        zReal_data[zRealCount][1].push([w[j], 20*nFactorExp[i]*Math.log10(w[j])]);//add data to array.
       }
       zRealCount++;
     }//lets figure out a good way to track how many of each root there are.
   }
+  for (let j=0; j<zRealCount; j++) {//is there a more elegant solution?
+    zRealArr.push(zReal_data[j][1]);
+  }
   for (let i=0;i<dRoot.length; i++) {
     if (dRoot[i][0] == 0 && dRoot[i][1] == 0) {//zero pole
+      pOrigin = 1;
       for (let j=0; j<100; j++) {
-        w = roundDecimal(1.0 + j*0.1, 1);
-        pOrigin_data.push([w, -20*dFactorExp[i]*Math.log10(w)]);
+        pOrigin_data.push([w[j], -20*dFactorExp[i]*Math.log10(w[j])]);
       }
     }
     if (dRoot[i][0] != 0 && dRoot[i][1] == 0) {//real pole
+      pReal = 1;
       pReal_data.push([dRoot[i][0], []]);//push a 2D array to pReal_data. second item will become data for graphing every real root.
       for (let j=0; j<100; j++) {
-        w = roundDecimal(1.0 + j*0.1, 1);
-        pReal_data[pRealCount][1].push([w, -20*dFactorExp[i]*Math.log10(w)]);
+        pReal_data[pRealCount][1].push([w[j], -20*dFactorExp[i]*Math.log10(w[j])]);
       }
       pRealCount++;
     }
   }
-  return [consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pReal_data, zRealCount, pRealCount];
+  for (let j=0; j<pRealCount; j++) {//is there a more elegant solution?
+    pRealArr.push(pReal_data[j][1]);
+  }
+  //should we consolidate all for loops & include if statements inside them?
+  //each data point of total is sum of rest at its position.
+  //multiply each one by varible storing 1 or 0 to determine if it is included.
+  for (let i=0; i<100; i++) {//each data point for total is sum of other data points.
+    calc = consT_data[i];
+    if(zOrigin) {
+      calc += zOrigin_data[i];
+    }
+    if (pOrigin) {
+      calc += pOrigin_data[i];
+    }
+    if (zReal) {
+      for (let j=0; j<zRealCount; j++) {//is htere any way you can work this into the rest?
+        calc += zReal[i][1][j];
+      }
+    }
+    if (pReal) {
+      for (let j=0; j<zRealCount; j++) {//is htere any way you can work this into the rest?
+        calc += pReal[i][1][j];
+      }
+    }
+    allFreq_data.push([w[j], calc]);
+  }
+  return [consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pReal_data, zRealCount, pRealCount, allFreq_data];
 }
 //function rounds a number to a decimal # of decimal places.
 function roundDecimal (num, decimal) {
@@ -601,7 +631,7 @@ function roundDecimal (num, decimal) {
 //first is whether it is the first time graphing plot.
 //pass in data for plot. data itself will only be generated once, mkBode
 
-function mkBode (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pReal_data, zRealCount, pRealCount, options){
+function mkBode (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pReal_data, zRealCount, pRealCount, allFreq_data, options){
   console.log(consT_data);
   console.log(zReal_data);
   console.log(pReal_data);
@@ -647,6 +677,13 @@ function mkBode (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pRea
       });
     }
   }
+  if (allFreq_data.length) {
+    series.push({
+        name: 'Real Pole '+pReal_data[i][0].toString(),
+        color: 'rgba(119, 152, 191, 1)',
+        data: allFreq_data//data for relevant real zero.
+    });
+  }
 
   //at some point, numAns or denomAns will need to be able to tell us
   //how many times each root occurs (1 at minimum)
@@ -659,7 +696,7 @@ function mkBode (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pRea
         text: 'Bode Plot'
     },
     xAxis: {
-      type: 'linear',//'logarithmic'
+      type: 'logarithmic',//'logarithmic'
         title: {
             enabled: true,
             text: 'Frequency ω'//ω, &#x03C9;
@@ -668,8 +705,9 @@ function mkBode (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pRea
         endOnTick: true,
         showLastLabel: true
     },
-    type: 'linear',//'logarithmic'
+    //type: 'linear','logarithmic'
     yAxis: {
+      type: 'linear',
         title: {
             text: 'Magnitude dB'
         }
