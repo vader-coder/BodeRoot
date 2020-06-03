@@ -30,9 +30,13 @@ function onClick() {
   for (let i=0; i<ids.length; i++) {
     opt.push(document.getElementById(ids[i]).checked);//1 or 0 depending on whether it is checked.
   }*/
+  //desmos(5);
   var bdata = bodeData(numAns, denomAns);
-  mkBode(bdata[0], bdata[1], bdata[2], bdata[3], bdata[4], bdata[5], bdata[6], bdata[7], bdata[8], [1, 1, 1, 1, 1])//, 1);//plot data for first time.
-  //we actualy don't need options checkboxes because we can already choose wheich ones to show w/ js.
+//bodeData ret. [consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pReal_data, zRealCount, pRealCount, allFreq_data, zReal_dataApprox, pReal_dataApprox, [1, zOrigin, pOrigin, zReal, pReal]];
+//mkbode params  consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pReal_data, zRealCount, pRealCount, allFreq_data, zReal_dataApprox, pReal_dataApprox, options
+  mkBode(bdata[0], bdata[1], bdata[2], bdata[3], bdata[4], bdata[5], bdata[6], bdata[7], bdata[8], bdata[9], bdata[10], bdata[11])//, 1);//plot data for first time.
+  //we actualy don't need options checkboxes because we can already choose which ones to show w/ js.
+
 }
 //returns list contaniing polynomial form, coefficients, roots, order, etc.
 function finder (polynomialform) {
@@ -436,12 +440,14 @@ function mkPlot(numRootStr, denomRootStr) {
 //converts string array to format that can use.
 function rootsStrArrToChartFormat(roots) {
   var temp;
+  var real = [];//real roots.
+  var comp = [];//complex roots.
   roots = rem(roots, ['[', ']']);
   var len = roots.length;
   var ogLen = len;//original length
   for (let i=0; i<len; i++) {
     if (i < ogLen) {//if i<originial length, still going through strings.
-      if (roots[i].indexOf(',') != -1) {//if there is a
+      if (roots[i].indexOf(',') != -1) {//if there is a comma in one.
         temp = roots[i].split(',');
         roots[i] = temp[0];//make original have 1st item from array.
         for (let j=1; j<temp.length; j++) {
@@ -452,12 +458,14 @@ function rootsStrArrToChartFormat(roots) {
     }
     if (roots[i].indexOf('i') == -1) {//no i, isn't irrational.
       roots[i] = [parseInt(roots[i], 10), 0];
+      real.push(parseInt(roots[i], 10));
     }
-    else {//it is imaginary.
+    else if (typeof(parseInt(nerdamer('realpart('+roots[i]+')').text(), 10)) == typeof(5)) {//it is complex, not just imaginary.
       roots[i] = [parseInt(nerdamer('realpart('+roots[i]+')').text(), 10), parseInt(nerdamer('imagpart('+roots[i]+')').text(), 10)];
+      comp.push([parseInt(nerdamer('realpart('+roots[i]+')').text(), 10), parseInt(nerdamer('imagpart('+roots[i]+')').text(), 10)];);
     }
   }
-  return roots;
+  return [real, comp];
 }
 //takes array of coeffs for denominator and numerator (largest to smallest power)
 //as input, form with smallest decimal as unity in the back.
@@ -520,53 +528,81 @@ function times (arr, item) {
   }
   return times;
 }
+function bodeDataParams (numAns, denomAns) {
+
+}
 //takes numAns, denomAns & returns list of data for bode plot
 //each root will only occur once, and its exponet will be listed in numAns['factorExp'] or denomAns['factorExp'];
 function bodeData (numAns, denomAns) {//add pReal & zReal nextx
   var nRoot = rootsStrArrToChartFormat(numAns['roots']);
   var dRoot = rootsStrArrToChartFormat(denomAns['roots']);
+  var nComp = nRoot[1], dComp = dRoot[1];
   var n = unity(numAns['coef'], numAns['powers']);//make x^0's coefficeint 1
   var d = unity(denomAns['coef'], numAns['powers']);
   var nFactorExp = numAns['factorExp'];
   var dFactorExp = denomAns['factorExp'];
-  var consT, calc;
+  var consT, calc, x, w0, zeta, realPart, imagPart, zOrigin = 0, pOrigin = 0, zReal = 0, pReal = 0;//false by default.
+  var consT_data = [], zOrigin_data = [], pOrigin_data = [], zReal_data = [], pReal_data = [], allFreq_data = [];
+  var zRealArr = [], pRealArr = [];//array storing data in more accessible form.
+  var zReal_dataApprox = [], pReal_dataApprox = [];//approximation of data.
+  var zReals = [], pReals = [];//array for storing real zeros & poles.
+  var zRealCount = 0;//# of real zeros
+  var pRealCount = 0;//# of real poles
+  var w = [];//for omega, frequency. why was w ever at 100.
+
   if (n['divisor']) {
     consT = d['divisor']/n['divisor'];
   }
   else {//x^0 coefficient is 0 in numerator.
     consT = 1;//if multiply anything by 1, is still itself.
   }
-  var zOrigin = 0, pOrigin = 0, zReal = 0, pReal = 0;//false by default.
-  var consT_data = [], zOrigin_data = [], pOrigin_data = [], zReal_data = [], pReal_data = [], allFreq_data = [];
-  var zRealArr = [], pRealArr = [];
-  var zRealCount = 0;//# of real zeros
-  var pRealCount = 0;//# of real poles
+  if (consT == Infinity || consT == -Infinity || consT == 0) {
+    consT = 1.1;//log10(1) = 10, and a logarithmic scale won't work.
+  }//what do we actually do here, where d[divisor] = 0?
   consT = 20*Math.log10(Math.abs(consT));
-  var w = [];//for omega, frequency.
-  for (let i=0; i<100; i++) {
+  for (let i=1; i<101; i++) {//started at 0, can't graph logarithmically.
     w.push(roundDecimal(1.0 + i*0.1, 1));
     consT_data.push([w, consT]);
   }
-  for (let i=0;i<nRoot.length; i++) {
-    if (nRoot[i][0] == 0 && nRoot[i][1] == 0) {
+  for (let i=0;i<nRoot[0].length; i++) {//numerator real zeros.
+    if (nRoot[0][i] == 0) {//zero at origin
       zOrigin = 1;
       for (let j=0; j<100; j++) {
         zOrigin_data.push([w[j], 20*nFactorExp[i]*Math.log10(w[j])]);
       }
     }
-    if (nRoot[i][0] != 0 && nRoot[i][1] == 0) {//real number zero
+    if (nRoot[0][i]) {//real number zero
+      zReals.push(nRoot[0][i]);//list of real zeros (that aren't zero) corresponding to data
       zReal = 1;
       zReal_data.push([nRoot[i][0], []]);//each zero is included with it's array of data.
+      zReal_dataApprox.push([]);
+      w0 = Math.abs(nRoot[i][0]);
       for (let j=0; j<100; j++) {
-        zReal_data[zRealCount][1].push([w[j], 20*nFactorExp[i]*Math.log10(w[j])]);//add data to array.
+        x = w[j]/w0;
+        if (w[j] <= w0) {
+          zReal_dataApprox[zRealCount].push(0);
+        }
+        else if (w[j] > w0) {
+          zReal_dataApprox[zRealCount].push([w[j], 20*nFactorExp[i]*Math.log10(x)]);
+        }
+        zReal_data[zRealCount][1].push([w[j], 20*nFactorExp[i]*Math.log10(Math.pow((1 + x*x), 0.5))]);//add data to array.
       }
       zRealCount++;
     }//lets figure out a good way to track how many of each root there are.
   }
+  for (let i=0; i<nComp.length; i++) {//loop through complex roots in numerator.
+    realPart = nComp[i][0];
+    imagPart = nComp[i][1];
+    w0 = Math.sqrt(realPart*realPart + imagPart*imagPart);
+    zeta = Math.cos(Math.arctan2(imagPart/realPart));
+    if (zeta <= 0 && zeta < 1) {
+      
+    }
+  }
   for (let j=0; j<zRealCount; j++) {//is there a more elegant solution?
     zRealArr.push(zReal_data[j][1]);
   }
-  for (let i=0;i<dRoot.length; i++) {
+  for (let i=0;i<denomAns['roots'].length; i++) {
     if (dRoot[i][0] == 0 && dRoot[i][1] == 0) {//zero pole
       pOrigin = 1;
       for (let j=0; j<100; j++) {
@@ -575,9 +611,18 @@ function bodeData (numAns, denomAns) {//add pReal & zReal nextx
     }
     if (dRoot[i][0] != 0 && dRoot[i][1] == 0) {//real pole
       pReal = 1;
+      pReals.push(dRoot[i][0]);
       pReal_data.push([dRoot[i][0], []]);//push a 2D array to pReal_data. second item will become data for graphing every real root.
+      w0 = Math.abs(dRoot[i][0]);
       for (let j=0; j<100; j++) {
-        pReal_data[pRealCount][1].push([w[j], -20*dFactorExp[i]*Math.log10(w[j])]);
+        x = w[j]/w0;
+        if (w[j] <= w0) {
+          pReal_dataApprox[pRealCount].push(0);
+        }
+        else if (w[j] > w0) {
+          pReal_dataApprox[pRealCount].push([w[j], -20*dFactorExp[i]*Math.log10(x)]);
+        }
+        pReal_data[pRealCount][1].push([w[j], -20*dFactorExp[i]*Math.log10(Math.pow((1 + x*x), 0.5))]);
       }
       pRealCount++;
     }
@@ -589,26 +634,28 @@ function bodeData (numAns, denomAns) {//add pReal & zReal nextx
   //each data point of total is sum of rest at its position.
   //multiply each one by varible storing 1 or 0 to determine if it is included.
   for (let i=0; i<100; i++) {//each data point for total is sum of other data points.
-    calc = consT_data[i];
+    calc = parseInt(consT_data[0], 10);//consT will always be horizontal & the same
     if(zOrigin) {
-      calc += zOrigin_data[i];
+      calc += parseInt(zOrigin_data[i], 10);
     }
     if (pOrigin) {
-      calc += pOrigin_data[i];
+      calc += parseInt(pOrigin_data[i], 10);
     }
     if (zReal) {
       for (let j=0; j<zRealCount; j++) {//is htere any way you can work this into the rest?
-        calc += zRealArr[j][i];
+        calc += parseInt(zRealArr[j][i], 10);
       }
     }
     if (pReal) {
       for (let j=0; j<pRealCount; j++) {//is htere any way you can work this into the rest?
-        calc += pRealArr[j][i];
+        calc += parseInt(pRealArr[j][i], 10);
       }
     }
     allFreq_data.push([w[i], calc]);
   }
-  return [consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pReal_data, zRealCount, pRealCount, allFreq_data];
+  console.log(zRealArr);
+  console.log(pRealArr);
+  return [consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pReal_data, zRealCount, pRealCount, allFreq_data, zReal_dataApprox, pReal_dataApprox, [1, zOrigin, pOrigin, zReal, pReal]];
 }
 //function rounds a number to a decimal # of decimal places.
 function roundDecimal (num, decimal) {
@@ -631,10 +678,9 @@ function roundDecimal (num, decimal) {
 //first is whether it is the first time graphing plot.
 //pass in data for plot. data itself will only be generated once, mkBode
 
-function mkBode (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pReal_data, zRealCount, pRealCount, allFreq_data, options){
-  console.log(consT_data);
-  console.log(zReal_data);
-  console.log(pReal_data);
+function mkBode (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pReal_data, zRealCount, pRealCount, allFreq_data, zReal_dataApprox, pReal_dataApprox, options) {
+  console.log('allFreq_data: ');
+  console.log(allFreq_data);
   var series = [];
   if (options[0]) {
     series.push(
@@ -667,6 +713,13 @@ function mkBode (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pRea
           data: zReal_data[i][1]//data for relevant real zero.
       });
     }
+    for (let i=0; i<zRealCount; i++) {
+      series.push({
+          name: 'Real Zero '+zReal_data[i][0].toString() + ' Approximation',
+          color: 'rgba(119, 152, 191, 1)',
+          data: zReal_dataApprox[i]//data for relevant real zero.
+      });
+    }
   }
   if (pRealCount && options[4]) {
     for (let i=0; i<pRealCount; i++) {
@@ -674,6 +727,13 @@ function mkBode (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pRea
           name: 'Real Pole '+pReal_data[i][0].toString(),
           color: 'rgba(119, 152, 191, 1)',
           data: pReal_data[i][1]//data for relevant real zero.
+      });
+    }
+    for (let i=0; i<pRealCount; i++) {
+      series.push({
+          name: 'Real Pole '+pReal_data[i][0].toString()+' Approximation',
+          color: 'rgba(119, 152, 191, 1)',
+          data: pReal_dataApprox[i]//data for relevant real zero.
       });
     }
   }
@@ -696,7 +756,7 @@ function mkBode (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pRea
         text: 'Bode Plot'
     },
     xAxis: {
-      type: 'logarithmic',//'logarithmic'
+      type: 'linear',//'logarithmic'. can't plot sub-zero values on a logarithmic axis
         title: {
             enabled: true,
             text: 'Frequency ω'//ω, &#x03C9;
@@ -752,295 +812,42 @@ function mkBode (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pRea
 function desmos(constant) {
   var elt = document.getElementById('desmos');
   var calculator = Desmos.GraphingCalculator(elt);
-  calculator.setExpression({ id: 'graph1', latex: 'f(x)=\log_{10}(x)' });
-  calculator.setExpression({ id: 'graph2', latex: 'g\left(x\right)=-20\log\left(x\right)' });
+  calculator.setExpression({ id: 'graph1', latex: 'f(x)=\\log_{10}(x)' });
   calculator.setExpression({ id: 'graph3', latex: 'y = '+constant.toString() });
 }
-//called when button clicked.
-//only graphs the elements that the user wants to see (allows them to only look at one.)
-//only supports zOrigin now for testing.
-function onFrequency(appOrExact) {//will we need a new function?
-  var constant, zOrigin, pOrigin;
-  var zReal = [], pReal = [], zComp = [], pComp = [];
-  if (!appOrExact) {
-    if (document.getElementById('zOriginCheck').checked) {
-      zOrigin = 1;
+function bodeDataPhase (w, consT_data, zOrigin_data, pOrigin_data, zReals, pReals, zRealArr, pRealArr) {
+  var w = [], consT_data = [], zOrigin_data = [], pOrigin_data = [];
+  var zReal = zReals.length, pReal = pReals.length;
+  //get w.
+  for (let i=0; i<100; i++) {
+    if (consT > 0) {
+      consT_data[i] = [w, 0];
     }
-    else {
-      zOrigin = 0;
+    else if (consT < 0) {
+      consT_data[i] = [w[i], 180];
     }
-    constant = 0;
-    pOrigin = 0;
-    zReal.push(0);
-    pReal.push(0);
-    zComp.push(0);
-    bodeApprox(constant, zOrigin, pOrigin, zReal, pReal, zComp, pComp, 0);//0 so it won't create the box again.
-  }
-}
-//constant is the constant const gain
-//zOrigin & pOrigin specify whether there is a zero or pole (respectively) at the origin or not (1|0).
-//zReal[0] & pReal[0] specify whether there is a zero or pole (respectively) at the origin or not (1|0).
-//zReal[1] & pReal[1] are the list of real zeros or poles.
-//zReal [2] & pReal[1] are a list of the # of times each zero appears (its order).
-//worry about repeated zeros later.
-//ω = &#x03C9;
-//original specifies whether it is the first time this is being graphed or not.
-function bodeApprox(constant, zOrigin, pOrigin, zReal, pReal, zComp, pComp, original) {
-  //add array to specify which ones want graphed. could have each if testing if which[whatever] is 0 or 1.
-  //actually not needed since already have these. would just need another function to call this one.
-  // Create a function graph for f(x) = 0.5*x*x-2*x
-  var uBoundX = 10;//upper and lower bound of x-axis
-  var lBoundX = -1;
-  var uBoundY = 21;
-  var lBoundY = -21;//upper & lower bound of y-axis
-  const board = JXG.JSXGraph.initBoard('bodeApprox', {
-    boundingbox: [lBoundY, uBoundY, uBoundX, lBoundX], axis:true
-});
-   if (constant) {//graphing constant K out front
-     var graph1 = board.create('functiongraph',
-     [function(x){
-       return 20*Math.log(constant);
-     }, lBoundX, uBoundX]
-     );
-     if (original) {
-       var add = "<input type='checkbox' id='zOriginCheck' onclick='console.log(Math.log(10))'></input>"
-       document.getElementById('constant').innerHTML = add + " constant: dB = " + "20*log("+constant.toString()+")";
-     }
-   }
-   if (zOrigin) {//graphing a zero at the origin
-     var graph2 = board.create('functiongraph',
-  [function(x){
-      return 20*Math.log10(x);
-    }, lBoundX, uBoundX]
-  );
-  document.getElementById('zOrigin').innerHTML = "Zero at Origin: dB = 20*log(&#x03C9;)";
-  }
-  if (pOrigin) {
-  var graph3 = board.create('functiongraph',
-  [function(x){
-    return -20*Math.log10(x);
-  }, lBoundX, uBoundX]
-  );
-  document.getElementById('pOrigin').innerHTML = "Pole at Origin: dB = -20*log(&#x03C9;)";
-  }
-  if (zReal[0]) {
-    var len = zReal[1].length;
-    var graph4 = [];
-    var html = "";
-    let w0;
-    let power;//power of a zero, N in a textbook. default is 1.
-    for (let i=0; i<len; i++) {
-      w0 = Math.abs(zReal[1][i]);// s/(w0) + 1 = 0.
-      power = zReal[2][i];
-      graph4.push(i);//necessary?
-      //will graph each one.
-      //might want to give options to turn each one on & off.
-      graph4[i] = board.create('functiongraph',
-      [function(x){
-        if (x>w0) {
-          return 20*power*(Math.log(x)-Math.log(w0));
-          //add N for powers! how determine power of 1 zero? # times it appears.
-          //originally if x>=w0, 20*Math.log10(x-(w0-1));
-        }
-        else {
-          return 0;
-        }
-      }, lBoundX, uBoundX]
-      );
-      //ask if -w0 is correct; it is a way to change the function such that it joins
-      html = html + "Real Zero: dB = {20*N*log(&#x03C9;-"+w0+") if &#x03C9; >= "+ w0.toString() +"; 0 if &#x03C9; <= "+w0+"}<br>";
-    }
-    document.getElementById('zReal').innerHTML = html;
-  }
-  if (pReal[0]) {
-    var len = pReal[1].length;
-    var graph5 = [];
-    var html = "";
-    let w0;
-    let power;
-    for (let i=0; i<len; i++) {
-      w0 = Math.abs(pReal[1][i]);// s/(w0) + 1 = 0.
-      power = pReal[2][i];
-      graph5.push(i);//necessary?
-      graph5[i] = board.create('functiongraph',
-      [function(x){
-        if (x>=w0) {
-          return -20*power*(Math.log10(x)-Math.log10(w0))// before book: -20*Math.log10(x-(w0-1));
-        }//does this count as an approximation or a definite? they use ~= to refer to  it. seems like original was straight line.
-        else {
-          return 0;
-        }
-      }, lBoundX, uBoundX]
-      );
-      html = html + "Real Pole: dB = {20*log(&#x03C9;-"+w0+") if &#x03C9; >= "+ w0.toString() +"; 0 if &#x03C9; <= "+w0+"}<br>";
-    }
-    document.getElementById('pReal').innerHTML = html;
-  }//still not sure how to do the complex ones
-  if (zComp[0]) {
-    var len = zComp[1].length;
-    var graph6 = [];
-    var html = "";
-    let w0;
-    for (let i=0; i<len; i++) {
-      w0 = 1;// s/(w0) + 1 = 0.
-      graph6.push(i);//necessary?
-      graph6[i] = board.create('functiongraph',
-      [function(x){
-        if (x>=w0) {
-          return 40*Math.log10(x-(w0-1));
-        }
-        else {
-          return 0;
-        }
-      }, lBoundX, uBoundX]
-      );
-      html = html + "Complex Zero: dB = {40*log(&#x03C9;-"+w0+") if &#x03C9; >= "+ w0.toString() +"; 0 if &#x03C9; <= "+w0+"}<br>";
-    }
-    document.getElementById('zComp').innerHTML = html;
-  }
-  if (pComp[0]) {
-    var len = pReal[1].length;
-    var graph7 = [];
-    var html = "";
-    let w0;
-    for (let i=0; i<len; i++) {
-      w0 = 1;// s/(w0) + 1 = 0.
-      graph7.push(i);//necessary?
-      graph7[i] = board.create('functiongraph',
-      [function(x){
-        if (x>=w0) {
-          return -40*Math.log10(x);
-        }
-        else {
-          return 0;
-        }
-      }, lBoundX, uBoundX]
-      );
-      //html = html + "Real Pole: dB = {-40*log(w) if w >= ; 0 if ω <= "+w0+"}<br>";
-    }
-    //document.getElementById('pComp').innerHTML = html;
-  }
-}
-//graphs exact versions from text.
-function bodeExact (constant, zOrigin, pOrigin, zReal, pReal, zComp, pComp) {
-  var uBoundX = 40;
-  var lBoundX = -40;
-  const board = JXG.JSXGraph.initBoard('bodeExact', {
-    boundingbox: [lBoundX, uBoundX, uBoundX, lBoundX], axis:true
-  });
-     if (constant) {
-       var graph1 = board.create('functiongraph',
-       [function(x){
-         return constant;
-       }, lBoundX, uBoundX]
-       );
-       document.getElementById('constant').innerHTML = "constant: dB = " + constant.toString();
-     }
-     if (zOrigin) {
-       var graph2 = board.create('functiongraph',
-    [function(x){
-        return 20*Math.log10(x);
-      }, lBoundX, uBoundX]
-    );
-    document.getElementById('zOrigin').innerHTML = "Zero at Origin: dB = 20*log(ω)";
+    if (zOrigin) {
+      zOrigin_data[i] = [w[i], 90];
     }
     if (pOrigin) {
-    var graph3 = board.create('functiongraph',
-    [function(x){
-      return -20*Math.log10(x);
-    }, lBoundX, uBoundX]
-    );
-    document.getElementById('pOrigin').innerHTML = "Pole at Origin: dB = -20*log(ω)";
+      pOrigin_data[i] = [w[i], -90];
     }
-    if (zReal[0]) {
-      var len = zReal[1].length;
-      var graph4 = [];
-      var html = "";
-      let w0;
-      for (let i=0; i<len; i++) {
-        w0 = Math.abs(zReal[1][i]);// s/(w0) + 1 = 0.
-        graph4.push(i);//necessary?
-        //will graph each one.
-        //might want to give options to turn each one on & off.
-        graph4[i] = board.create('functiongraph',
-        [function(x){
-          if (x>=w0) {
-            return 20*Math.log10(x-(w0-1));
-          }
-          else {
-            return 0;
-          }
-        }, lBoundX, uBoundX]
-        );
-        //ask if -w0 is correct; it is a way to change the function such that it joins
-        html = html + "Real Zero: dB = {20*log(w-"+w0+") if w >= "+ w0.toString() +"; 0 if w <= "+w0+"}<br>";
+    if (zReal) {//loop through real zeros. figure out this again.
+      for (let j=0; j<zReal; j++) {
+        zReal_data.push([])
+        if (w < 0.1*Math.abs(zReals[j])) {
+
+        }
+        else if (w > 10*Math.abs(zReals[j])) {
+
+        }
+        else {//if it's between them
+
+        }
       }
-      document.getElementById('zReal').innerHTML = html;
     }
-    if (pReal[0]) {
-      var len = pReal[1].length;
-      var graph5 = [];
-      var html = "";
-      let w0;
-      for (let i=0; i<len; i++) {
-        w0 = Math.abs(pReal[1][i]);// s/(w0) + 1 = 0.
-        graph5.push(i);//necessary?
-        graph5[i] = board.create('functiongraph',
-        [function(x){
-          if (x>=w0) {
-            return -20*Math.log10(x-(w0-1));
-          }
-          else {
-            return 0;
-          }
-        }, lBoundX, uBoundX]
-        );
-        html = html + "Real Pole: dB = {20*log(w-"+w0+") if w >= "+ w0.toString() +"; 0 if ω <= "+w0+"}<br>";
-      }
-      document.getElementById('pReal').innerHTML = html;
-    }
-    if (zComp[0]) {
-      var len = zComp[1].length;
-      var graph6 = [];
-      var html = "";
-      let w0;
-      for (let i=0; i<len; i++) {
-        w0 = 1;// s/(w0) + 1 = 0.
-        graph6.push(i);//necessary?
-        graph6[i] = board.create('functiongraph',
-        [function(x){
-          if (x>=w0) {
-            return 40*Math.log10(x-(w0-1));
-          }
-          else {
-            return 0;
-          }
-        }, lBoundX, uBoundX]
-        );
-        html = html + "Complex Zero: dB = {40*log(w-"+w0+") if w >= "+ w0.toString() +"; 0 if ω <= "+w0+"}<br>";
-      }
-      document.getElementById('zComp').innerHTML = html;
-    }
-    if (pComp[0]) {
-      var len = pReal[1].length;
-      var graph7 = [];
-      var html = "";
-      let w0;
-      for (let i=0; i<len; i++) {
-        w0 = 1;// s/(w0) + 1 = 0.
-        graph7.push(i);//necessary?
-        graph7[i] = board.create('functiongraph',
-        [function(x){
-          if (x>=w0) {
-            return -40*Math.log10(x);
-          }
-          else {
-            return 0;
-          }
-        }, lBoundX, uBoundX]
-        );
-        //html = html + "Real Pole: dB = {-40*log(w) if w >= ; 0 if ω <= "+w0+"}<br>";
-      }
-      //document.getElementById('pComp').innerHTML = html;
-    }
+  }
+}
+function mkBodePhase (consT_data, zOrigin_data, pOrigin_data) {
+
 }
