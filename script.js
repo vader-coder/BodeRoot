@@ -16,7 +16,6 @@ function onClick() {
   'variable term for each coefficient: ','order: ', 'number of terms: '];
   var ans = ['poly', 'factors', 'roots', 'factorExp', 'coef', 'powers', 'polyTerms', 'order', 'numTerms'];//numerator
   var ans2 = ['poly2', 'factors2', 'roots2', 'factorExp2', 'coef2', 'powers2', 'polyTerms2', 'order2', 'numTerms2'];//denominator
-
   //document.getElementById(ans[2]).innerHTML = ans[2] +  [1, 1].toString();
   for (let i=0; i<ans.length; i++) {
     document.getElementById(ans[i]).innerHTML = labels[i] + numAns[ans[i]].toString();
@@ -24,10 +23,19 @@ function onClick() {
   }
   document.getElementById('numerator').innerHTML = "Numerator";
   document.getElementById('denominator').innerHTML = "Denominator";
+  if (numAns['order'] > denomAns['order']) {
+    alert('Order of the numerator must be <= that of the denominator');
+    return;
+  }
   //rootsStrArrToChartFormat(numAns['roots']);
   //error for just rt. maybe problem w/ rootsStrArrToChartFormat is that roots[i] isn't just 1 item.
-  //var bdata = bodeData(numAns, denomAns);
-  //mkBode(bdata[0], bdata[1], bdata[2], bdata[3], bdata[4], bdata[5], bdata[6], bdata[7], bdata[8], bdata[9], bdata[10], bdata[11], bdata[12], bdata[13]);
+  /*(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pReal_data, zComp_data, pComp_data,
+     zRealCount, pRealCount, allFreq_data, zReal_dataApprox, pReal_dataApprox, zComp_dataApprox,
+      pComp_dataApprox, nComp, dComp, options)*/
+  var bdata = bodeData(numAns, denomAns);
+  mkBode(bdata[0], bdata[1], bdata[2], bdata[3], bdata[4], bdata[5], bdata[6],
+    bdata[7], bdata[8], bdata[9], bdata[10], bdata[11], bdata[12], bdata[13],
+    bdata[14], bdata[15], bdata[16], bdata[17]);
 }
 //returns list contaniing polynomial form, coefficients, roots, order, etc.
 function finder (polynomialform) {
@@ -604,48 +612,7 @@ function bodeData (numAns, denomAns) {//add pReal & zReal nextx
       zRealCount++;
     }//lets figure out a good way to track how many of each root there are.
   }
-  for (let i=0; i<nComp.length; i++) {//loop through complex roots in numerator.
-    realPart = nComp[i][0];
-    imagPart = nComp[i][1];
-    w0 = Math.sqrt(realPart*realPart + imagPart*imagPart);
-    x = Math.atan2(imagPart,realPart);//y, x -> y/x, opposite/ajdacent
-    zeta = Math.cos(x);
-    //pg 293 of book vs https://lpsa.swarthmore.edu/Bode/BodeReviewRules.html: 0<zeta<1 or 0<=zeta<1?
-    //how is this possible for a complex conjugate? one will be -, other will be +.
-    if (zeta > 0 && zeta < 1) {//will have to account for a # & it's conjugate being in there (I think? or will zeta take care of that?)
-    zComp_data.push([]);
-    zComp_dataApprox.push([]);
-      if (zeta < 0.5) {
-        for (let j=0; j<100; j++) {
-          x = w[j];//lines 40*Math.log10(x) & y=0 intersect at x = 1.
-          if (w[j] < 1) {//for phase w[j] <= w0/(Math.pow(10, zeta))) {
-            zComp_dataApprox[i].push([w[j], 0]);
-          }
-          else if (w[j] >= 1 ) {//&& w[j] != roundDecimal(w0, 1)) { might change to if so they will connect?
-            zComp_dataApprox[i].push([w[j], 40*Math.log10(x)]);
-          }
-          /*else if (w[j] == roundDecimal(w0, 1)) {//only in invervals of .1
-            base = 40*Math.log10(x);
-            peak = 20*Math.log10(2*zeta);
-            //zComp_dataApprox[i].push([w[j], base+(peak/3)]);//should we have nFactorExp[i] here?
-            //zComp_dataApprox[i].push([w[j], base+(2*peak/3)]);//should we have nFactorExp[i] here?
-            zComp_dataApprox[i].push([w[j], base+peak]);//should we have nFactorExp[i] here?
-          }*/
-        }
-      }
-      else if (zeta >= 0.5) {//don't draw peak. it would seem like in this case w[0] doesn't matter.
-        for (let j=0; j<100; j++) {
-          x = w[j];
-          if (w[j] < 1) {//for phase w[j] <= w0/(Math.pow(10, zeta))) {
-            zComp_dataApprox[i].push([w[j], 0]);
-          }
-          else if (w[j] >= 1) {
-            zComp_dataApprox[i].push([w[j], 40*Math.log10(x)]);
-          }
-        }
-      }
-    }
-  }
+  [zComp_data, zComp_dataApprox] = compConjugateData(nComp, w, 1);
   for (let j=0; j<zRealCount; j++) {//is there a more elegant solution?
     zRealArr.push(zReal_data[j][1]);
   }
@@ -677,47 +644,7 @@ function bodeData (numAns, denomAns) {//add pReal & zReal nextx
   for (let j=0; j<pRealCount; j++) {//is there a more elegant solution?
     pRealArr.push(pReal_data[j][1]);
   }
-  /*for (let i=0; i<dComp.length; i++) {//loop through complex roots in numerator.
-    realPart = dComp[i][0];
-    imagPart = dComp[i][1];
-    w0 = Math.sqrt(realPart*realPart + imagPart*imagPart);
-    x = Math.atan2(imagPart,realPart);//y, x -> y/x, opposite/ajdacent
-    zeta = Math.cos(x);
-    //pg 293 of book vs https://lpsa.swarthmore.edu/Bode/BodeReviewRules.html: 0<zeta<1 or 0<=zeta<1?
-    //how is this possible for a complex conjugate? one will be -, other will be +.
-    if (zeta > 0 && zeta < 1) {//will have to account for a # & it's conjugate being in there (I think? or will zeta take care of that?)
-    pComp_data.push([]);
-    pComp_dataApprox.push([]);
-      if (zeta < 0.5) {
-        for (let j=0; j<100; j++) {
-          x = w[j];//lines 40*Math.log10(x) & y=0 intersect at x = 1.
-          if (w[j] < 1) {//for phase w[j] <= w0/(Math.pow(10, zeta))) {
-            pComp_dataApprox[i].push([w[j], 0]);
-          }
-          else if (w[j] >= 1 ) {//&& w[j] != roundDecimal(w0, 1)) { might change to if so they will connect?
-            pComp_dataApprox[i].push([w[j], -40*Math.log10(x)]);
-          }
-          /*else if (w[j] == roundDecimal(w0, 1)) {//only in invervals of .1
-            base = 40*Math.log10(x);
-            peak = 20*Math.log10(2*zeta);
-            //zComp_dataApprox[i].push([w[j], base+(peak/3)]);//should we have nFactorExp[i] here?
-            //zComp_dataApprox[i].push([w[j], base+(2*peak/3)]);//should we have nFactorExp[i] here?
-            zComp_dataApprox[i].push([w[j], base+peak]);//should we have nFactorExp[i] here?
-          }
-        }
-      }
-      else if (zeta >= 0.5) {//don't draw peak. it would seem like in this case w[0] doesn't matter.
-        for (let j=0; j<100; j++) {
-          x = w[j];
-          if (w[j] < 1) {//for phase w[j] <= w0/(Math.pow(10, zeta))) {
-            pComp_dataApprox[i].push([w[j], 0]);
-          }
-          else if (w[j] >= 1) {
-            pComp_dataApprox[i].push([w[j], 40*Math.log10(x)]);
-          }
-        }
-      }
-    }*/
+  [pComp_data, pComp_dataApprox] = compConjugateData(dComp, w, -1);
   //should we consolidate all for loops & include if statements inside them?
   //each data point of total is sum of rest at its position.
   //multiply each one by varible storing 1 or 0 to determine if it is included.
@@ -739,11 +666,28 @@ function bodeData (numAns, denomAns) {//add pReal & zReal nextx
         calc += parseInt(pRealArr[j][i], 10);
       }
     }
+    if (zComp_data[0].length) {//if first item in zComp_data has anything in it.
+      for (let j=0; j<zComp_data.length; j++) {//is htere any way you can work this into the rest?
+        calc += parseInt(zComp_data[j][i], 10);
+      }
+    }
+    if (pComp_data[0].length) {//if first item in zComp_data has anything in it.
+      for (let j=0; j<pComp_data.length; j++) {//is htere any way you can work this into the rest?
+        calc += parseInt(pComp_data[j][i], 10);
+      }
+    }
     allFreq_data.push([w[i], calc]);
   }
-  return [consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pReal_data, zRealCount, pRealCount, allFreq_data, zReal_dataApprox, pReal_dataApprox, zComp_dataApprox, nComp, [1, zOrigin, pOrigin, zReal, pReal, nComp.length]];
+  return [consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
+    pReal_data, zComp_data, pComp_data, zRealCount, pRealCount, allFreq_data,
+    zReal_dataApprox, pReal_dataApprox, zComp_dataApprox, pComp_dataApprox, nComp, dComp,
+    [1, zOrigin, pOrigin, zReal, pReal, nComp.length, dComp.length]];
 }
+/* (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pReal_data, zComp_data, pComp_data
+   zRealCount, pRealCount, allFreq_data, zReal_dataApprox, pReal_dataApprox, zComp_dataApprox,
+    pComp_dataApprox, nComp, dComp, options) */
 //function rounds a number to a decimal # of decimal places.
+
 function roundDecimal (num, decimal) {
   var a = Math.pow(10, decimal);
   return (Math.round(num*a)/a);
@@ -769,6 +713,87 @@ function compArrToStr(comp) {
   }
   return print;
 }
+//works on dComp or nComp to get their data.
+function compConjugateData (comp, w, sign) {//sign will be -1 or +1
+  var comp_data = [], comp_dataApprox = [], base, peak, imagPart, realPart, x, zeta, w0;
+  for (let i=0; i<comp.length; i++) {//loop through complex roots in numerator.
+    realPart = comp[i][0];
+    imagPart = comp[i][1];
+    w0 = Math.sqrt(realPart*realPart + imagPart*imagPart);
+    x = Math.atan2(imagPart,realPart);//y, x -> y/x, opposite/ajdacent
+    zeta = Math.cos(x);
+    //pg 293 of book vs https://lpsa.swarthmore.edu/Bode/BodeReviewRules.html: 0<zeta<1 or 0<=zeta<1?
+    //how is this possible for a complex conjugate? one will be -, other will be +.
+    if (zeta > 0 && zeta < 1) {//will have to account for a # & it's conjugate being in there (I think? or will zeta take care of that?)
+    comp_data.push([]);
+    comp_dataApprox.push([]);
+      if (zeta < 0.5) {
+        for (let j=0; j<100; j++) {
+          x = w[j];//lines 40*Math.log10(x) & y=0 intersect at x = 1.
+          if (w[j] < 1) {//for phase w[j] <= w0/(Math.pow(10, zeta))) {
+            comp_dataApprox[i].push([w[j], 0]);
+          }
+          else if (w[j] > 1 && w[j] != roundDecimal(w0, 1)) { //might change to if so they will connect?
+            comp_dataApprox[i].push([w[j], sign*40*Math.log10(x)]);
+          }
+          else if (w[j] == roundDecimal(w0, 1)) {//might ask prof cheever about his peak at some point.
+            base = sign*40*Math.log10(x);
+            peak = Math.abs(20*Math.log10(2*zeta))*Math.sign(base);
+            //if the peak doesn't have the same size as the base, it iwll look like a valley.
+            //zComp_dataApprox[i].push([w[j], base+(peak/3)]);//should we have nFactorExp[i] here?
+            //zComp_dataApprox[i].push([w[j], base+(2*peak/3)]);//should we have nFactorExp[i] here?
+            comp_dataApprox[i].push([w[j], base+peak]);//should we have nFactorExp[i] here?
+          }
+        }
+      }
+      else if (zeta >= 0.5) {//don't draw peak. it would seem like in this case w[0] doesn't matter.
+        for (let j=0; j<100; j++) {
+          x = w[j];
+          if (w[j] < 1) {//for phase w[j] <= w0/(Math.pow(10, zeta))) {
+            comp_dataApprox[i].push([w[j], 0]);
+          }
+          else if (w[j] >= 1) {
+            comp_dataApprox[i].push([w[j], sign*40*Math.log10(x)]);
+          }
+        }
+      }
+    }
+  }
+  return [comp_data, comp_dataApprox]
+}
+function allFreq(zOrigin, zOrigin_data, pOrigin, pOrigin_data, zReal, zReal_data, pReal, pReal_data, zComp_data, pComp_data) {
+  var allFreq_data = [];
+  for (let i=0; i<100; i++) {//each data point for total is sum of other data points.
+    calc = parseInt(consT_data[0], 10);//consT will always be horizontal & the same
+    if(zOrigin) {
+      calc += parseInt(zOrigin_data[i], 10);
+    }
+    if (pOrigin) {
+      calc += parseInt(pOrigin_data[i], 10);
+    }
+    if (zReal) {
+      for (let j=0; j<zRealCount; j++) {//is htere any way you can work this into the rest?
+        calc += parseInt(zRealArr[j][i], 10);
+      }
+    }
+    if (pReal) {
+      for (let j=0; j<pRealCount; j++) {//is htere any way you can work this into the rest?
+        calc += parseInt(pRealArr[j][i], 10);
+      }
+    }
+    if (zComp_data[0].length) {//if first item in zComp_data has anything in it.
+      for (let j=0; j<zComp_data.length; j++) {//is htere any way you can work this into the rest?
+        calc += parseInt(zComp_data[j][i], 10);
+      }
+    }
+    if (pComp_data[0].length) {//if first item in zComp_data has anything in it.
+      for (let j=0; j<pComp_data.length; j++) {//is htere any way you can work this into the rest?
+        calc += parseInt(pComp_data[j][i], 10);
+      }
+    }
+    allFreq_data.push([w[i], calc]);
+  }
+}
 //executes when graph is clicked.
 /*function onGraphClick () {
   var opt = [];//options
@@ -785,8 +810,10 @@ function compArrToStr(comp) {
 //first is whether it is the first time graphing plot.
 //pass in data for plot. data itself will only be generated once, mkBode
 
-function mkBode (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pReal_data, zRealCount, pRealCount, allFreq_data, zReal_dataApprox, pReal_dataApprox, zComp_dataApprox, nComp, options) {
-  var series = [], print;
+function mkBode (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pReal_data,
+   zComp_data, pComp_data, zRealCount, pRealCount, allFreq_data, zReal_dataApprox,
+   pReal_dataApprox, zComp_dataApprox, pComp_dataApprox, nComp, dComp, options) {
+  var series = [];
   if (options[0]) {
     series.push(
     {//if something is to not be graphed, it's data will be empty.
@@ -840,13 +867,39 @@ function mkBode (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pRea
       });
     }
   }
-  if (options[5]) {
+  if (options[5]) {//nComp.length
+    let print = [];
     for (let i=0; i<zComp_dataApprox.length; i++) {
-      print = compArrToStr(nComp[i]);
+      print.push(compArrToStr(nComp[i]));
       series.push({
-          name: 'Complex Zero '+ print + ' Approximation',//nComp[i][0].toString() + ' + ' + nComp[i][1].toString() +' Approximation',
+          name: 'Complex Zero '+ print[i] + ' Approximation',//nComp[i][0].toString() + ' + ' + nComp[i][1].toString() +' Approximation',
           color: 'rgba(119, 152, 191, 1)',
           data: zComp_dataApprox[i]//data for relevant real zero.
+      });
+    }
+    for (let i=0; i<zComp_data.length; i++) {
+      series.push({
+          name: 'Complex Zero '+ print[i] + ' Approximation',//nComp[i][0].toString() + ' + ' + nComp[i][1].toString() +' Approximation',
+          color: 'rgba(119, 152, 191, 1)',
+          data: zComp_data[i]//data for relevant real zero.
+      });
+    }
+  }
+  if (options[6]) {//dComp.length
+    let print = [];
+    for (let i=0; i<pComp_dataApprox.length; i++) {
+      print.push(compArrToStr(dComp[i]));
+      series.push({
+          name: 'Complex Pole '+ print[i] + ' Approximation',//nComp[i][0].toString() + ' + ' + nComp[i][1].toString() +' Approximation',
+          color: 'rgba(119, 152, 191, 1)',
+          data: pComp_dataApprox[i]//data for relevant real zero.
+      });
+    }
+    for (let i=0; i<pComp_data.length; i++) {
+      series.push({
+          name: 'Complex Pole '+ print[i] + ' Approximation',//nComp[i][0].toString() + ' + ' + nComp[i][1].toString() +' Approximation',
+          color: 'rgba(119, 152, 191, 1)',
+          data: pComp_data[i]//data for relevant real zero.
       });
     }
   }
@@ -887,8 +940,8 @@ function mkBode (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pRea
     },
     legend: {
         layout: 'vertical',
-        align: 'left',
-        verticalAlign: 'top',
+        align: 'right',//'left'
+        verticalAlign: 'bottom',//'top'
         x: 100,
         y: 70,
         floating: true,
