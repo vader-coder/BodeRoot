@@ -24,26 +24,10 @@ function onClick() {
   }
   document.getElementById('numerator').innerHTML = "Numerator";
   document.getElementById('denominator').innerHTML = "Denominator";
-
-  /*var opt = [];//options
-  var ids = ['constant', 'zOrigin', 'pOrigin', 'zReal', 'pReal'];
-  for (let i=0; i<ids.length; i++) {
-    opt.push(document.getElementById(ids[i]).checked);//1 or 0 depending on whether it is checked.
-  }*/
-  //desmos(5);
-  var rt = ['2+i', '5-i'];
-  for (let i=0; i<2; i++) {
-    console.log(nerdamer('realpart('+rt[i]+')').text());
-  }//error for just rt. maybe problem w/ rootsStrArrToChartFormat is that roots[i] isn't just 1 item.
-  //console.log(nerdamer('realpart(2+i)').text());
-  //console.log(rootsStrArrToChartFormat(['2+i', '2-i']));
-  //var bdata = bodeData(numAns, denomAns);
-  //[consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pReal_data, zRealCount, pRealCount, allFreq_data, zReal_dataApprox,
-  //pReal_dataApprox, zComp_dataApprox, [1, zOrigin, pOrigin, zReal, pReal, nComp.length]];
-
-  //mkBode(bdata[0], bdata[1], bdata[2], bdata[3], bdata[4], bdata[5], bdata[6], bdata[7], bdata[8], bdata[9], bdata[10], bdata[11], bdata[12])//, 1);//plot data for first time.
-  //we actualy don't need options checkboxes because we can already choose which ones to show w/ js.
-
+  //rootsStrArrToChartFormat(numAns['roots']);
+  //error for just rt. maybe problem w/ rootsStrArrToChartFormat is that roots[i] isn't just 1 item.
+  var bdata = bodeData(numAns, denomAns);
+  mkBode(bdata[0], bdata[1], bdata[2], bdata[3], bdata[4], bdata[5], bdata[6], bdata[7], bdata[8], bdata[9], bdata[10], bdata[11], bdata[12]);
 }
 //returns list contaniing polynomial form, coefficients, roots, order, etc.
 function finder (polynomialform) {
@@ -53,7 +37,7 @@ function finder (polynomialform) {
   var poly = polynomialform.trim();//get rid of whitespace
   var variable = document.getElementById('variable').value;
   var coef = nerdamer('coeffs('+ poly + ',' + variable + ')');
-  var factors = nerdamer('factor('+ poly + ')');
+  var factors = nerdamer('factor('+ poly + ')');//with complex conjugate roots, you can't factor the polynomial.
   var roots = [];
   //var factorRoots = [];//roots based on the factors.
   var order;//nerdamer returns coefficients of x^0 to x^order
@@ -61,15 +45,20 @@ function finder (polynomialform) {
   var polyTerms = [];//x-terms corresponding to each coefficient
   var factorPowers = [];//powers corresponding to each factor.
   //think about using coef.text() instead of objectToArray.
-  //console.log(coef.text());
   coef = objectToArray(coef);//splits up all digits.
-  //console.log(coef[coef.length-1]); was ']'
-  factors = factors.toString();
-  ret = factorsArr(factors);//array of factors & their exponets.
-  factors = ret[0];
-  factorExp = ret[1];//can also view these as # of times that a root appears, since each root is calculated form a factor.
-  for (let i=0; i<factors.length; i++) {
-    roots.push(nerdamer('roots(' + factors[i] +')').toString());
+  if (factors.text() == nerdamer('expand('+ poly +')')) {//polynomial can't be factored.
+    factors = factors.text();
+    factorExp = [1];
+    roots = objectToArray(nerdamer('roots('+ poly + ')'));
+  }
+  else {//polynomial can be factored.
+    factors = factors.toString();//.text() vs .toString()
+    ret = factorsArr(factors);//array of factors & their exponets.
+    factors = ret[0];
+    factorExp = ret[1];//can also view these as # of times that a root appears, since each root is calculated form a factor.
+    for (let i=0; i<factors.length; i++) {
+      roots.push(nerdamer('roots(' + factors[i] +')').toString());
+    }
   }
   for (let i=0; i<coef.length; i++) {
     powers.push(i);
@@ -151,6 +140,7 @@ function factorsArr(str) {
     factorExp.push(1);
   }
   factorExp = factorExp.map(v=>v.toString().replace('*', ''));
+  factorExp = factorExp.map(v=>parseInt(v, 10));
   return [factorsList, factorExp];
 }
 /*function repMult(item) {
@@ -446,7 +436,7 @@ function mkPlot(numRootStr, denomRootStr) {
 }
 //converts string array to format that can use.
 function rootsStrArrToChartFormat(roots) {
-  var temp;
+  var temp, realPart, imagPart;
   var real = [];//real roots.
   var comp = [];//complex roots.
   roots = rem(roots, ['[', ']']);
@@ -467,9 +457,11 @@ function rootsStrArrToChartFormat(roots) {
       roots[i] = [parseInt(roots[i], 10), 0];
       real.push(parseInt(roots[i], 10));
     }
-    else if (typeof(parseInt(nerdamer('realpart('+roots[i].toString()+')').text(), 10)) == typeof(5)) {//it is complex, not just imaginary.
-      roots[i] = [parseInt(nerdamer('realpart('+roots[i]+')').text(), 10), parseInt(nerdamer('imagpart('+roots[i]+')').text(), 10)];
-      comp.push([parseInt(nerdamer('realpart('+roots[i]+')').text(), 10), parseInt(nerdamer('imagpart('+roots[i]+')').text(), 10)]);
+    if (typeof(parseInt(nerdamer('realpart('+roots[i].toString()+')').text(), 10)) == typeof(5)) {//it is complex, not just imaginary.
+      realPart = parseInt(nerdamer('realpart('+roots[i].toString()+')').text(), 10);
+      imagPart = parseInt(nerdamer('imagpart('+roots[i].toString()+')').text(), 10);
+      roots[i] = [realPart, imagPart];
+      comp.push([realPart, imagPart]);
     }
   }
   return [real, comp];
@@ -538,8 +530,20 @@ function times (arr, item) {
 function rad2Degrees(rad) {//converts radians to degrees.
   return (rad/Math.PI)*180;
 }
-function bodeDataParams (numAns, denomAns) {
-
+function desmos(constant, nRoot, dRoot) {
+  var elt = document.getElementById('desmos');
+  var calculator = Desmos.GraphingCalculator(elt);
+  var x;
+  calculator.setExpression({ id: 'graph', latex: 'y='+consT.toString() });
+  for (let i=0;i<nRoot[0].length; i++) {//numerator real zeros.
+    if (nRoot[0][i] == 0) {//zero at origin
+      zOrigin = 1;
+      x = 20*nFactorExp[i];
+      calculator.setExpression({ id: 'graph1', latex: 'y = '+x.toString()+'\\log_{10}(x)' });
+    }
+  }
+  calculator.setExpression({ id: 'graph2', latex: 'f(x)=\\log_{10}(x)' });
+  calculator.setExpression({ id: 'graph3', latex: 'y = '+constant.toString() });
 }
 //takes numAns, denomAns & returns list of data for bode plot
 //each root will only occur once, and its exponet will be listed in numAns['factorExp'] or denomAns['factorExp'];
@@ -567,12 +571,12 @@ function bodeData (numAns, denomAns) {//add pReal & zReal nextx
     consT = 1;//if multiply anything by 1, is still itself.
   }
   if (consT == Infinity || consT == -Infinity || consT == 0) {
-    consT = 1.1;//log10(1) = 10, and a logarithmic scale won't work.
+    consT = 1;//log10(1) = 10, and a logarithmic scale won't work.
   }//what do we actually do here, where d[divisor] = 0?
   consT = 20*Math.log10(Math.abs(consT));
   for (let i=1; i<101; i++) {//started at 0, can't graph logarithmically.
-    w.push(roundDecimal(1.0 + i*0.1, 1));
-    consT_data.push([w, consT]);
+    w.push(roundDecimal(i*0.1, 1));//w.push(roundDecimal(1+ i*0.1, 1)); might want multiple versions of this.
+    consT_data.push([w[i], consT]);
   }
   for (let i=0;i<nRoot[0].length; i++) {//numerator real zeros.
     if (nRoot[0][i] == 0) {//zero at origin
@@ -604,9 +608,11 @@ function bodeData (numAns, denomAns) {//add pReal & zReal nextx
     realPart = nComp[i][0];
     imagPart = nComp[i][1];
     w0 = Math.sqrt(realPart*realPart + imagPart*imagPart);
-    zeta = Math.cos(Math.arctan2(imagPart/realPart));
+    x = Math.atan2(imagPart,realPart);//y, x -> y/x, opposite/ajdacent
+    zeta = Math.cos(x);
     //pg 293 of book vs https://lpsa.swarthmore.edu/Bode/BodeReviewRules.html: 0<zeta<1 or 0<=zeta<1?
-    if ( zeta > 0 && zeta < 1) {//will have to account for a # & it's conjugate being in there (I think? or will zeta take care of that?)
+    //how is this possible for a complex conjugate? one will be -, other will be +.
+    if (zeta > 0 && zeta < 1) {//will have to account for a # & it's conjugate being in there (I think? or will zeta take care of that?)
     zComp_data.push([]);
     zComp_dataApprox.push([]);
       if (zeta < 0.5) {
@@ -616,24 +622,25 @@ function bodeData (numAns, denomAns) {//add pReal & zReal nextx
             zComp_dataApprox[i].push([w[j], 0]);
           }
           else if (w[j] > 1 && w[j] != roundDecimal(w0, 1)) {
-            zComp_dataApprox[i].push([w[j], 40*nFactorExp[i]*Math.log10(x)]);
+            zComp_dataApprox[i].push([w[j], 40*Math.log10(x)]);
           }
           else if (w[j] == roundDecimal(w0, 1)) {//only in invervals of .1
-            base = 40*nFactorExp[i]*Math.log10(x);
-            peak = 20*Math.log10(x);
-            zComp_dataApprox[i].push([w[j], base+(peak/3)]);//should we have nFactorExp[i] here?
-            zComp_dataApprox[i].push([w[j], base+(2*peak/3)]);//should we have nFactorExp[i] here?
+            base = 40*Math.log10(x);
+            peak = 20*Math.log10(2*zeta);
+            //zComp_dataApprox[i].push([w[j], base+(peak/3)]);//should we have nFactorExp[i] here?
+            //zComp_dataApprox[i].push([w[j], base+(2*peak/3)]);//should we have nFactorExp[i] here?
             zComp_dataApprox[i].push([w[j], base+peak]);//should we have nFactorExp[i] here?
           }
         }
       }
       else {//don't draw peak. it would seem like in this case w[0] doesn't matter.
         for (let j=0; j<100; j++) {
+          x = w[j];
           if (w[j] <= 1) {//for phase w[j] <= w0/(Math.pow(10, zeta))) {
             zComp_dataApprox[i].push(w[j], 0);
           }
           else if (w[j] > 1) {
-            zComp_dataApprox[i].push([w[j], 40*nFactorExp[i]*Math.log10(x)]);
+            zComp_dataApprox[i].push([w[j], 40*Math.log10(x)]);
           }
         }
       }
@@ -853,12 +860,6 @@ function mkBode (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pRea
     },
     series: series
   });
-}
-function desmos(constant) {
-  var elt = document.getElementById('desmos');
-  var calculator = Desmos.GraphingCalculator(elt);
-  calculator.setExpression({ id: 'graph1', latex: 'f(x)=\\log_{10}(x)' });
-  calculator.setExpression({ id: 'graph3', latex: 'y = '+constant.toString() });
 }
 function bodeDataPhase (w, consT_data, zOrigin_data, pOrigin_data, zReals, pReals, zRealArr, pRealArr) {
   var w = [], consT_data = [], zOrigin_data = [], pOrigin_data = [];
