@@ -26,8 +26,8 @@ function onClick() {
   document.getElementById('denominator').innerHTML = "Denominator";
   //rootsStrArrToChartFormat(numAns['roots']);
   //error for just rt. maybe problem w/ rootsStrArrToChartFormat is that roots[i] isn't just 1 item.
-  var bdata = bodeData(numAns, denomAns);
-  mkBode(bdata[0], bdata[1], bdata[2], bdata[3], bdata[4], bdata[5], bdata[6], bdata[7], bdata[8], bdata[9], bdata[10], bdata[11], bdata[12], bdata[13]);
+  //var bdata = bodeData(numAns, denomAns);
+  //mkBode(bdata[0], bdata[1], bdata[2], bdata[3], bdata[4], bdata[5], bdata[6], bdata[7], bdata[8], bdata[9], bdata[10], bdata[11], bdata[12], bdata[13]);
 }
 //returns list contaniing polynomial form, coefficients, roots, order, etc.
 function finder (polynomialform) {
@@ -677,7 +677,7 @@ function bodeData (numAns, denomAns) {//add pReal & zReal nextx
   for (let j=0; j<pRealCount; j++) {//is there a more elegant solution?
     pRealArr.push(pReal_data[j][1]);
   }
-  for (let i=0; i<dComp.length; i++) {//loop through complex roots in numerator.
+  /*for (let i=0; i<dComp.length; i++) {//loop through complex roots in numerator.
     realPart = dComp[i][0];
     imagPart = dComp[i][1];
     w0 = Math.sqrt(realPart*realPart + imagPart*imagPart);
@@ -703,7 +703,7 @@ function bodeData (numAns, denomAns) {//add pReal & zReal nextx
             //zComp_dataApprox[i].push([w[j], base+(peak/3)]);//should we have nFactorExp[i] here?
             //zComp_dataApprox[i].push([w[j], base+(2*peak/3)]);//should we have nFactorExp[i] here?
             zComp_dataApprox[i].push([w[j], base+peak]);//should we have nFactorExp[i] here?
-          }*/
+          }
         }
       }
       else if (zeta >= 0.5) {//don't draw peak. it would seem like in this case w[0] doesn't matter.
@@ -717,7 +717,7 @@ function bodeData (numAns, denomAns) {//add pReal & zReal nextx
           }
         }
       }
-    }
+    }*/
   //should we consolidate all for loops & include if statements inside them?
   //each data point of total is sum of rest at its position.
   //multiply each one by varible storing 1 or 0 to determine if it is included.
