@@ -27,7 +27,7 @@ function onClick() {
   //rootsStrArrToChartFormat(numAns['roots']);
   //error for just rt. maybe problem w/ rootsStrArrToChartFormat is that roots[i] isn't just 1 item.
   var bdata = bodeData(numAns, denomAns);
-  mkBode(bdata[0], bdata[1], bdata[2], bdata[3], bdata[4], bdata[5], bdata[6], bdata[7], bdata[8], bdata[9], bdata[10], bdata[11], bdata[12]);
+  mkBode(bdata[0], bdata[1], bdata[2], bdata[3], bdata[4], bdata[5], bdata[6], bdata[7], bdata[8], bdata[9], bdata[10], bdata[11], bdata[12], bdata[13]);
 }
 //returns list contaniing polynomial form, coefficients, roots, order, etc.
 function finder (polynomialform) {
@@ -576,7 +576,7 @@ function bodeData (numAns, denomAns) {//add pReal & zReal nextx
   consT = 20*Math.log10(Math.abs(consT));
   for (let i=1; i<101; i++) {//started at 0, can't graph logarithmically.
     w.push(roundDecimal(i*0.1, 1));//w.push(roundDecimal(1+ i*0.1, 1)); might want multiple versions of this.
-    consT_data.push([w[i], consT]);
+    consT_data.push([w[i-1], consT]);
   }
   for (let i=0;i<nRoot[0].length; i++) {//numerator real zeros.
     if (nRoot[0][i] == 0) {//zero at origin
@@ -618,28 +618,28 @@ function bodeData (numAns, denomAns) {//add pReal & zReal nextx
       if (zeta < 0.5) {
         for (let j=0; j<100; j++) {
           x = w[j];//lines 40*Math.log10(x) & y=0 intersect at x = 1.
-          if (w[j] <= 1) {//for phase w[j] <= w0/(Math.pow(10, zeta))) {
+          if (w[j] < 1) {//for phase w[j] <= w0/(Math.pow(10, zeta))) {
             zComp_dataApprox[i].push([w[j], 0]);
           }
-          else if (w[j] > 1 && w[j] != roundDecimal(w0, 1)) {
+          else if (w[j] >= 1 ) {//&& w[j] != roundDecimal(w0, 1)) { might change to if so they will connect?
             zComp_dataApprox[i].push([w[j], 40*Math.log10(x)]);
           }
-          else if (w[j] == roundDecimal(w0, 1)) {//only in invervals of .1
+          /*else if (w[j] == roundDecimal(w0, 1)) {//only in invervals of .1
             base = 40*Math.log10(x);
             peak = 20*Math.log10(2*zeta);
             //zComp_dataApprox[i].push([w[j], base+(peak/3)]);//should we have nFactorExp[i] here?
             //zComp_dataApprox[i].push([w[j], base+(2*peak/3)]);//should we have nFactorExp[i] here?
             zComp_dataApprox[i].push([w[j], base+peak]);//should we have nFactorExp[i] here?
-          }
+          }*/
         }
       }
-      else {//don't draw peak. it would seem like in this case w[0] doesn't matter.
+      else if (zeta >= 0.5) {//don't draw peak. it would seem like in this case w[0] doesn't matter.
         for (let j=0; j<100; j++) {
           x = w[j];
-          if (w[j] <= 1) {//for phase w[j] <= w0/(Math.pow(10, zeta))) {
-            zComp_dataApprox[i].push(w[j], 0);
+          if (w[j] < 1) {//for phase w[j] <= w0/(Math.pow(10, zeta))) {
+            zComp_dataApprox[i].push([w[j], 0]);
           }
-          else if (w[j] > 1) {
+          else if (w[j] >= 1) {
             zComp_dataApprox[i].push([w[j], 40*Math.log10(x)]);
           }
         }
@@ -649,7 +649,7 @@ function bodeData (numAns, denomAns) {//add pReal & zReal nextx
   for (let j=0; j<zRealCount; j++) {//is there a more elegant solution?
     zRealArr.push(zReal_data[j][1]);
   }
-  for (let i=0;i<denomAns['roots'].length; i++) {
+  for (let i=0;i<dRoot[0].length; i++) {//loop through real zeros.
     if (dRoot[i][0] == 0 && dRoot[i][1] == 0) {//zero pole
       pOrigin = 1;
       for (let j=0; j<100; j++) {
@@ -677,6 +677,47 @@ function bodeData (numAns, denomAns) {//add pReal & zReal nextx
   for (let j=0; j<pRealCount; j++) {//is there a more elegant solution?
     pRealArr.push(pReal_data[j][1]);
   }
+  for (let i=0; i<dComp.length; i++) {//loop through complex roots in numerator.
+    realPart = dComp[i][0];
+    imagPart = dComp[i][1];
+    w0 = Math.sqrt(realPart*realPart + imagPart*imagPart);
+    x = Math.atan2(imagPart,realPart);//y, x -> y/x, opposite/ajdacent
+    zeta = Math.cos(x);
+    //pg 293 of book vs https://lpsa.swarthmore.edu/Bode/BodeReviewRules.html: 0<zeta<1 or 0<=zeta<1?
+    //how is this possible for a complex conjugate? one will be -, other will be +.
+    if (zeta > 0 && zeta < 1) {//will have to account for a # & it's conjugate being in there (I think? or will zeta take care of that?)
+    pComp_data.push([]);
+    pComp_dataApprox.push([]);
+      if (zeta < 0.5) {
+        for (let j=0; j<100; j++) {
+          x = w[j];//lines 40*Math.log10(x) & y=0 intersect at x = 1.
+          if (w[j] < 1) {//for phase w[j] <= w0/(Math.pow(10, zeta))) {
+            pComp_dataApprox[i].push([w[j], 0]);
+          }
+          else if (w[j] >= 1 ) {//&& w[j] != roundDecimal(w0, 1)) { might change to if so they will connect?
+            pComp_dataApprox[i].push([w[j], -40*Math.log10(x)]);
+          }
+          /*else if (w[j] == roundDecimal(w0, 1)) {//only in invervals of .1
+            base = 40*Math.log10(x);
+            peak = 20*Math.log10(2*zeta);
+            //zComp_dataApprox[i].push([w[j], base+(peak/3)]);//should we have nFactorExp[i] here?
+            //zComp_dataApprox[i].push([w[j], base+(2*peak/3)]);//should we have nFactorExp[i] here?
+            zComp_dataApprox[i].push([w[j], base+peak]);//should we have nFactorExp[i] here?
+          }*/
+        }
+      }
+      else if (zeta >= 0.5) {//don't draw peak. it would seem like in this case w[0] doesn't matter.
+        for (let j=0; j<100; j++) {
+          x = w[j];
+          if (w[j] < 1) {//for phase w[j] <= w0/(Math.pow(10, zeta))) {
+            pComp_dataApprox[i].push([w[j], 0]);
+          }
+          else if (w[j] >= 1) {
+            pComp_dataApprox[i].push([w[j], 40*Math.log10(x)]);
+          }
+        }
+      }
+    }
   //should we consolidate all for loops & include if statements inside them?
   //each data point of total is sum of rest at its position.
   //multiply each one by varible storing 1 or 0 to determine if it is included.
@@ -700,12 +741,33 @@ function bodeData (numAns, denomAns) {//add pReal & zReal nextx
     }
     allFreq_data.push([w[i], calc]);
   }
-  return [consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pReal_data, zRealCount, pRealCount, allFreq_data, zReal_dataApprox, pReal_dataApprox, zComp_dataApprox, [1, zOrigin, pOrigin, zReal, pReal, nComp.length]];
+  return [consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pReal_data, zRealCount, pRealCount, allFreq_data, zReal_dataApprox, pReal_dataApprox, zComp_dataApprox, nComp, [1, zOrigin, pOrigin, zReal, pReal, nComp.length]];
 }
 //function rounds a number to a decimal # of decimal places.
 function roundDecimal (num, decimal) {
   var a = Math.pow(10, decimal);
-  return (Math.round(num*a)/a)
+  return (Math.round(num*a)/a);
+}
+//turns an array of [real, img] to 'real + imag*i'
+function compArrToStr(comp) {
+  let print;
+  if (comp[1] < 0) {//imaginary # is negative.
+    if (comp[1] == -1) {
+      print = comp[0].toString() + ' - i ';
+    }
+    else {
+      print = comp[0].toString() + ' - ' + Math.abs(comp[1]).toString() + 'i';
+    }
+  }
+  else {//imaginary # is positive
+    if (comp[1] == 1) {
+      print = comp[0].toString() + ' + i';
+    }
+    else {
+      print = comp[0].toString() + ' + ' + comp[1].toString() + 'i';
+    }
+  }
+  return print;
 }
 //executes when graph is clicked.
 /*function onGraphClick () {
@@ -723,8 +785,8 @@ function roundDecimal (num, decimal) {
 //first is whether it is the first time graphing plot.
 //pass in data for plot. data itself will only be generated once, mkBode
 
-function mkBode (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pReal_data, zRealCount, pRealCount, allFreq_data, zReal_dataApprox, pReal_dataApprox, zComp_dataApprox, options) {
-  var series = [];
+function mkBode (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pReal_data, zRealCount, pRealCount, allFreq_data, zReal_dataApprox, pReal_dataApprox, zComp_dataApprox, nComp, options) {
+  var series = [], print;
   if (options[0]) {
     series.push(
     {//if something is to not be graphed, it's data will be empty.
@@ -749,13 +811,11 @@ function mkBode (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pRea
     });
   }
   if (zRealCount && options[3]) {//[]
-    for (let i=0; i<zRealCount; i++) {
       series.push({
           name: 'Real Zero '+zReal_data[i][0].toString(),
           color: 'rgba(119, 152, 191, 1)',
           data: zReal_data[i][1]//data for relevant real zero.
       });
-    }
     for (let i=0; i<zRealCount; i++) {
       series.push({
           name: 'Real Zero '+zReal_data[i][0].toString() + ' Approximation',
@@ -782,8 +842,9 @@ function mkBode (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pRea
   }
   if (options[5]) {
     for (let i=0; i<zComp_dataApprox.length; i++) {
+      print = compArrToStr(nComp[i]);
       series.push({
-          name: 'Complex Zero #'+ i.toString() + ' Approximation',//nComp[i][0].toString() + ' + ' + nComp[i][1].toString() +' Approximation',
+          name: 'Complex Zero '+ print + ' Approximation',//nComp[i][0].toString() + ' + ' + nComp[i][1].toString() +' Approximation',
           color: 'rgba(119, 152, 191, 1)',
           data: zComp_dataApprox[i]//data for relevant real zero.
       });
@@ -792,7 +853,7 @@ function mkBode (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pRea
   if (allFreq_data.length) {
     series.push({
         name: 'Total Bode',
-        color: 'rgba(119, 152, 191, 1)',
+        color: 'rgba(0, 0, 0, 1)',
         data: allFreq_data//data for relevant real zero.
     });
   }
