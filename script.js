@@ -36,6 +36,10 @@ function onClick() {
   mkBode(bdata[0], bdata[1], bdata[2], bdata[3], bdata[4], bdata[5], bdata[6],
     bdata[7], bdata[8], bdata[9], bdata[10], bdata[11], bdata[12], bdata[13],
     bdata[14], bdata[15], bdata[16], bdata[17], bdata[18]);
+  bdata = bodeDataPhase()
+  //w, consT_data, zOrigin_data, pOrigin_data, zReals, pReals, zRealArr, pRealArr
+  mkBodePhase(bdata[0], bdata[1], bdata[2], bdata[3]);
+
 }
 //returns list contaniing polynomial form, coefficients, roots, order, etc.
 function finder (polynomialform) {
@@ -783,15 +787,6 @@ function allFreq(consT_data, w, zOrigin, zOrigin_data, pOrigin, pOrigin_data, zR
   }
   return allFreq_data;
 }
-//executes when graph is clicked.
-/*function onGraphClick () {
-  var opt = [];//options
-  var ids = ['constant', 'zOrigin', 'pOrigin', 'zReal', 'pReal'];
-  for (let i=0; i<ids.length; i++) {
-    opt.push(document.getElementById(ids[i])).checked);//1 or 0 depending on whether it is checked.
-  }
-  mkBode(, opt);
-}*/
 //atan2 can be more precise.
 //what should we do for just imaginary #s?
 //will have to do less coding if understand what you're doing first!
@@ -819,7 +814,7 @@ function mkBode (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pRea
         data: zOrigin_data
     });
   }
-  if (zOrigin_data.length && options[2]) {//if no pole at origin, will just be 0.
+  if (pOrigin_data.length && options[2]) {//if no pole at origin, will just be 0.
     series.push({
         name: 'Pole at Origin',
         color: 'rgba(20, 191, 20, 1)',
@@ -969,6 +964,7 @@ function mkBode (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pRea
     series: series
   });
 }
+//w is input (like #s plugged in for x).
 function bodeDataPhase (w, consT_data, zOrigin_data, pOrigin_data, zReals, pReals, zRealArr, pRealArr) {
   var w = [], consT_data = [], zOrigin_data = [], pOrigin_data = [];
   var zReal = zReals.length, pReal = pReals.length;
@@ -986,7 +982,7 @@ function bodeDataPhase (w, consT_data, zOrigin_data, pOrigin_data, zReals, pReal
     if (pOrigin) {
       pOrigin_data[i] = [w[i], -90];
     }
-    if (zReal) {//loop through real zeros. figure out this again.
+    /*if (zReal) {//loop through real zeros. figure out this again.
       for (let j=0; j<zReal; j++) {
         zReal_data.push([])
         if (w < 0.1*Math.abs(zReals[j])) {
@@ -999,9 +995,93 @@ function bodeDataPhase (w, consT_data, zOrigin_data, pOrigin_data, zReals, pReal
 
         }
       }
-    }
+    }*/
   }
 }
-function mkBodePhase (consT_data, zOrigin_data, pOrigin_data) {
+function mkBodePhase (consT, consT_data, zOrigin_data, pOrigin_data) {
+  var series = [];
+  if (consT) {
+    series.push(
+    {//if something is to not be graphed, it's data will be empty.
+        name: 'Constant ' + consT,
+        color: 'rgba(223, 83, 83, .5)',//data is [x, y];
+        data: consT_data
 
+    });
+  }
+  if (zOrigin_data.length) {
+    series.push({
+        name: 'Zero at Origin',
+        color: 'rgba(119, 152, 191, .5)',
+        data: zOrigin_data
+    });
+  }
+  if (pOrigin_data.length) {//if no pole at origin, will just be 0.
+    series.push({
+        name: 'Pole at Origin',
+        color: 'rgba(20, 191, 20, 1)',
+        data: pOrigin_data
+    });
+  }
+  Highcharts.chart('bodePhase', {
+    chart: {
+        type: 'line',
+        zoomType: 'xy'
+    },
+    title: {
+        text: 'Bode Plot: Phase'
+    },
+    xAxis: {
+      type: 'linear',//'logarithmic'. can't plot sub-zero values on a logarithmic axis
+        title: {
+            enabled: true,
+            text: 'Frequency ω'//ω, &#x03C9;
+        },
+        startOnTick: true,
+        endOnTick: true,
+        showLastLabel: true
+    },
+    //type: 'linear','logarithmic'
+    yAxis: {
+      type: 'linear',
+        title: {
+            text: 'Phase'
+        }
+    },
+    legend: {
+        layout: 'vertical',
+        align: 'right',//'left'
+        verticalAlign: 'bottom',//'top'
+        x: 100,
+        y: 70,
+        floating: true,
+        backgroundColor: Highcharts.defaultOptions.chart.backgroundColor,
+        borderWidth: 1
+    },
+    plotOptions: {
+        scatter: {
+            marker: {
+                radius: 5,
+                states: {
+                    hover: {
+                        enabled: true,
+                        lineColor: 'rgb(100,100,100)'
+                    }
+                }
+            },
+            states: {
+                hover: {
+                    marker: {
+                        enabled: false
+                    }
+                }
+            },
+            tooltip: {
+                headerFormat: '<b>{series.name}</b><br>',
+                pointFormat: '{point.x} &#x03C9;, {point.y} dB'
+            }
+        }
+    },
+    series: series
+  });
 }
