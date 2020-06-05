@@ -35,7 +35,7 @@ function onClick() {
   var bdata = bodeData(numAns, denomAns);
   mkBode(bdata[0], bdata[1], bdata[2], bdata[3], bdata[4], bdata[5], bdata[6],
     bdata[7], bdata[8], bdata[9], bdata[10], bdata[11], bdata[12], bdata[13],
-    bdata[14], bdata[15], bdata[16], bdata[17]);
+    bdata[14], bdata[15], bdata[16], bdata[17], bdata[18]);
 }
 //returns list contaniing polynomial form, coefficients, roots, order, etc.
 function finder (polynomialform) {
@@ -566,7 +566,7 @@ function bodeData (numAns, denomAns) {//add pReal & zReal nextx
   var consT, calc, x, w0, zeta, realPart, imagPart, diff, base, peak, zOrigin = 0, pOrigin = 0, zReal = 0, pReal = 0;//false by default.
   var consT_data = [], zOrigin_data = [], pOrigin_data = [], zReal_data = [], pReal_data = [], zComp_data = [], pComp_data = [], allFreq_data = [];
   var zRealArr = [], pRealArr = [];//array storing data in more accessible form.
-  var zReal_dataApprox = [], pReal_dataApprox = [], zComp_dataApprox = [], pComp_dataApprox = [];//approximation of data.
+  var zReal_dataApprox = [], pReal_dataApprox = [], zComp_dataApprox = [], pComp_dataApprox = [], allFreq_dataApprox;//approximation of data.
   var zReals = [], pReals = [];//array for storing real zeros & poles.
   var zRealCount = 0, zCompCount = 0;//# of real zeros & complex zeros.
   var pRealCount = 0, pCompCount = 0;//# of real poles
@@ -648,39 +648,17 @@ function bodeData (numAns, denomAns) {//add pReal & zReal nextx
   //should we consolidate all for loops & include if statements inside them?
   //each data point of total is sum of rest at its position.
   //multiply each one by varible storing 1 or 0 to determine if it is included.
-  for (let i=0; i<100; i++) {//each data point for total is sum of other data points.
-    calc = parseInt(consT_data[0], 10);//consT will always be horizontal & the same
-    if(zOrigin) {
-      calc += parseInt(zOrigin_data[i], 10);
-    }
-    if (pOrigin) {
-      calc += parseInt(pOrigin_data[i], 10);
-    }
-    if (zReal) {
-      for (let j=0; j<zRealCount; j++) {//is htere any way you can work this into the rest?
-        calc += parseInt(zRealArr[j][i], 10);
-      }
-    }
-    if (pReal) {
-      for (let j=0; j<pRealCount; j++) {//is htere any way you can work this into the rest?
-        calc += parseInt(pRealArr[j][i], 10);
-      }
-    }
-    if (zComp_data[0].length) {//if first item in zComp_data has anything in it.
-      for (let j=0; j<zComp_data.length; j++) {//is htere any way you can work this into the rest?
-        calc += parseInt(zComp_data[j][i], 10);
-      }
-    }
-    if (pComp_data[0].length) {//if first item in zComp_data has anything in it.
-      for (let j=0; j<pComp_data.length; j++) {//is htere any way you can work this into the rest?
-        calc += parseInt(pComp_data[j][i], 10);
-      }
-    }
-    allFreq_data.push([w[i], calc]);
-  }
+  //find total exact frequency plot.
+  allFreq_data = allFreq(consT_data, w, zOrigin, zOrigin_data, pOrigin, pOrigin_data, zReal, zRealCount, zRealArr, pReal, pRealArr, pRealCount, zComp_data, pComp_data);
+  //find total approximate frequency plot.
+  allFreq_dataApprox = allFreq(consT_data, w, zOrigin, zOrigin_data, pOrigin, pOrigin_data, zReal, zRealCount, zReal_dataApprox, pReal, pReal_dataApprox, pRealCount, zComp_dataApprox, pComp_dataApprox);
+
+  /*if (JSON.stringify(allFreq_data) == JSON.stringify(allFreq_data2)) {
+    console.log("Yes it works.");
+  }*/
   return [consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
     pReal_data, zComp_data, pComp_data, zRealCount, pRealCount, allFreq_data,
-    zReal_dataApprox, pReal_dataApprox, zComp_dataApprox, pComp_dataApprox, nComp, dComp,
+    zReal_dataApprox, pReal_dataApprox, zComp_dataApprox, pComp_dataApprox, allFreq_dataApprox, nComp, dComp,
     [1, zOrigin, pOrigin, zReal, pReal, nComp.length, dComp.length]];
 }
 /* (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pReal_data, zComp_data, pComp_data
@@ -716,6 +694,7 @@ function compArrToStr(comp) {
 //works on dComp or nComp to get their data.
 function compConjugateData (comp, w, sign) {//sign will be -1 or +1
   var comp_data = [], comp_dataApprox = [], base, peak, imagPart, realPart, x, zeta, w0;
+  let a, b;//a + jb, a = 1-(w/w0)^2 b = 2*zeta*w/(w0) w[j]
   for (let i=0; i<comp.length; i++) {//loop through complex roots in numerator.
     realPart = comp[i][0];
     imagPart = comp[i][1];
@@ -757,12 +736,21 @@ function compConjugateData (comp, w, sign) {//sign will be -1 or +1
           }
         }
       }
-    }
+      //exact version starts here:
+      //a + jb, a = 1-(w/w0)^2 b = 2*zeta*w/(w0) w[j]. 20*log10(|a+jb|)
+      for (let j=0; j<100; j++) {//should we have included this in both the other for loops or had there be only one?
+        a = 1-Math.pow((w[j]/w0), 2);
+        b = 2*zeta*(w[j]/w0);
+        x = Math.sqrt(a*a+b*b);//magnitude |a+jb|
+        comp_data[i].push([w[j], sign*40*Math.log10(x)]);
+        //approx & exact are closer when both 20 or 40.
+      }
+    }//there is no way the exact way can be this easy.
   }
   return [comp_data, comp_dataApprox]
 }
-function allFreq(zOrigin, zOrigin_data, pOrigin, pOrigin_data, zReal, zReal_data, pReal, pReal_data, zComp_data, pComp_data) {
-  var allFreq_data = [];
+function allFreq(consT_data, w, zOrigin, zOrigin_data, pOrigin, pOrigin_data, zReal, zRealArr, zRealCount, pReal, pReal_data, pRealArr, zComp_data, pComp_data) {
+  var allFreq_data = [], calc;
   for (let i=0; i<100; i++) {//each data point for total is sum of other data points.
     calc = parseInt(consT_data[0], 10);//consT will always be horizontal & the same
     if(zOrigin) {
@@ -793,6 +781,7 @@ function allFreq(zOrigin, zOrigin_data, pOrigin, pOrigin_data, zReal, zReal_data
     }
     allFreq_data.push([w[i], calc]);
   }
+  return allFreq_data;
 }
 //executes when graph is clicked.
 /*function onGraphClick () {
@@ -812,7 +801,7 @@ function allFreq(zOrigin, zOrigin_data, pOrigin, pOrigin_data, zReal, zReal_data
 
 function mkBode (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pReal_data,
    zComp_data, pComp_data, zRealCount, pRealCount, allFreq_data, zReal_dataApprox,
-   pReal_dataApprox, zComp_dataApprox, pComp_dataApprox, nComp, dComp, options) {
+   pReal_dataApprox, zComp_dataApprox, pComp_dataApprox, allFreq_dataApprox, nComp, dComp, options) {
   var series = [];
   if (options[0]) {
     series.push(
@@ -873,14 +862,14 @@ function mkBode (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pRea
       print.push(compArrToStr(nComp[i]));
       series.push({
           name: 'Complex Zero '+ print[i] + ' Approximation',//nComp[i][0].toString() + ' + ' + nComp[i][1].toString() +' Approximation',
-          color: 'rgba(119, 152, 191, 1)',
+          color: 'rgba(5, 191, 5, 1)',
           data: zComp_dataApprox[i]//data for relevant real zero.
       });
     }
     for (let i=0; i<zComp_data.length; i++) {
       series.push({
-          name: 'Complex Zero '+ print[i] + ' Approximation',//nComp[i][0].toString() + ' + ' + nComp[i][1].toString() +' Approximation',
-          color: 'rgba(119, 152, 191, 1)',
+          name: 'Complex Zero '+ print[i],//nComp[i][0].toString() + ' + ' + nComp[i][1].toString() +' Approximation',
+          color: 'rgba(5, 191, 5, 1)',
           data: zComp_data[i]//data for relevant real zero.
       });
     }
@@ -890,15 +879,15 @@ function mkBode (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pRea
     for (let i=0; i<pComp_dataApprox.length; i++) {
       print.push(compArrToStr(dComp[i]));
       series.push({
-          name: 'Complex Pole '+ print[i] + ' Approximation',//nComp[i][0].toString() + ' + ' + nComp[i][1].toString() +' Approximation',
-          color: 'rgba(119, 152, 191, 1)',
+          name: 'Complex Pole '+ print[i],//nComp[i][0].toString() + ' + ' + nComp[i][1].toString() +' Approximation',
+          color: 'rgba(5, 191, 5, 1)',
           data: pComp_dataApprox[i]//data for relevant real zero.
       });
     }
     for (let i=0; i<pComp_data.length; i++) {
       series.push({
           name: 'Complex Pole '+ print[i] + ' Approximation',//nComp[i][0].toString() + ' + ' + nComp[i][1].toString() +' Approximation',
-          color: 'rgba(119, 152, 191, 1)',
+          color: 'rgba(5, 191, 5, 1)',
           data: pComp_data[i]//data for relevant real zero.
       });
     }
@@ -908,6 +897,11 @@ function mkBode (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pRea
         name: 'Total Bode',
         color: 'rgba(0, 0, 0, 1)',
         data: allFreq_data//data for relevant real zero.
+    });
+    series.push({
+        name: 'Total Bode',
+        color: 'rgba(0, 0, 0, 1)',
+        data: allFreq_dataApprox//data for relevant real zero.
     });
   }
 
