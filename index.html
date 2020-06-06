@@ -24,11 +24,13 @@
   https://cdnjs.cloudflare.com/ajax/libs/jsxgraph/0.99.7/jsxgraphcore.js
   -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsxgraph/0.99.7/jsxgraphcore.js"></script>
+  <script src="https://rawgithub.com/highcharts/draggable-legend/master/draggable-legend.js"></script>
+  <!-- lets user drag the legend -->
   <link rel="stylesheet" type="text/css" href="https://jsxgraph.org/distrib/jsxgraph.css">
 
  </head>
- <body>
-   <div align="left">
+ <body onload="document.getElementById('top').scrollIntoView()">
+   <div align="left" id="top">
      Enter numerator polynomial in one of these three forms:
      <p></p>
      <input type="checkbox" id="polyCheck1" onclick="polySelect(1, 0)" checked></input>
@@ -58,22 +60,6 @@
      <p></p>
      <label for="Polynomial2" id="denomLabel">Denominator:</label>
      <input type="text" id="Polynomial2" value="1"></input><br>
-     <!--<label for="Order2">Order: </label>
-     <input type="text" id="Order2" value="0"></input>-->
-     <!--<input type="checkbox" id="constant" checked></input>
-     <label for="constant">Constant term</label><br>
-     <input type="checkbox" id="zOrigin" checked></input>
-     <label for="zOrigin">Zero at Origin</label><br>
-     <input type="checkbox" id="pOrigin" checked></input>
-     <label for="pOrigin">Pole at Origin</label><br>
-     <input type="checkbox" id="zReal" checked></input>
-     <label for="zReal">Real Zero(s)</label><br>
-     <input type="checkbox" id="pReal" checked></input>
-     <label for="pReal">Real Pole(s)</label><br>
-     <input type="checkbox" id="zComp" checked></input>
-     <label for="zComp">Complex Zero(s)</label><br>
-     <input type="checkbox" id="pComp" checked></input>
-     <label for="pComp">Complex Pole(s)</label>-->
      <input type="button" nane="submit" value="Submit" onclick="onClick()"></input>
      <p></p>
      <label for="variable">Variable (x by default) </label>
@@ -89,9 +75,9 @@
      -6x^3-7x^2+1
      <p></p>
   </div>
-  <div align="left">
+  <!--<div align="left">
     <p id="numerator"></p>
-    <p id="poly"></p><!--Contains polynomial-->
+    <p id="poly"></p>
     <p id="factors"></p>
     <p id="roots"></p>
     <p id="factorExp"></p>
@@ -103,7 +89,7 @@
      <p id="numTerms"></p>
      <p></p>
      <p id="denominator"></p>
-     <p id="poly2"></p><!--Contains polynomial-->
+     <p id="poly2"></p>
      <p id="factors2"></p>
      <p id="roots2"></p>
      <p id="factorExp2"></p>
@@ -113,17 +99,12 @@
       <p id="order2"></p>
       <p id="numTerms2"></p>
       <p id="polynomialform2"></p>
-   </div>
-   <div id="desmos" style="width: 600px; height: 400px;"></div>
+   </div>-->
    To stop graphing one componet, tap its icon in the chart legend.
    <div align="right">
      <figure class="highcharts-figure">
     <div id="container"></div>
     <p class="highcharts-description">
-        Scatter charts are often used to visualize the relationships
-        between data in two dimensions. This chart is visualizing
-        height and weight by gender, showing a clear trend where men
-        are on average taller and heavier than women.
     </p>
   </figure>
      <!--<canvas id="rootLocus" width="200" height="200"></canvas>
@@ -146,8 +127,7 @@
     <br>
     <input type="checkbox" id="pOriginCheck"></input>
     <label for="rootCheck" id="pOriginLabel"></label>-->
-    Just writing some text.
-    <div id="bodeApprox" class="bodeApprox" style="width:500px; height:500px"></div>
-    <div id="bodeExact" class="bodeExact" style="width:500px; height:500px"></div>
+    <div id="desmos" style="width: 600px; height: 400px;"></div>
+
  </body>
 </html>

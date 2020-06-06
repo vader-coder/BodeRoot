@@ -7,12 +7,17 @@ function onClick() {
   var polyCheck2 = document.getElementById('polyCheck2').checked;//check which checkbox was checked
   var factorCheck2 = document.getElementById('factorCheck2').checked;
   var rootCheck2 = document.getElementById('rootCheck2').checked;
+  var variable = document.getElementById('variable').value;
+  if (getElementById('Polynomial1').value.indexOf(variable) == -1 || getElementById('Polynomial2').value.indexOf(variable) == -1) {
+    alert("You need to enter a variable in both fields.");
+    return;
+  }
   var polynomialform = getPoly(polyCheck, factorCheck, rootCheck, '1');//numerator
   var polynomialform2 = getPoly(polyCheck2, factorCheck2, rootCheck2, '2');//denominator
   var numAns = finder(polynomialform);//numerator answers
   var denomAns = finder(polynomialform2);//denominator answers
 
-  labels = ['expanded form: ', 'factors: ', 'roots: ', 'exponet of factors & roots: ', 'polynomial coefficients: ','powers of variables corresponding to each coefficient: ',
+  /*labels = ['expanded form: ', 'factors: ', 'roots: ', 'exponet of factors & roots: ', 'polynomial coefficients: ','powers of variables corresponding to each coefficient: ',
   'variable term for each coefficient: ','order: ', 'number of terms: '];
   var ans = ['poly', 'factors', 'roots', 'factorExp', 'coef', 'powers', 'polyTerms', 'order', 'numTerms'];//numerator
   var ans2 = ['poly2', 'factors2', 'roots2', 'factorExp2', 'coef2', 'powers2', 'polyTerms2', 'order2', 'numTerms2'];//denominator
@@ -22,7 +27,7 @@ function onClick() {
     document.getElementById(ans2[i]).innerHTML = labels[i] + denomAns[ans[i]].toString();
   }
   document.getElementById('numerator').innerHTML = "Numerator";
-  document.getElementById('denominator').innerHTML = "Denominator";
+  document.getElementById('denominator').innerHTML = "Denominator";*/
   if (numAns['order'] > denomAns['order']) {
     alert('Order of the numerator must be <= that of the denominator');
     return;
@@ -32,14 +37,17 @@ function onClick() {
   /*(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pReal_data, zComp_data, pComp_data,
      zRealCount, pRealCount, allFreq_data, zReal_dataApprox, pReal_dataApprox, zComp_dataApprox,
       pComp_dataApprox, nComp, dComp, options)*/
-  var bdata = bodeData(numAns, denomAns);
+  var bdata, pdata;
+  [bdata, pdata] = bodeData(numAns, denomAns);
   mkBode(bdata[0], bdata[1], bdata[2], bdata[3], bdata[4], bdata[5], bdata[6],
     bdata[7], bdata[8], bdata[9], bdata[10], bdata[11], bdata[12], bdata[13],
     bdata[14], bdata[15], bdata[16], bdata[17], bdata[18]);
-  bdata = bodeDataPhase()
-  //w, consT_data, zOrigin_data, pOrigin_data, zReals, pReals, zRealArr, pRealArr
-  mkBodePhase(bdata[0], bdata[1], bdata[2], bdata[3]);
 
+//(consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRealArr, pReals, pRealArr, zComp_data, pComp_data, zComp_dataApprox, pComp_data, pComp_dataApprox, nComp, dComp)
+  pdata = bodeDataPhase(pdata[0], pdata[1], pdata[2], pdata[3], pdata[4], pdata[5], pdata[6], pdata[7], pdata[8], pdata[9], pdata[10], pdata[11], pdata[12], pdata[13], pdata[14]);
+  //(consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRealArr, pReals, pRealArr, zComp_data, pComp_data, zComp_dataApprox, pComp_data, pComp_dataApprox)
+  mkBodePhase(pdata[0], pdata[1], pdata[2], pdata[3], pdata[4], pdata[5], pdata[6], pdata[7], pdata[8], pdata[9], pdata[10], pdata[11], pdata[12], pdata[13], pdata[14], pdata[15], pdata[16]);
+  document.getElementById('bode').scrollIntoView();
 }
 //returns list contaniing polynomial form, coefficients, roots, order, etc.
 function finder (polynomialform) {
@@ -373,79 +381,6 @@ function getPoly (polyCheck, factorCheck, rootCheck, num) {
   }
   return y.toString();
 }
-//function to make plot
-//copyright policy on code from demos?
-function mkPlot(numRootStr, denomRootStr) {
-  var numRoots = rootsStrArrToChartFormat(numRootStr);
-  var denomRoots = rootsStrArrToChartFormat(denomRootStr);
-  Highcharts.chart('container', {
-    chart: {
-        type: 'scatter',
-        zoomType: 'xy'
-    },
-    title: {
-        text: 'Plot of Roots on Imaginary and Real Axis'
-    },
-    xAxis: {
-        title: {
-            enabled: true,
-            text: 'Real'
-        },
-        startOnTick: true,
-        endOnTick: true,
-        showLastLabel: true
-    },
-    yAxis: {
-        title: {
-            text: 'Imaginary'
-        }
-    },
-    legend: {
-        layout: 'vertical',
-        align: 'left',
-        verticalAlign: 'top',
-        x: 100,
-        y: 70,
-        floating: true,
-        backgroundColor: Highcharts.defaultOptions.chart.backgroundColor,
-        borderWidth: 1
-    },
-    plotOptions: {
-        scatter: {
-            marker: {
-                radius: 5,
-                states: {
-                    hover: {
-                        enabled: true,
-                        lineColor: 'rgb(100,100,100)'
-                    }
-                }
-            },
-            states: {
-                hover: {
-                    marker: {
-                        enabled: false
-                    }
-                }
-            },
-            tooltip: {
-                headerFormat: '<b>{series.name}</b><br>',
-                pointFormat: '{point.x} + {point.y}i'
-            }
-        }
-    },
-    series: [{
-        name: 'Numerator',
-        color: 'rgba(223, 83, 83, .5)',//data is [x, y];
-        data: [[2, 0], [4, 1], [4, -1]]//numRoots
-
-    }, {
-        name: 'Denominator',
-        color: 'rgba(119, 152, 191, .5)',
-        data: [[-1, 0], [1, 0]]//denomRoots
-    }]
-});
-}
 //converts string array to format that can use.
 function rootsStrArrToChartFormat(roots) {
   var temp, realPart, imagPart;
@@ -466,13 +401,13 @@ function rootsStrArrToChartFormat(roots) {
       }
     }
     if (roots[i].indexOf('i') == -1) {//no i, isn't irrational.
-      roots[i] = [parseInt(roots[i], 10), 0];
+      //roots[i] = [parseInt(roots[i], 10), 0];
       real.push(parseInt(roots[i], 10));
     }
-    if (typeof(parseInt(nerdamer('realpart('+roots[i].toString()+')').text(), 10)) == typeof(5)) {//it is complex, not just imaginary.
+    else if (typeof(parseInt(nerdamer('realpart('+roots[i].toString()+')').text(), 10)) == typeof(5)) {//it is complex, not just imaginary.
       realPart = parseInt(nerdamer('realpart('+roots[i].toString()+')').text(), 10);
       imagPart = parseInt(nerdamer('imagpart('+roots[i].toString()+')').text(), 10);
-      roots[i] = [realPart, imagPart];
+      //roots[i] = [realPart, imagPart];
       comp.push([realPart, imagPart]);
     }
   }
@@ -559,7 +494,7 @@ function desmos(constant, nRoot, dRoot) {
 }
 //takes numAns, denomAns & returns list of data for bode plot
 //each root will only occur once, and its exponet will be listed in numAns['factorExp'] or denomAns['factorExp'];
-function bodeData (numAns, denomAns) {//add pReal & zReal nextx
+function bodeData(numAns, denomAns) {//add pReal & zReal nextx
   var nRoot = rootsStrArrToChartFormat(numAns['roots']);
   var dRoot = rootsStrArrToChartFormat(denomAns['roots']);
   var nComp = nRoot[1], dComp = dRoot[1];
@@ -585,10 +520,10 @@ function bodeData (numAns, denomAns) {//add pReal & zReal nextx
   if (consT == Infinity || consT == -Infinity || consT == 0) {
     consT = 1;//log10(1) = 10, and a logarithmic scale won't work.
   }//what do we actually do here, where d[divisor] = 0?
-  consT = 20*Math.log10(Math.abs(consT));
+  x = 20*Math.log10(Math.abs(consT));
   for (let i=1; i<101; i++) {//started at 0, can't graph logarithmically.
     w.push(roundDecimal(i*0.1, 1));//w.push(roundDecimal(1+ i*0.1, 1)); might want multiple versions of this.
-    consT_data.push([w[i-1], consT]);
+    consT_data.push([w[i-1], x]);
   }
   for (let i=0;i<nRoot[0].length; i++) {//numerator real zeros.
     if (nRoot[0][i] == 0) {//zero at origin
@@ -616,21 +551,24 @@ function bodeData (numAns, denomAns) {//add pReal & zReal nextx
       zRealCount++;
     }//lets figure out a good way to track how many of each root there are.
   }
-  [zComp_data, zComp_dataApprox] = compConjugateData(nComp, w, 1);
+  if (nComp[0]) {//only call this if there are complex conjugate roots in the numerator.
+    [zComp_data, zComp_dataApprox] = compConjugateData(nComp, w, 1);
+  }
   for (let j=0; j<zRealCount; j++) {//is there a more elegant solution?
     zRealArr.push(zReal_data[j][1]);
   }
   for (let i=0;i<dRoot[0].length; i++) {//loop through real zeros.
-    if (dRoot[i][0] == 0 && dRoot[i][1] == 0) {//zero pole
+    if (dRoot[0][i] == 0) {//zero pole
       pOrigin = 1;
       for (let j=0; j<100; j++) {
         pOrigin_data.push([w[j], -20*dFactorExp[i]*Math.log10(w[j])]);
       }
     }
-    if (dRoot[i][0] != 0 && dRoot[i][1] == 0) {//real pole
+    if (dRoot[0][i]) {//real pole
       pReal = 1;
       pReals.push(dRoot[i][0]);
       pReal_data.push([dRoot[i][0], []]);//push a 2D array to pReal_data. second item will become data for graphing every real root.
+      pReal_dataApprox.push([]);//why didn't this come up earlier?
       w0 = Math.abs(dRoot[i][0]);
       for (let j=0; j<100; j++) {
         x = w[j]/w0;
@@ -648,23 +586,25 @@ function bodeData (numAns, denomAns) {//add pReal & zReal nextx
   for (let j=0; j<pRealCount; j++) {//is there a more elegant solution?
     pRealArr.push(pReal_data[j][1]);
   }
-  [pComp_data, pComp_dataApprox] = compConjugateData(dComp, w, -1);
+  if (dComp[0]) {
+    [pComp_data, pComp_dataApprox] = compConjugateData(dComp, w, -1);
+  }
   //should we consolidate all for loops & include if statements inside them?
   //each data point of total is sum of rest at its position.
   //multiply each one by varible storing 1 or 0 to determine if it is included.
   //find total exact frequency plot.
-  allFreq_data = allFreq(consT_data, w, zOrigin, zOrigin_data, pOrigin, pOrigin_data, zReal, zRealCount, zRealArr, pReal, pRealArr, pRealCount, zComp_data, pComp_data);
+  allFreq_data = allFreq(consT_data, w, zOrigin, zOrigin_data, pOrigin, pOrigin_data, zReal, zRealCount, zRealArr, pReal, pRealCount, pRealArr, zComp_data, pComp_data);
   //find total approximate frequency plot.
-  allFreq_dataApprox = allFreq(consT_data, w, zOrigin, zOrigin_data, pOrigin, pOrigin_data, zReal, zRealCount, zReal_dataApprox, pReal, pReal_dataApprox, pRealCount, zComp_dataApprox, pComp_dataApprox);
+  allFreq_dataApprox = allFreq(consT_data, w, zOrigin, zOrigin_data, pOrigin, pOrigin_data, zReal, zRealCount, zReal_dataApprox, pReal, pRealCount, pReal_dataApprox, zComp_dataApprox, pComp_dataApprox);
 
   /*if (JSON.stringify(allFreq_data) == JSON.stringify(allFreq_data2)) {
     console.log("Yes it works.");
   }*/
-  return [consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
+  return [[consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
     pReal_data, zComp_data, pComp_data, zRealCount, pRealCount, allFreq_data,
     zReal_dataApprox, pReal_dataApprox, zComp_dataApprox, pComp_dataApprox, allFreq_dataApprox, nComp, dComp,
-    [1, zOrigin, pOrigin, zReal, pReal, nComp.length, dComp.length]];
-}
+    [1, zOrigin, pOrigin, zReal, pReal, nComp.length, dComp.length]], [w, consT, consT_data, zOrigin_data, pOrigin_data, zReals, pReals, zRealArr, pRealArr, nComp, dComp]];
+}//w, consT, consT_data, zOrigin_data, pOrigin_data, zReals, pReals, zRealArr, pRealArr, nComp, dComp)
 /* (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pReal_data, zComp_data, pComp_data
    zRealCount, pRealCount, allFreq_data, zReal_dataApprox, pReal_dataApprox, zComp_dataApprox,
     pComp_dataApprox, nComp, dComp, options) */
@@ -707,9 +647,9 @@ function compConjugateData (comp, w, sign) {//sign will be -1 or +1
     zeta = Math.cos(x);
     //pg 293 of book vs https://lpsa.swarthmore.edu/Bode/BodeReviewRules.html: 0<zeta<1 or 0<=zeta<1?
     //how is this possible for a complex conjugate? one will be -, other will be +.
-    if (zeta > 0 && zeta < 1) {//will have to account for a # & it's conjugate being in there (I think? or will zeta take care of that?)
     comp_data.push([]);
     comp_dataApprox.push([]);
+    if (zeta > 0 && zeta < 1) {//will have to account for a # & it's conjugate being in there (I think? or will zeta take care of that?)
       if (zeta < 0.5) {
         for (let j=0; j<100; j++) {
           x = w[j];//lines 40*Math.log10(x) & y=0 intersect at x = 1.
@@ -753,7 +693,7 @@ function compConjugateData (comp, w, sign) {//sign will be -1 or +1
   }
   return [comp_data, comp_dataApprox]
 }
-function allFreq(consT_data, w, zOrigin, zOrigin_data, pOrigin, pOrigin_data, zReal, zRealArr, zRealCount, pReal, pReal_data, pRealArr, zComp_data, pComp_data) {
+function allFreq(consT_data, w, zOrigin, zOrigin_data, pOrigin, pOrigin_data, zReal, zRealArr, zRealCount, pReal, pRealCount, pRealArr, zComp_data, pComp_data) {
   var allFreq_data = [], calc;
   for (let i=0; i<100; i++) {//each data point for total is sum of other data points.
     calc = parseInt(consT_data[0], 10);//consT will always be horizontal & the same
@@ -773,12 +713,12 @@ function allFreq(consT_data, w, zOrigin, zOrigin_data, pOrigin, pOrigin_data, zR
         calc += parseInt(pRealArr[j][i], 10);
       }
     }
-    if (zComp_data[0].length) {//if first item in zComp_data has anything in it.
+    if (zComp_data[0]) {//if first item in zComp_data exists
       for (let j=0; j<zComp_data.length; j++) {//is htere any way you can work this into the rest?
         calc += parseInt(zComp_data[j][i], 10);
       }
     }
-    if (pComp_data[0].length) {//if first item in zComp_data has anything in it.
+    if (pComp_data[0]) {//if first item in zComp_data has anything in it.
       for (let j=0; j<pComp_data.length; j++) {//is htere any way you can work this into the rest?
         calc += parseInt(pComp_data[j][i], 10);
       }
@@ -798,36 +738,32 @@ function mkBode (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pRea
    zComp_data, pComp_data, zRealCount, pRealCount, allFreq_data, zReal_dataApprox,
    pReal_dataApprox, zComp_dataApprox, pComp_dataApprox, allFreq_dataApprox, nComp, dComp, options) {
   var series = [];
-  if (options[0]) {
-    series.push(
-    {//if something is to not be graphed, it's data will be empty.
-        name: 'Constant ' + consT,
-        color: 'rgba(223, 83, 83, .5)',//data is [x, y];
-        data: consT_data
-
-    });
-  }
-  if (zOrigin_data.length && options[1]) {//if no z at origin, will just be 0.
+  series.push({//if something is to not be graphed, it's data will be empty.
+      name: 'Constant ' + consT,
+      color: 'rgba(223, 83, 83, .5)',//data is [x, y];
+      data: consT_data
+  });
+  if (zOrigin_data[0]) {//if no z at origin, will just be 0.
     series.push({
         name: 'Zero at Origin',
         color: 'rgba(119, 152, 191, .5)',
         data: zOrigin_data
     });
   }
-  if (pOrigin_data.length && options[2]) {//if no pole at origin, will just be 0.
+  if (pOrigin_data[0]) {//check if 1st item exists
     series.push({
         name: 'Pole at Origin',
         color: 'rgba(20, 191, 20, 1)',
         data: pOrigin_data
     });
   }
-  if (zRealCount && options[3]) {//[]
+  if (zReal_data[0]) {//check if 1st item exists
+    for (let i=0; i<zRealCount; i++) {
       series.push({
           name: 'Real Zero '+zReal_data[i][0].toString(),
           color: 'rgba(119, 152, 191, 1)',
           data: zReal_data[i][1]//data for relevant real zero.
       });
-    for (let i=0; i<zRealCount; i++) {
       series.push({
           name: 'Real Zero '+zReal_data[i][0].toString() + ' Approximation',
           color: 'rgba(119, 152, 191, 1)',
@@ -835,15 +771,13 @@ function mkBode (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pRea
       });
     }
   }
-  if (pRealCount && options[4]) {
+  if (pReal_data[0]) {//is having two for loops more secure?
     for (let i=0; i<pRealCount; i++) {
       series.push({
           name: 'Real Pole '+pReal_data[i][0].toString(),
           color: 'rgba(119, 152, 191, 1)',
           data: pReal_data[i][1]//data for relevant real zero.
       });
-    }
-    for (let i=0; i<pRealCount; i++) {
       series.push({
           name: 'Real Pole '+pReal_data[i][0].toString()+' Approximation',
           color: 'rgba(119, 152, 191, 1)',
@@ -894,8 +828,8 @@ function mkBode (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pRea
         data: allFreq_data//data for relevant real zero.
     });
     series.push({
-        name: 'Total Bode',
-        color: 'rgba(0, 0, 0, 1)',
+        name: 'Total Bode' + ' Approximation',
+        color: 'rgba(50, 0, 50, 1)',
         data: allFreq_dataApprox//data for relevant real zero.
     });
   }
@@ -927,7 +861,7 @@ function mkBode (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pRea
             text: 'Magnitude dB'
         }
     },
-    legend: {
+    /*legend: {
         layout: 'vertical',
         align: 'right',//'left'
         verticalAlign: 'bottom',//'top'
@@ -935,8 +869,28 @@ function mkBode (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pRea
         y: 70,
         floating: true,
         backgroundColor: Highcharts.defaultOptions.chart.backgroundColor,
-        borderWidth: 1
-    },
+        borderWidth: 1,
+        title: {
+                text: ':: Drag me'
+            },
+        floating: true,
+        draggable: true
+    }*/legend: {
+            layout: 'vertical',
+            backgroundColor: 'white',
+            align: 'right',
+            verticalAlign: 'top',
+            y: 60,
+            x: -10,
+            borderWidth: 1,
+            borderRadius: 0,
+            title: {
+                text: ':: Drag me'
+            },
+            floating: true,
+            draggable: true,
+            zIndex: 20
+        },
     plotOptions: {
         scatter: {
             marker: {
@@ -965,40 +919,140 @@ function mkBode (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pRea
   });
 }
 //w is input (like #s plugged in for x).
-function bodeDataPhase (w, consT_data, zOrigin_data, pOrigin_data, zReals, pReals, zRealArr, pRealArr) {
-  var w = [], consT_data = [], zOrigin_data = [], pOrigin_data = [];
-  var zReal = zReals.length, pReal = pReals.length;
+function bodeDataPhase (w, consT, consT_data, zOrigin_data, pOrigin_data, zReals, pReals, zRealArr, pRealArr, nComp, dComp) {
+  var x, w0, theta, zReal = zReals.length, pReal = pReals.length,
+  zOrigin, pOrigin, zRealCount = zReal, pRealCount = pReal, zReal_dataApprox, pReal_dataApprox,
+  zComp_data, pComp_data, zComp_dataApprox, pComp_dataApprox;
+  //pRealCount vs pReal might confuse your readers.. mbe try to eliminate the flags you can?
   //get w.
   for (let i=0; i<100; i++) {
     if (consT > 0) {
-      consT_data[i] = [w, 0];
+      consT_data[i] = [w[i], 0];
     }
     else if (consT < 0) {
-      consT_data[i] = [w[i], 180];
+      consT_data[i] = [w[i], 180];//-180 would also work.
     }
-    if (zOrigin) {
+    if (zOrigin_data.length) {//they wouldn't have a length if there was no zero at origin.
       zOrigin_data[i] = [w[i], 90];
+      zOrigin = 1;
     }
-    if (pOrigin) {
+    if (pOrigin_data[0]) {
       pOrigin_data[i] = [w[i], -90];
+      pOrigin = 1;
     }
-    /*if (zReal) {//loop through real zeros. figure out this again.
-      for (let j=0; j<zReal; j++) {
-        zReal_data.push([])
-        if (w < 0.1*Math.abs(zReals[j])) {
-
+  }
+  if (zReal) {//loop through real zeros. figure out this again.
+    [zRealArr, zReal_dataApprox] = realPhaseData(w, 1, zReals);
+    //would it be better to change original items w/ zRealArr[i]? we would pass in zRealArr as a parameter.
+  }
+  if (pReal) {
+    [pRealArr, pReal_dataApprox] = realPhaseData(w, -1, pReals);
+  }
+  //function compConjugatePhaseData (comp, w, sign) {//sign will be -1 or +1
+  if (nComp[0]) {
+    [zComp_data, zComp_dataApprox] = compConjugatePhaseData(nComp, w, 1);
+  }
+  if (dComp[0]) {//double check that this is not true when there are no complex poles.
+    [pComp_data, pComp_dataApprox] = compConjugatePhaseData(dComp, w, -1);
+  }
+  allFreq_data = (consT_data, w, zOrigin, zOrigin_data, pOrigin, pOrigin_data, zReal, zRealArr, zRealCount, pReal, pRealCount, pRealArr, zComp_data, pComp_data);
+  //for allFreq_data, you could probably eliminate some of the parameters.
+  return [consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRealArr, zReal_dataApprox, pReals, pRealArr, zReal_dataApprox, zComp_data, pComp_data, zComp_dataApprox, pComp_data, pComp_dataApprox, nComp, dComp];
+  //(consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRealArr, pReals, pRealArr, zComp_data, pComp_data, zComp_dataApprox, pComp_data, pComp_dataApprox, nComp, dComp)
+}
+// generates phase data for real zeros & poles.
+//sign = 1 for real zeros, sign = -1 for real poles.
+function realPhaseData(w, sign, zReals) {
+  var zReal_data = [], zReal_dataApprox = [], theta, x, w0, zReal = zReals.length,
+  lowerBound, upperBound, slope, yIntercept;
+  for (let i=0; i<zReal; i++) {//loop through real zeros.
+      zReal_data.push([]);
+      zReal_dataApprox.push([]);
+      w0 = Math.abs(zReals[i]);//w0, reciprocal of zero.
+      lowerBound = 0.1*w0;
+      upperBound = 10*w0;
+      for (let j=0; j<100; j++) {
+        //approximate:
+        if (w[j]<lowerBound) {
+          zReal_dataApprox[i].push(0);
         }
-        else if (w > 10*Math.abs(zReals[j])) {
-
+        else if (w[j]>upperBound) {
+          zReal_dataApprox[i].push(sign*90);
         }
-        else {//if it's between them
-
+        else {//betweeen the two.
+          slope = 90*sign/(upperBound - lowerBound);
+          yIntercept = slope*(-1*lowerBound);// m*(-x1)+y1 in point-slope form. y1 = 0.
+          zReal_dataApprox[i].push([w[j], slope*w[j]+yIntercept]);
+        }
+        //exact
+        x = w[j]/w0;
+        if (sign > 0) {//1
+          theta = rad2Degrees(Math.atan2(w[j], w0));
+          zReal_data[i].push([w[j], (Math.sqrt(1+x*x))*theta]);
+        }
+        else {//-1
+          theta = rad2Degrees(sign*Math.atan2(w[j], w0));
+          zReal_data[i].push([w[j], (Math.pow(Math.sqrt(1+x*x), sign))*theta]);
         }
       }
-    }*/
   }
+  return [zReal_data, zReal_dataApprox];
 }
-function mkBodePhase (consT, consT_data, zOrigin_data, pOrigin_data) {
+//works on dComp or nComp to get their phase data.
+//should we pass it w0, zeta, etc from other functions?
+function compConjugatePhaseData (comp, w, sign) {//sign will be -1 or +1
+  var comp_data = [], comp_dataApprox = [], base, peak, imagPart, realPart,
+  x, zeta, w0, upperBound, lowerBound, slope, yIntercept;
+  let a, b;//a + jb, a = 1-(w/w0)^2 b = 2*zeta*w/(w0) w[j]
+  for (let i=0; i<comp.length; i++) {//loop through complex roots in numerator.
+    realPart = comp[i][0];
+    imagPart = comp[i][1];
+    w0 = Math.sqrt(realPart*realPart + imagPart*imagPart);
+    x = Math.atan2(imagPart,realPart);//y, x -> y/x, opposite/ajdacent
+    zeta = Math.cos(x);//zeta will be a ratio.
+    //pg 293 of book vs https://lpsa.swarthmore.edu/Bode/BodeReviewRules.html: 0<zeta<1 or 0<=zeta<1?
+    //how is this possible for a complex conjugate? one will be -, other will be +.
+    comp_data.push([]);
+    comp_dataApprox.push([]);
+    if (zeta > 0 && zeta < 1) {//will have to account for a # & it's conjugate being in there (I think? or will zeta take care of that?)
+      for (let j=0; j<100; j++) {
+        x = w[j];
+        //lower & upper boundarises of line in x coordinates
+        lowerBound = w0/(Math.pow(10, zeta));////(x,y) = (lowerBound, 0)
+        upperBound = w0*Math.pow(10, zeta);//(x,y) = (upperBound, sign*180)
+        if (w[j] < lowerBound) {//for phase w[j] <= w0/(Math.pow(10, zeta))) {
+          comp_dataApprox[i].push([w[j], 0]);
+        }
+        else if (w[j] > upperBound) {
+          comp_dataApprox[i].push([w[j], sign*180]);
+        }
+        else {
+          slope = 180*sign/(upperBound - lowerBound);
+          yIntercept = slope*(-1*lowerBound);// m*(-x1)+y1 in point-slope form. y1 = 0.
+          comp_dataApprox[i].push([w[j], slope*w[j]+yIntercept]);
+        }
+      }
+    }
+      //exact version starts here:
+      //a + jb, a = 1-(w/w0)^2 b = 2*zeta*w/(w0) w[j]. 20*log10(|a+jb|)
+    for (let j=0; j<100; j++) {//should we have included this in both the other for loops or had there be only one?
+      a = w[j]/w0;
+      b = 1-a*a;
+      x = (2*zeta*a)/b;//magnitude |a+jb|
+      //ends up being arctan(img/real)
+      comp_data[i].push([w[j], sign*rad2Degrees(Math.atan2(2*zeta*a, b))]);//vs Math.atan2(x)
+      //we need rad2Degrees bc graph is in degrees & Math.atan2() returns radians.
+    }
+  }
+  if (JSON.stringify(comp_data[0]) == JSON.stringify(comp_dataApprox[0])) {
+    console.log("They're the same.");
+  }
+  //there is no way the exact way can be this easy.
+  return [comp_data, comp_dataApprox];
+}
+function mkBodePhase(consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRealArr,
+  zReal_dataApprox, pReals, pRealArr, pReal_dataApprox, zComp_data, pComp_data,
+  zComp_dataApprox, pComp_data, pComp_dataApprox, nComp, dComp) {
   var series = [];
   if (consT) {
     series.push(
@@ -1006,7 +1060,6 @@ function mkBodePhase (consT, consT_data, zOrigin_data, pOrigin_data) {
         name: 'Constant ' + consT,
         color: 'rgba(223, 83, 83, .5)',//data is [x, y];
         data: consT_data
-
     });
   }
   if (zOrigin_data.length) {
@@ -1023,6 +1076,71 @@ function mkBodePhase (consT, consT_data, zOrigin_data, pOrigin_data) {
         data: pOrigin_data
     });
   }
+  if (zReals.length) {
+    for (let i=0; i<zRealArr.length; i++) {
+      series.push({
+          name: 'Real Zero: ' + zReals[i].toString(),
+          color: 'rgba(20, 20, 191, 1)',
+          data: zRealArr[i]
+      });
+      series.push({
+          name: 'Real Zero: ' + zReals[i].toString() + ' Approximation',
+          color: 'rgba(20, 20, 191, 1)',
+          data: zReal_dataApprox[i]
+      });
+    }
+  }
+  if (pReals.length) {
+    for (let i=0; i<pRealArr.length; i++) {
+      series.push({
+          name: 'Real Pole: ' + pReals[i].toString(),
+          color: 'rgba(20, 20, 191, 1)',
+          data: pRealArr[i]
+      });
+      series.push({
+          name: 'Real Pole: ' + pReals[i].toString() + ' Approximation',
+          color: 'rgba(20, 20, 191, 1)',
+          data: pReal_dataApprox[i]
+      });
+    }
+  }
+  if (nComp[0]) {//nComp.length
+    let print = [];
+    for (let i=0; i<zComp_dataApprox.length; i++) {
+      print.push(compArrToStr(nComp[i]));
+      series.push({
+          name: 'Complex Zero '+ print[i] + ' Approximation',//nComp[i][0].toString() + ' + ' + nComp[i][1].toString() +' Approximation',
+          color: 'rgba(5, 191, 5, 1)',
+          data: zComp_dataApprox[i]//data for relevant real zero.
+      });
+    }
+    for (let i=0; i<zComp_data.length; i++) {
+      series.push({
+          name: 'Complex Zero '+ print[i],//nComp[i][0].toString() + ' + ' + nComp[i][1].toString() +' Approximation',
+          color: 'rgba(5, 191, 5, 1)',
+          data: zComp_data[i]//data for relevant real zero.
+      });
+    }
+  }
+  if (dComp[0]) {//dComp.length
+    let print = [];//two lengths should be equal
+    for (let i=0; i<pComp_dataApprox.length; i++) {
+      print.push(compArrToStr(dComp[i]));
+      series.push({
+          name: 'Complex Pole '+ print[i],//nComp[i][0].toString() + ' + ' + nComp[i][1].toString() +' Approximation',
+          color: 'rgba(5, 191, 5, 1)',
+          data: pComp_dataApprox[i]//data for relevant real zero.
+      });
+    }
+    for (let i=0; i<pComp_data.length; i++) {
+      series.push({
+          name: 'Complex Pole '+ print[i] + ' Approximation',//nComp[i][0].toString() + ' + ' + nComp[i][1].toString() +' Approximation',
+          color: 'rgba(5, 191, 5, 1)',
+          data: pComp_data[i]//data for relevant real zero.
+      });
+    }
+  }
+
   Highcharts.chart('bodePhase', {
     chart: {
         type: 'line',
@@ -1048,7 +1166,7 @@ function mkBodePhase (consT, consT_data, zOrigin_data, pOrigin_data) {
             text: 'Phase'
         }
     },
-    legend: {
+    /*legend: {
         layout: 'vertical',
         align: 'right',//'left'
         verticalAlign: 'bottom',//'top'
@@ -1056,8 +1174,28 @@ function mkBodePhase (consT, consT_data, zOrigin_data, pOrigin_data) {
         y: 70,
         floating: true,
         backgroundColor: Highcharts.defaultOptions.chart.backgroundColor,
-        borderWidth: 1
-    },
+        borderWidth: 1,
+        title: {
+                text: ':: Drag me'
+            },
+        floating: true,
+        draggable: true
+}*/legend: {
+            layout: 'vertical',
+            backgroundColor: 'white',
+            align: 'right',
+            verticalAlign: 'top',
+            y: 60,
+            x: -10,
+            borderWidth: 1,
+            borderRadius: 0,
+            title: {
+                text: ':: Drag me'
+            },
+            floating: true,
+            draggable: true,
+            zIndex: 20
+        },
     plotOptions: {
         scatter: {
             marker: {
