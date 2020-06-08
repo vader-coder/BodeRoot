@@ -34,20 +34,19 @@ function onClick() {
   }
   //rootsStrArrToChartFormat(numAns['roots']);
   //error for just rt. maybe problem w/ rootsStrArrToChartFormat is that roots[i] isn't just 1 item.
-
+  /*(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pReal_data, zComp_data, pComp_data,
+     zRealCount, pRealCount, allFreq_data, zReal_dataApprox, pReal_dataApprox, zComp_dataApprox,
+      pComp_dataApprox, nComp, dComp, options)*/
   var bdata, pdata;
   [bdata, pdata] = bodeData(numAns, denomAns);
   mkBode(bdata[0], bdata[1], bdata[2], bdata[3], bdata[4], bdata[5], bdata[6],
     bdata[7], bdata[8], bdata[9], bdata[10], bdata[11], bdata[12], bdata[13],
-    bdata[14], bdata[15], bdata[16], bdata[17], bdata[18], bdata[19]);
+    bdata[14], bdata[15], bdata[16], bdata[17], bdata[18]);
 
 //(consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRealArr, pReals, pRealArr, zComp_data, pComp_data, zComp_dataApprox, pComp_data, pComp_dataApprox, nComp, dComp)
-  pdata = bodeDataPhase(pdata[0], pdata[1], pdata[2], pdata[3], pdata[4], pdata[5],
-    pdata[6], pdata[7], pdata[8], pdata[9], pdata[10], pdata[11], pdata[12], pdata[13], pdata[14]);
+  pdata = bodeDataPhase(pdata[0], pdata[1], pdata[2], pdata[3], pdata[4], pdata[5], pdata[6], pdata[7], pdata[8], pdata[9], pdata[10], pdata[11], pdata[12], pdata[13], pdata[14]);
   //(consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRealArr, pReals, pRealArr, zComp_data, pComp_data, zComp_dataApprox, pComp_data, pComp_dataApprox)
-  mkBodePhase(pdata[0], pdata[1], pdata[2], pdata[3], pdata[4], pdata[5], pdata[6],
-    pdata[7], pdata[8], pdata[9], pdata[10], pdata[11], pdata[12], pdata[13], pdata[14],
-    pdata[15], pdata[16], pdata[17], pdata[18]);
+  mkBodePhase(pdata[0], pdata[1], pdata[2], pdata[3], pdata[4], pdata[5], pdata[6], pdata[7], pdata[8], pdata[9], pdata[10], pdata[11], pdata[12], pdata[13], pdata[14], pdata[15], pdata[16]);
   document.getElementById('bode').scrollIntoView();
 }
 //returns list contaniing polynomial form, coefficients, roots, order, etc.
@@ -526,45 +525,92 @@ function bodeData(numAns, denomAns) {//add pReal & zReal nextx
     w.push(roundDecimal(i*0.1, 1));//w.push(roundDecimal(1+ i*0.1, 1)); might want multiple versions of this.
     consT_data.push([w[i-1], x]);
   }
-  if (nRoot[0]) {
-    [zReal_data, zReal_dataApprox, zOrigin_data, zOrigin, zReals] = realData(w, 1, nRoot, nFactorExp);
+  //here and down is in realData.
+  for (let i=0;i<nReal.length; i++) {//numerator real zeros.
+    if (nRoot[0][i] == 0) {//zero at origin
+      zOrigin = 1;
+      for (let j=0; j<100; j++) {
+        zOrigin_data.push([w[j], 20*nFactorExp[i]*Math.log10(w[j])]);
+      }
+    }
+    if (nRoot[0][i]) {//real number zero
+      zReals.push(nRoot[0][i]);//list of real zeros (that aren't zero) corresponding to data
+      zReal = 1;
+      zReal_data.push([nRoot[i][0], []]);//each zero is included with its array of data.
+      zReal_dataApprox.push([]);
+      w0 = Math.abs(nRoot[i][0]);
+      for (let j=0; j<100; j++) {//generate approximate.
+        x = w[j]/w0;
+        if (w[j] <= w0) {
+          zReal_dataApprox[zRealCount].push([w[j], 0]);
+        }
+        else if (w[j] > w0) {
+          zReal_dataApprox[zRealCount].push([w[j], 20*nFactorExp[i]*Math.log10(x)]);
+        }
+        zReal_data[zRealCount][1].push([w[j], 20*nFactorExp[i]*Math.log10(Math.pow((1 + x*x), 0.5))]);//add data to array.
+      }
+      zRealCount++;
+    }//lets figure out a good way to track how many of each root there are.
   }
-  if (nComp) {//only call this if there are complex conjugate roots in the numerator.
+  if (nComp[1]) {//only call this if there are complex conjugate roots in the numerator.
     [zComp_data, zComp_dataApprox] = compConjugateData(nComp, w, 1);
   }
-  //function realData(w, sign, nRoot, nFactorExp) {
-  if (dRoot[0]) {
-    [pReal_data, pReal_dataApprox, pOrigin_data, pOrigin, pReals] = realData(w, -1, dRoot, dFactorExp);
+  for (let j=0; j<zRealCount; j++) {//is there a more elegant solution?
+    zRealArr.push(zReal_data[j][1]);
   }
-  if (dComp) {
+  for (let i=0;i<dRoot[0].length; i++) {//loop through real zeros.
+    if (dRoot[0][i] == 0) {//zero pole
+      pOrigin = 1;
+      for (let j=0; j<100; j++) {
+        pOrigin_data.push([w[j], -20*dFactorExp[i]*Math.log10(w[j])]);
+      }
+    }
+    if (dRoot[0][i]) {//real pole
+      pReal = 1;
+      pReals.push(dRoot[i][0]);
+      pReal_data.push([dRoot[i][0], []]);//push a 2D array to pReal_data. second item will become data for graphing every real root.
+      pReal_dataApprox.push([]);//why didn't this come up earlier?
+      w0 = Math.abs(dRoot[i][0]);
+      for (let j=0; j<100; j++) {
+        x = w[j]/w0;
+        //approximate
+        if (w[j] <= w0) {
+          pReal_dataApprox[pRealCount].push([w[j], 0]);
+        }
+        else if (w[j] > w0) {
+          pReal_dataApprox[pRealCount].push([w[j], -20*dFactorExp[i]*Math.log10(x)]);
+        }
+        //exact.
+        pReal_data[pRealCount][1].push([w[j], -20*dFactorExp[i]*Math.log10(Math.pow((1 + x*x), 0.5))]);
+      }
+      pRealCount++;
+    }
+  }
+  for (let j=0; j<pRealCount; j++) {//is there a more elegant solution?
+    pRealArr.push(pReal_data[j][1]);
+  }
+  if (dComp[0]) {
     [pComp_data, pComp_dataApprox] = compConjugateData(dComp, w, -1);//should have one for real
   }
   //should we consolidate all for loops & include if statements inside them?
   //each data point of total is sum of rest at its position.
   //multiply each one by varible storing 1 or 0 to determine if it is included.
   //find total exact frequency plot.
-  pRealCount = pReals.length, zRealCount = zReals.length;
-  //function allFreq(consT_data, w, zOrigin, zOrigin_data, pOrigin, pOrigin_data, zReal, zRealArr, zRealCount, pReal, pRealCount, pRealArr, zComp_data, pComp_data) {
-  //allFreq(consT_data, w, zOrigin, zOrigin_data, pOrigin, pOrigin_data, zReal, zRealCount, zRealArr, pReal, pRealCount, pRealArr, zComp_data, pComp_data
-  allFreq_data = allFreq(consT_data, w, zOrigin, zOrigin_data, pOrigin, pOrigin_data, zReals, zRealCount, zReal_data, pReals, pRealCount, pReal_data, zComp_data, pComp_data);
+  allFreq_data = allFreq(consT_data, w, zOrigin, zOrigin_data, pOrigin, pOrigin_data, zReal, zRealCount, zRealArr, pReal, pRealCount, pRealArr, zComp_data, pComp_data);
   //find total approximate frequency plot.
-  allFreq_dataApprox = allFreq(consT_data, w, zOrigin, zOrigin_data, pOrigin, pOrigin_data, zReals, zRealCount, zReal_dataApprox, pReals, pRealCount, pReal_dataApprox, zComp_dataApprox, pComp_dataApprox);
+  allFreq_dataApprox = allFreq(consT_data, w, zOrigin, zOrigin_data, pOrigin, pOrigin_data, zReal, zRealCount, zReal_dataApprox, pReal, pRealCount, pReal_dataApprox, zComp_dataApprox, pComp_dataApprox);
 
   /*if (JSON.stringify(allFreq_data) == JSON.stringify(allFreq_data2)) {
     console.log("Yes it works.");
   }*/
-  /* (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
-    pReal_data, zReals, pReals, zComp_data, pComp_data, zRealCount, pRealCount,
-    allFreq_data, zReal_dataApprox, pReal_dataApprox, zComp_dataApprox, pComp_dataApprox,
-    allFreq_dataApprox, nComp, dComp) */
   return [[consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
-    pReal_data, zReals, pReals, zComp_data, pComp_data, zRealCount,
-    pRealCount, allFreq_data, zReal_dataApprox, pReal_dataApprox,
-    zComp_dataApprox, pComp_dataApprox, allFreq_dataApprox, nComp, dComp],
-    [w, consT, consT_data, zOrigin_data, pOrigin_data, zReals, pReals,
-      zRealArr, pRealArr, nComp, dComp]];
+    pReal_data, zComp_data, pComp_data, zRealCount, pRealCount, allFreq_data,
+    zReal_dataApprox, pReal_dataApprox, zComp_dataApprox, pComp_dataApprox, allFreq_dataApprox, nComp, dComp,
+    [1, zOrigin, pOrigin, zReal, pReal, nComp.length, dComp.length]], [w, consT, consT_data, zOrigin_data, pOrigin_data, zReals, pReals, zRealArr, pRealArr, nComp, dComp]];
 }//w, consT, consT_data, zOrigin_data, pOrigin_data, zReals, pReals, zRealArr, pRealArr, nComp, dComp)
-
+/* (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pReal_data, zComp_data, pComp_data
+   zRealCount, pRealCount, allFreq_data, zReal_dataApprox, pReal_dataApprox, zComp_dataApprox,
+    pComp_dataApprox, nComp, dComp, options) */
 //function rounds a number to a decimal # of decimal places.
 
 function roundDecimal (num, decimal) {
@@ -651,34 +697,34 @@ function compConjugateData (comp, w, sign) {//sign will be -1 or +1
   }
   return [comp_data, comp_dataApprox]
 }
-function allFreq(consT_data, w, zOrigin, zOrigin_data, pOrigin, pOrigin_data, zReal, zRealCount, zRealArr, pReal, pRealCount, pRealArr, zComp_data, pComp_data) {
+function allFreq(consT_data, w, zOrigin, zOrigin_data, pOrigin, pOrigin_data, zReal, zRealArr, zRealCount, pReal, pRealCount, pRealArr, zComp_data, pComp_data) {
   var allFreq_data = [], calc;
   for (let i=0; i<100; i++) {//each data point for total is sum of other data points.
-    calc = parseInt(consT_data[i][1], 10);//consT will always be horizontal & the same
+    calc = parseInt(consT_data[0], 10);//consT will always be horizontal & the same
     if(zOrigin) {
-      calc += parseInt(zOrigin_data[i][1], 10);
+      calc += parseInt(zOrigin_data[i], 10);
     }
     if (pOrigin) {
-      calc += parseInt(pOrigin_data[i][1], 10);
+      calc += parseInt(pOrigin_data[i], 10);
     }
-    if (zReal[0]) {
+    if (zReal) {
       for (let j=0; j<zRealCount; j++) {//is htere any way you can work this into the rest?
-        calc += parseInt(zRealArr[j][i][1], 10);
+        calc += parseInt(zRealArr[j][i], 10);
       }
     }
-    if (pReal[0]) {
+    if (pReal) {
       for (let j=0; j<pRealCount; j++) {//is htere any way you can work this into the rest?
-        calc += parseInt(pRealArr[j][i][1], 10);
+        calc += parseInt(pRealArr[j][i], 10);
       }
     }
     if (zComp_data[0]) {//if first item in zComp_data exists
       for (let j=0; j<zComp_data.length; j++) {//is htere any way you can work this into the rest?
-        calc += parseInt(zComp_data[j][i][1], 10);
+        calc += parseInt(zComp_data[j][i], 10);
       }
     }
     if (pComp_data[0]) {//if first item in zComp_data has anything in it.
       for (let j=0; j<pComp_data.length; j++) {//is htere any way you can work this into the rest?
-        calc += parseInt(pComp_data[j][i][1], 10);
+        calc += parseInt(pComp_data[j][i], 10);
       }
     }
     allFreq_data.push([w[i], calc]);
@@ -692,20 +738,19 @@ function allFreq(consT_data, w, zOrigin, zOrigin_data, pOrigin, pOrigin_data, zR
 //first is whether it is the first time graphing plot.
 //pass in data for plot. data itself will only be generated once, mkBode
 
-function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
-  pReal_data, zReals, pReals, zComp_data, pComp_data, zRealCount, pRealCount,
-  allFreq_data, zReal_dataApprox, pReal_dataApprox, zComp_dataApprox, pComp_dataApprox,
-  allFreq_dataApprox, nComp, dComp) {
+function mkBode (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pReal_data,
+   zComp_data, pComp_data, zRealCount, pRealCount, allFreq_data, zReal_dataApprox,
+   pReal_dataApprox, zComp_dataApprox, pComp_dataApprox, allFreq_dataApprox, nComp, dComp, options) {
   var series = [];
   series.push({//if something is to not be graphed, it's data will be empty.
       name: 'Constant ' + consT,
-      color: 'rgba(223, 83, 83, 1)',//data is [x, y];
+      color: 'rgba(223, 83, 83, .5)',//data is [x, y];
       data: consT_data
   });
   if (zOrigin_data[0]) {//if no z at origin, will just be 0.
     series.push({
         name: 'Zero at Origin',
-        color: 'rgba(119, 152, 191, 1)',
+        color: 'rgba(119, 152, 191, .5)',
         data: zOrigin_data
     });
   }
@@ -719,12 +764,12 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
   if (zReal_data[0]) {//check if 1st item exists
     for (let i=0; i<zRealCount; i++) {
       series.push({
-          name: 'Real Zero '+zReals[i].toString(),
+          name: 'Real Zero '+zReal_data[i][0].toString(),
           color: 'rgba(119, 152, 191, 1)',
-          data: zReal_data[i]//zReal_data[i][1]//data for relevant real zero.
+          data: zReal_data[i][1]//data for relevant real zero.
       });
       series.push({
-          name: 'Real Zero '+zReals.toString() + ' Approximation',
+          name: 'Real Zero '+zReal_data[i][0].toString() + ' Approximation',
           color: 'rgba(119, 152, 191, 1)',
           data: zReal_dataApprox[i]//data for relevant real zero.
       });
@@ -733,18 +778,18 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
   if (pReal_data[0]) {//is having two for loops more secure?
     for (let i=0; i<pRealCount; i++) {
       series.push({
-          name: 'Real Pole '+pReals[i].toString(),
+          name: 'Real Pole '+pReal_data[i][0].toString(),
           color: 'rgba(119, 152, 191, 1)',
-          data: pReal_data[i]//data for relevant real zero.
+          data: pReal_data[i][1]//data for relevant real zero.
       });
       series.push({
-          name: 'Real Pole '+pReals[i].toString()+' Approximation',
+          name: 'Real Pole '+pReal_data[i][0].toString()+' Approximation',
           color: 'rgba(119, 152, 191, 1)',
           data: pReal_dataApprox[i]//data for relevant real zero.
       });
     }
   }
-  if (nComp[0]) {//nComp.length
+  if (options[5]) {//nComp.length
     let print = [];
     for (let i=0; i<zComp_dataApprox.length; i++) {
       print.push(compArrToStr(nComp[i]));
@@ -762,7 +807,7 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
       });
     }
   }
-  if (dComp[0]) {//dComp.length
+  if (options[6]) {//dComp.length
     let print = [];
     for (let i=0; i<pComp_dataApprox.length; i++) {
       print.push(compArrToStr(dComp[i]));
@@ -878,10 +923,10 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
   });
 }
 //w is input (like #s plugged in for x).
-function bodeDataPhase(w, consT, consT_data, zOrigin_data, pOrigin_data, zReals, pReals, zReal_data, pReal_data, nComp, dComp) {
+function bodeDataPhase (w, consT, consT_data, zOrigin_data, pOrigin_data, zReals, pReals, zRealArr, pRealArr, nComp, dComp) {
   var x, w0, theta, zReal = zReals.length, pReal = pReals.length,
-  zOrigin = 0, pOrigin = 0, zRealCount = zReal, pRealCount = pReal, zReal_dataApprox, pReal_dataApprox,
-  zComp_data = [], pComp_data = [], zComp_dataApprox = [], pComp_dataApprox = [], allPhase_data, allPhase_dataApprox;
+  zOrigin, pOrigin, zRealCount = zReal, pRealCount = pReal, zReal_dataApprox, pReal_dataApprox,
+  zComp_data, pComp_data, zComp_dataApprox, pComp_dataApprox;
   //pRealCount vs pReal might confuse your readers.. mbe try to eliminate the flags you can?
   //get w.
   for (let i=0; i<100; i++) {
@@ -901,11 +946,11 @@ function bodeDataPhase(w, consT, consT_data, zOrigin_data, pOrigin_data, zReals,
     }
   }
   if (zReal) {//loop through real zeros. figure out this again.
-    [zReal_data, zReal_dataApprox] = realPhaseData(w, 1, zReals);
+    [zRealArr, zReal_dataApprox] = realPhaseData(w, 1, zReals);
     //would it be better to change original items w/ zRealArr[i]? we would pass in zRealArr as a parameter.
   }
   if (pReal) {
-    [pReal_data, pReal_dataApprox] = realPhaseData(w, -1, pReals);
+    [pRealArr, pReal_dataApprox] = realPhaseData(w, -1, pReals);
   }
   //function compConjugatePhaseData (comp, w, sign) {//sign will be -1 or +1
   if (nComp[0]) {
@@ -914,49 +959,49 @@ function bodeDataPhase(w, consT, consT_data, zOrigin_data, pOrigin_data, zReals,
   if (dComp[0]) {//double check that this is not true when there are no complex poles.
     [pComp_data, pComp_dataApprox] = compConjugatePhaseData(dComp, w, -1);
   }
-  // allFreq(consT_data, w, zOrigin, zOrigin_data, pOrigin, pOrigin_data, zReal, zRealCount, zRealArr, pReal, pRealCount, pRealArr, zComp_data, pComp_data) {
-
-  allPhase_data = allFreq(consT_data, w, zOrigin, zOrigin_data, pOrigin, pOrigin_data,
-    zReals, zRealCount, zReal_data, pReals, pRealCount, pReal_data, zComp_data, pComp_data);
-  allPhase_dataApprox = allFreq(consT_data, w, zOrigin, zOrigin_data, pOrigin, pOrigin_data,
-    zReals, zRealCount, zReal_dataApprox, pReals, pRealCount, pReal_dataApprox, zComp_dataApprox, pComp_dataApprox);
-  return [consT, consT_data, zOrigin_data, pOrigin_data, zReals, zReal_data,
-    zReal_dataApprox, pReals, pReal_data, zReal_dataApprox, zComp_data, pComp_data,
-    zComp_dataApprox, pComp_data, pComp_dataApprox, nComp, dComp, allPhase_data, allPhase_dataApprox];
+  allFreq_data = (consT_data, w, zOrigin, zOrigin_data, pOrigin, pOrigin_data, zReal, zRealArr, zRealCount, pReal, pRealCount, pRealArr, zComp_data, pComp_data);
+  //for allFreq_data, you could probably eliminate some of the parameters.
+  return [consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRealArr, zReal_dataApprox, pReals, pRealArr, zReal_dataApprox, zComp_data, pComp_data, zComp_dataApprox, pComp_data, pComp_dataApprox, nComp, dComp];
   //(consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRealArr, pReals, pRealArr, zComp_data, pComp_data, zComp_dataApprox, pComp_data, pComp_dataApprox, nComp, dComp)
 }
 // generates phase data for real zeros & poles.
 //sign = 1 for real zeros, sign = -1 for real poles.
-function realData(w, sign, nRoot, nFactorExp) {
-  var zReal_data = [], zReal_dataApprox = [],
-  zReals = [], x, w0, zOrigin = 0, zOrigin_data = [];
-  for (let i=0; i<nRoot[0].length; i++) {//loop through real zeros.
-    if (nRoot[0][i] == 0) {
-      zOrigin = 1;
-      for (let j=0; j<100; j++) {
-        zOrigin_data.push([w[j], 20*nFactorExp[i]*Math.log10(w[j])]);
-      }
-    }
-    else if (nRoot[0][i]) {//real number zero
-      zReals.push(nRoot[0][i]);
+function realData(w, sign, zReals) {
+  var zReal_data = [], zReal_dataApprox = [], theta, x, w0, zReal = zReals.length,
+  lowerBound, upperBound, slope, yIntercept;
+  for (let i=0; i<zReal; i++) {//loop through real zeros.
       zReal_data.push([]);
       zReal_dataApprox.push([]);
-      w0 = Math.abs(nRoot[0][i]);//w0, reciprocal of zero.
+      w0 = Math.abs(zReals[i]);//w0, reciprocal of zero.
+      lowerBound = 0.1*w0;
+      upperBound = 10*w0;
       for (let j=0; j<100; j++) {
         //approximate:
-        x = w[j]/w0;
-        if (w[j]<= w0) {
-          zReal_dataApprox[i].push([w[j], 0]);
+        if (w[j]<lowerBound) {
+          zReal_dataApprox[i].push(0);
         }
-        else if (w[j]>w0) {
-          zReal_dataApprox[i].push([w[j], sign*20*nFactorExp[i]*Math.log10(x)]);
+        else if (w[j]>upperBound) {
+          zReal_dataApprox[i].push(sign*90);
+        }
+        else {//betweeen the two.
+          slope = 90*sign/(upperBound - lowerBound);
+          yIntercept = slope*(-1*lowerBound);// m*(-x1)+y1 in point-slope form. y1 = 0.
+          zReal_dataApprox[i].push([w[j], slope*w[j]+yIntercept]);
         }
         //exact
-        zReal_data[i].push([w[j], sign*20*nFactorExp[i]*Math.log10(Math.pow((1 + x*x), 0.5))]);
+        x = w[j]/w0;
+        if (sign > 0) {//1
+          theta = rad2Degrees(Math.atan2(w[j], w0));
+          zReal_data[i].push([w[j], (Math.sqrt(1+x*x))*theta]);
+        }
+        else {//-1
+          theta = rad2Degrees(sign*Math.atan2(w[j], w0));
+          zReal_data[i].push([w[j], (Math.pow(Math.sqrt(1+x*x), sign))*theta]);
+          //zReal_data[i].push([w[j], (Math.sqrt(1+x*x))*theta]);
+        }
       }
-    }
   }
-  return [zReal_data, zReal_dataApprox, zOrigin_data, zOrigin, zReals];
+  return [zReal_data, zReal_dataApprox];
 }
 function realPhaseData(w, sign, zReals) {
   var zReal_data = [], zReal_dataApprox = [], theta, x, w0, zReal = zReals.length,
@@ -970,10 +1015,10 @@ function realPhaseData(w, sign, zReals) {
       for (let j=0; j<100; j++) {
         //approximate:
         if (w[j]<lowerBound) {
-          zReal_dataApprox[i].push([w[j], 0]);
+          zReal_dataApprox[i].push(0);
         }
         else if (w[j]>upperBound) {
-          zReal_dataApprox[i].push([w[j], sign*90]);
+          zReal_dataApprox[i].push(sign*90);
         }
         else {//betweeen the two.
           slope = 90*sign/(upperBound - lowerBound);
@@ -1049,20 +1094,20 @@ function compConjugatePhaseData (comp, w, sign) {//sign will be -1 or +1
 }
 function mkBodePhase(consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRealArr,
   zReal_dataApprox, pReals, pRealArr, pReal_dataApprox, zComp_data, pComp_data,
-  zComp_dataApprox, pComp_data, pComp_dataApprox, nComp, dComp, allPhase_data, allPhase_dataApprox) {
+  zComp_dataApprox, pComp_data, pComp_dataApprox, nComp, dComp) {
   var series = [];
   if (consT) {
     series.push(
     {//if something is to not be graphed, it's data will be empty.
         name: 'Constant ' + consT,
-        color: 'rgba(223, 83, 83, 1)',//data is [x, y];
+        color: 'rgba(223, 83, 83, .5)',//data is [x, y];
         data: consT_data
     });
   }
   if (zOrigin_data.length) {
     series.push({
         name: 'Zero at Origin',
-        color: 'rgba(119, 152, 191, 1)',
+        color: 'rgba(119, 152, 191, .5)',
         data: zOrigin_data
     });
   }
@@ -1100,18 +1145,6 @@ function mkBodePhase(consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRea
           data: pReal_dataApprox[i]
       });
     }
-  }
-  if (allPhase_data.length) {
-    series.push({
-        name: 'Total Phase',
-        color: 'rgba(0, 0, 0, 1)',
-        data: allPhase_data//data for relevant real zero.
-    });
-    series.push({
-        name: 'Total Phase Approximation',
-        color: 'rgba(50, 0, 50, 1)',
-        data: allPhase_dataApprox//data for relevant real zero.
-    });
   }
   if (nComp[0]) {//nComp.length
     let print = [];
