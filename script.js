@@ -8,7 +8,7 @@ function onClick() {
   var factorCheck2 = document.getElementById('factorCheck2').checked;
   var rootCheck2 = document.getElementById('rootCheck2').checked;
   var variable = document.getElementById('variable').value;
-  if (getElementById('Polynomial1').value.indexOf(variable) == -1 || getElementById('Polynomial2').value.indexOf(variable) == -1) {
+  if (document.getElementById('Polynomial1').value.indexOf(variable) == -1 || document.getElementById('Polynomial2').value.indexOf(variable) == -1) {
     alert("You need to enter a variable in both fields.");
     return;
   }
@@ -535,10 +535,10 @@ function bodeData(numAns, denomAns) {//add pReal & zReal nextx
     if (nRoot[0][i]) {//real number zero
       zReals.push(nRoot[0][i]);//list of real zeros (that aren't zero) corresponding to data
       zReal = 1;
-      zReal_data.push([nRoot[i][0], []]);//each zero is included with it's array of data.
+      zReal_data.push([nRoot[i][0], []]);//each zero is included with its array of data.
       zReal_dataApprox.push([]);
       w0 = Math.abs(nRoot[i][0]);
-      for (let j=0; j<100; j++) {
+      for (let j=0; j<100; j++) {//generate approximate.
         x = w[j]/w0;
         if (w[j] <= w0) {
           zReal_dataApprox[zRealCount].push([w[j], 0]);
@@ -572,12 +572,14 @@ function bodeData(numAns, denomAns) {//add pReal & zReal nextx
       w0 = Math.abs(dRoot[i][0]);
       for (let j=0; j<100; j++) {
         x = w[j]/w0;
+        //approximate
         if (w[j] <= w0) {
-          pReal_dataApprox[pRealCount].push(0);
+          pReal_dataApprox[pRealCount].push([w[j], 0]);
         }
         else if (w[j] > w0) {
           pReal_dataApprox[pRealCount].push([w[j], -20*dFactorExp[i]*Math.log10(x)]);
         }
+        //exact.
         pReal_data[pRealCount][1].push([w[j], -20*dFactorExp[i]*Math.log10(Math.pow((1 + x*x), 0.5))]);
       }
       pRealCount++;
@@ -587,7 +589,7 @@ function bodeData(numAns, denomAns) {//add pReal & zReal nextx
     pRealArr.push(pReal_data[j][1]);
   }
   if (dComp[0]) {
-    [pComp_data, pComp_dataApprox] = compConjugateData(dComp, w, -1);
+    [pComp_data, pComp_dataApprox] = compConjugateData(dComp, w, -1);//should have one for real
   }
   //should we consolidate all for loops & include if statements inside them?
   //each data point of total is sum of rest at its position.
@@ -637,12 +639,13 @@ function compArrToStr(comp) {
 }
 //works on dComp or nComp to get their data.
 function compConjugateData (comp, w, sign) {//sign will be -1 or +1
-  var comp_data = [], comp_dataApprox = [], base, peak, imagPart, realPart, x, zeta, w0;
+  var comp_data = [], comp_dataApprox = [], base, peak, imagPart, realPart, x, zeta, w0, w0Rounded;
   let a, b;//a + jb, a = 1-(w/w0)^2 b = 2*zeta*w/(w0) w[j]
   for (let i=0; i<comp.length; i++) {//loop through complex roots in numerator.
     realPart = comp[i][0];
     imagPart = comp[i][1];
     w0 = Math.sqrt(realPart*realPart + imagPart*imagPart);
+    w0Rounded = roundDecimal(w0, 1);//round to 1 decimal place.
     x = Math.atan2(imagPart,realPart);//y, x -> y/x, opposite/ajdacent
     zeta = Math.cos(x);
     //pg 293 of book vs https://lpsa.swarthmore.edu/Bode/BodeReviewRules.html: 0<zeta<1 or 0<=zeta<1?
@@ -656,10 +659,10 @@ function compConjugateData (comp, w, sign) {//sign will be -1 or +1
           if (w[j] < 1) {//for phase w[j] <= w0/(Math.pow(10, zeta))) {
             comp_dataApprox[i].push([w[j], 0]);
           }
-          else if (w[j] > 1 && w[j] != roundDecimal(w0, 1)) { //might change to if so they will connect?
+          else if (w[j] > 1 && w[j] != w0Rounded) { //might change to if so they will connect?
             comp_dataApprox[i].push([w[j], sign*40*Math.log10(x)]);
           }
-          else if (w[j] == roundDecimal(w0, 1)) {//might ask prof cheever about his peak at some point.
+          else if (w[j] == w0Rounded) {//might ask prof cheever about his peak at some point.
             base = sign*40*Math.log10(x);
             peak = Math.abs(20*Math.log10(2*zeta))*Math.sign(base);
             //if the peak doesn't have the same size as the base, it iwll look like a valley.
@@ -686,7 +689,7 @@ function compConjugateData (comp, w, sign) {//sign will be -1 or +1
         a = 1-Math.pow((w[j]/w0), 2);
         b = 2*zeta*(w[j]/w0);
         x = Math.sqrt(a*a+b*b);//magnitude |a+jb|
-        comp_data[i].push([w[j], sign*40*Math.log10(x)]);
+        comp_data[i].push([w[j], sign*20*Math.log10(x)]);
         //approx & exact are closer when both 20 or 40.
       }
     }//there is no way the exact way can be this easy.
@@ -810,14 +813,14 @@ function mkBode (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data, pRea
       series.push({
           name: 'Complex Pole '+ print[i],//nComp[i][0].toString() + ' + ' + nComp[i][1].toString() +' Approximation',
           color: 'rgba(5, 191, 5, 1)',
-          data: pComp_dataApprox[i]//data for relevant real zero.
+          data: pComp_data[i]//data for relevant real zero.
       });
     }
     for (let i=0; i<pComp_data.length; i++) {
       series.push({
           name: 'Complex Pole '+ print[i] + ' Approximation',//nComp[i][0].toString() + ' + ' + nComp[i][1].toString() +' Approximation',
           color: 'rgba(5, 191, 5, 1)',
-          data: pComp_data[i]//data for relevant real zero.
+          data: pComp_dataApprox[i]//data for relevant real zero.
       });
     }
   }
@@ -993,6 +996,7 @@ function realPhaseData(w, sign, zReals) {
         else {//-1
           theta = rad2Degrees(sign*Math.atan2(w[j], w0));
           zReal_data[i].push([w[j], (Math.pow(Math.sqrt(1+x*x), sign))*theta]);
+          //zReal_data[i].push([w[j], (Math.sqrt(1+x*x))*theta]);
         }
       }
   }
@@ -1072,7 +1076,7 @@ function mkBodePhase(consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRea
   if (pOrigin_data.length) {//if no pole at origin, will just be 0.
     series.push({
         name: 'Pole at Origin',
-        color: 'rgba(20, 191, 20, 1)',
+        color: 'rgba(119, 152, 191, 1)',
         data: pOrigin_data
     });
   }
@@ -1080,12 +1084,12 @@ function mkBodePhase(consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRea
     for (let i=0; i<zRealArr.length; i++) {
       series.push({
           name: 'Real Zero: ' + zReals[i].toString(),
-          color: 'rgba(20, 20, 191, 1)',
+          color: 'rgba(119, 152, 191, 1)',
           data: zRealArr[i]
       });
       series.push({
           name: 'Real Zero: ' + zReals[i].toString() + ' Approximation',
-          color: 'rgba(20, 20, 191, 1)',
+          color: 'rgba(119, 152, 191, 1)',
           data: zReal_dataApprox[i]
       });
     }
@@ -1094,12 +1098,12 @@ function mkBodePhase(consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRea
     for (let i=0; i<pRealArr.length; i++) {
       series.push({
           name: 'Real Pole: ' + pReals[i].toString(),
-          color: 'rgba(20, 20, 191, 1)',
+          color: 'rgba(119, 152, 191, 1)',
           data: pRealArr[i]
       });
       series.push({
           name: 'Real Pole: ' + pReals[i].toString() + ' Approximation',
-          color: 'rgba(20, 20, 191, 1)',
+          color: 'rgba(119, 152, 191, 1)',
           data: pReal_dataApprox[i]
       });
     }
