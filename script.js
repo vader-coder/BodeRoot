@@ -3,17 +3,15 @@ function onClick() {
   var roots, roots2;//actual roots. I would like to check...
   var polyCheck = document.getElementById('polyCheck1').checked;//check which checkbox was checked
   var factorCheck = document.getElementById('factorCheck1').checked;
-  var rootCheck = document.getElementById('rootCheck1').checked;
   var polyCheck2 = document.getElementById('polyCheck2').checked;//check which checkbox was checked
   var factorCheck2 = document.getElementById('factorCheck2').checked;
-  var rootCheck2 = document.getElementById('rootCheck2').checked;
   var variable = document.getElementById('variable').value;
   if (document.getElementById('Polynomial1').value.indexOf(variable) == -1 || document.getElementById('Polynomial2').value.indexOf(variable) == -1) {
     alert("You need to enter a variable in both fields.");
     return;
   }
-  var polynomialform = getPoly(polyCheck, factorCheck, rootCheck, '1');//numerator
-  var polynomialform2 = getPoly(polyCheck2, factorCheck2, rootCheck2, '2');//denominator
+  var polynomialform = getPoly(polyCheck, factorCheck, '1');//numerator
+  var polynomialform2 = getPoly(polyCheck2, factorCheck2, '2');//denominator
   var numAns = finder(polynomialform);//numerator answers
   var denomAns = finder(polynomialform2);//denominator answers
 
@@ -231,22 +229,18 @@ function polySelect(num, expOrFactors) {
     document.getElementById('numerLabel').innerHTML = 'Numerator: ';
     if (!expOrFactors) {//if expanded is selected
       document.getElementById('factorCheck1').checked = 0;
-      document.getElementById('rootCheck1').checked = 0;//if one is selected, the others can't be.
     }
     else {
       document.getElementById('polyCheck1').checked = 0;
-      document.getElementById('rootCheck1').checked = 0;//if one is selected, the others can't be.
     }
   }
   else if (num == 2) {
     document.getElementById('denomLabel').innerHTML = 'Denominator: ';
     if (!expOrFactors) {//if expanded is selected
       document.getElementById('factorCheck2').checked = 0;
-      document.getElementById('rootCheck2').checked = 0;//if one is selected, the others can't be.
     }
     else {
       document.getElementById('polyCheck2').checked = 0;
-      document.getElementById('rootCheck2').checked = 0;//if one is selected, the others can't be.
     }
   }
 }
@@ -362,19 +356,16 @@ function complexSub (str, str2) {
 }
 //figures out the polynomial form depending on which box was checked.
 //num specifies numerator or denominator ('1' or '2')
-function getPoly (polyCheck, factorCheck, rootCheck, num) {
+function getPoly(polyCheck, factorCheck, num) {
   var factors,rootsInput, y;
-  if (polyCheck && !factorCheck && !rootCheck) {//input is in polynomial form.
+  if (polyCheck && !factorCheck) {//input is in polynomial form.
      y = document.getElementById('Polynomial'+num).value;
   }
-  else if (factorCheck && !polyCheck && !rootCheck) {//input is factors
+  else if (factorCheck && !polyCheck) {//input is factors
     factors = document.getElementById('Polynomial'+num).value;//'(1-3x)(1+x)(1+2x)';
     y = nerdamer('expand(' + factors + ')');
   }
-  else if (rootCheck && !polyCheck && !factorCheck) {//must be seperated by commas
-    rootsInput = document.getElementById('Polynomial'+num).value;
-    y = rootToPoly(rootsInput);
-  }
+  //is rootToPoly() still needed?
   else {
     alert('You must check one box for the numerator and one for the denominator.');
     throw new Error('You must check one box for the numerator and one for the denominator.');
@@ -593,7 +584,7 @@ function compArrToStr(comp) {
   return print;
 }
 //works on dComp or nComp to get their data.
-function compConjugateData (comp, w, sign) {//sign will be -1 or +1
+function compConjugateData(comp, w, sign) {//sign will be -1 or +1
   var comp_data = [], comp_dataApprox = [], base, peak, imagPart, realPart, x, zeta, w0, w0Rounded;
   let a, b;//a + jb, a = 1-(w/w0)^2 b = 2*zeta*w/(w0) w[j]
   for (let i=0; i<comp.length; i++) {//loop through complex roots in numerator.
@@ -611,7 +602,7 @@ function compConjugateData (comp, w, sign) {//sign will be -1 or +1
       if (zeta < 0.5) {
         for (let j=0; j<100; j++) {
           x = w[j];//lines 40*Math.log10(x) & y=0 intersect at x = 1.
-          if (w[j] < 1) {//for phase w[j] <= w0/(Math.pow(10, zeta))) {
+          if (w[j] <= 1) {//for phase w[j] <= w0/(Math.pow(10, zeta))) {
             comp_dataApprox[i].push([w[j], 0]);
           }
           else if (w[j] > 1 && w[j] != w0Rounded) { //might change to if so they will connect?
@@ -652,8 +643,9 @@ function compConjugateData (comp, w, sign) {//sign will be -1 or +1
   return [comp_data, comp_dataApprox]
 }
 function allFreq(consT_data, w, zOrigin, zOrigin_data, pOrigin, pOrigin_data, zReal, zRealCount, zRealArr, pReal, pRealCount, pRealArr, zComp_data, pComp_data) {
-  var allFreq_data = [], calc;
-  for (let i=0; i<100; i++) {//each data point for total is sum of other data points.
+  var allFreq_data = [], calc, pointNum = w.length;
+  //Math.min(zComp_data[0].length, pComp_data[0].length); this only works when both of these are defined, not otherwise.
+  for (let i=0; i<pointNum; i++) {//each data point for total is sum of other data points.
     calc = parseInt(consT_data[i][1], 10);//consT will always be horizontal & the same
     if(zOrigin) {
       calc += parseInt(zOrigin_data[i][1], 10);
@@ -673,6 +665,9 @@ function allFreq(consT_data, w, zOrigin, zOrigin_data, pOrigin, pOrigin_data, zR
     }
     if (zComp_data[0]) {//if first item in zComp_data exists
       for (let j=0; j<zComp_data.length; j++) {//is htere any way you can work this into the rest?
+        if (zComp_data[j][i] == undefined) {
+          console.log(i.toString() + 'i + ' + j.toString() + 'j');
+        }
         calc += parseInt(zComp_data[j][i][1], 10);
       }
     }
@@ -997,7 +992,7 @@ function realPhaseData(w, sign, zReals) {
 }
 //works on dComp or nComp to get their phase data.
 //should we pass it w0, zeta, etc from other functions?
-function compConjugatePhaseData (comp, w, sign) {//sign will be -1 or +1
+function compConjugatePhaseData(comp, w, sign) {//sign will be -1 or +1
   var comp_data = [], comp_dataApprox = [], base, peak, imagPart, realPart,
   x, zeta, w0, upperBound, lowerBound, slope, yIntercept;
   let a, b;//a + jb, a = 1-(w/w0)^2 b = 2*zeta*w/(w0) w[j]
