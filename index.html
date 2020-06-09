@@ -31,7 +31,7 @@
  </head>
  <body onload="document.getElementById('top').scrollIntoView()">
    <div align="left" id="top">
-     Enter numerator polynomial in one of these three forms:
+     Enter numerator polynomial in one of these two forms:
      <p></p>
      <input type="checkbox" id="polyCheck1" onclick="polySelect(1, 0)" checked></input>
      <label for="polyCheck"><b>Expanded form (ex. 1+2x^2+4x^5)</b></label>
@@ -44,7 +44,7 @@
      <!--<label for="Order">Order: </label>
      <input type="text" id="Order" value="0"></input> -->
      <p></p>
-     Enter denominator polynomial in one of these three forms:
+     Enter denominator polynomial in one of these two forms:
      <p></p>
      <input type="checkbox" id="polyCheck2" onclick="polySelect(2, 0)" checked></input>
      <label for="polyCheck2"><b>Expanded form (ex. 1+2x^2+4x^5)</b></label>
@@ -56,18 +56,21 @@
      <input type="text" id="Polynomial2" value="1"></input><br>
      <input type="button" nane="submit" value="Submit" onclick="onClick()"></input>
      <p></p>
-     <label for="variable">Variable (x by default) </label>
-     <input type="text" id="variable" value="x"></input>
+     <label for="variable">Variable (s by default) </label>
+     <input type="text" id="variable" value="s"></input><br>
+     <!-- Will we be creatinga new page for root locus? -->
+     <label for="constant">Constant to vary in root locus diagram</label>
+     <input type="text" id="constant" value="k"></input>
      <p></p>
      <p></p>
      Examples:
-     <p></p>
-     (1-3x)(1+x)(1+2x)
-     <p></p>
-     -6*x^3-7*x^2+1
-     <p></p>
-     -6x^3-7x^2+1
-     <p></p>
+     Real zeros:<br>
+     (1-3x)(1+x)(1+2x)<br>
+     -6*x^3-7*x^2+1<br>
+     -6x^3-7x^2+1<br>
+     Complex conjugate zeros:<br>
+     x^2-2x+5<br>
+     (x-(2+i))(x-(2-i))
   </div>
   <!--<div align="left">
     <p id="numerator"></p>

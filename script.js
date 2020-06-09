@@ -15,17 +15,6 @@ function onClick() {
   var numAns = finder(polynomialform);//numerator answers
   var denomAns = finder(polynomialform2);//denominator answers
 
-  /*labels = ['expanded form: ', 'factors: ', 'roots: ', 'exponet of factors & roots: ', 'polynomial coefficients: ','powers of variables corresponding to each coefficient: ',
-  'variable term for each coefficient: ','order: ', 'number of terms: '];
-  var ans = ['poly', 'factors', 'roots', 'factorExp', 'coef', 'powers', 'polyTerms', 'order', 'numTerms'];//numerator
-  var ans2 = ['poly2', 'factors2', 'roots2', 'factorExp2', 'coef2', 'powers2', 'polyTerms2', 'order2', 'numTerms2'];//denominator
-  //document.getElementById(ans[2]).innerHTML = ans[2] +  [1, 1].toString();
-  for (let i=0; i<ans.length; i++) {
-    document.getElementById(ans[i]).innerHTML = labels[i] + numAns[ans[i]].toString();
-    document.getElementById(ans2[i]).innerHTML = labels[i] + denomAns[ans[i]].toString();
-  }
-  document.getElementById('numerator').innerHTML = "Numerator";
-  document.getElementById('denominator').innerHTML = "Denominator";*/
   if (numAns['order'] > denomAns['order']) {
     alert('Order of the numerator must be <= that of the denominator');
     return;
@@ -707,7 +696,7 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
   if (pOrigin_data[0]) {//check if 1st item exists
     series.push({
         name: 'Pole at Origin',
-        color: 'rgba(20, 191, 20, 1)',
+        color: 'rgba(119, 152, 191, 1)',
         data: pOrigin_data
     });
   }
@@ -799,7 +788,7 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
         text: 'Bode Plot'
     },
     xAxis: {
-      type: 'linear',//'logarithmic'. can't plot sub-zero values on a logarithmic axis
+      type: 'logarithmic',//'logarithmic'. can't plot sub-zero values on a logarithmic axis
         title: {
             enabled: true,
             text: 'Frequency ω'//ω, &#x03C9;
@@ -1154,7 +1143,7 @@ function mkBodePhase(consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRea
         text: 'Bode Plot: Phase'
     },
     xAxis: {
-      type: 'linear',//'logarithmic'. can't plot sub-zero values on a logarithmic axis
+      type: 'logarithmic',//'logarithmic'. can't plot sub-zero values on a logarithmic axis
         title: {
             enabled: true,
             text: 'Frequency ω'//ω, &#x03C9;
