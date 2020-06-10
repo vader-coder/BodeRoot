@@ -38,8 +38,8 @@ function onClick() {
   document.getElementById('bode').scrollIntoView();
 }
 //returns list contaniing polynomial form, coefficients, roots, order, etc.
-function finder (polynomialform) {
-  var numTerms = 0;
+function finder(polynomialform) {
+  var numTerms = 0, len;
   var ret;//return value
   var signs = [];//+ & - signs.
   var poly = polynomialform.trim();//get rid of whitespace
@@ -388,6 +388,9 @@ function rootsStrArrToChartFormat(roots) {
     else if (typeof(parseInt(nerdamer('realpart('+roots[i].toString()+')').text(), 10)) == typeof(5)) {//it is complex, not just imaginary.
       realPart = parseInt(nerdamer('realpart('+roots[i].toString()+')').text(), 10);
       imagPart = parseInt(nerdamer('imagpart('+roots[i].toString()+')').text(), 10);
+      if (imagPart < 0 && realPart > 0) {
+        continue;//for complex conjugates, we only want to use +i version for data.
+      }
       //roots[i] = [realPart, imagPart];
       comp.push([realPart, imagPart]);
     }
@@ -491,7 +494,7 @@ function bodeData(numAns, denomAns) {//add pReal & zReal nextx
   var zRealCount = 0, zCompCount = 0;//# of real zeros & complex zeros.
   var pRealCount = 0, pCompCount = 0;//# of real poles
   var w = [];//for omega, frequency. why was w ever at 100.
-
+  console.log(wBound(nRoot, dRoot));
   if (n['divisor']) {
     consT = d['divisor']/n['divisor'];
   }
@@ -542,33 +545,46 @@ function bodeData(numAns, denomAns) {//add pReal & zReal nextx
     pRealCount, allFreq_data, zReal_dataApprox, pReal_dataApprox,
     zComp_dataApprox, pComp_dataApprox, allFreq_dataApprox, nComp, dComp],
     [w, consT, consT_data, zOrigin_data, pOrigin_data, zReals, pReals,
-      zRealArr, pRealArr, nComp, dComp]];
+      zRealArr, pRealArr, nComp, dComp, nFactorExp, dFactorExp]];
 }//w, consT, consT_data, zOrigin_data, pOrigin_data, zReals, pReals, zRealArr, pRealArr, nComp, dComp)
 
-//function rounds a number to a decimal # of decimal places.
+//takes roots and uses them to find the bounds of w (omega)
+function wBound(nRoot, dRoot) {
+  var wMin, wMax, n = [], d = [], total;
+  n = w0List(nRoot);
+  d = w0List(dRoot);
+  total = n.concat(d);
+  wMin = Math.min(...total);
+  wMax = Math.max(...total);
+  wMin = Math.pow(Math.floor(Math.log10(wMin)-1), 10);
+  wMax = Math.pow(Math.ceil(Math.log10(wMax)-1), 10);
+  return [wMin, wMax];
+}//so far this has not given us reasonable answers.
+function w0List(rootList) {
+  var ret = [];
+  for (let i=0; i<rootList[0].length; i++) {// loop through real roots
+    ret.push(Math.abs(rootList[i]));
+  }
+  for (let i=0; i<rootList[1].length; i++) {//loop through imaginary roots
+    ret.push(Math.sqrt(Math.pow(rootList[1][i][0], 2)+Math.pow(rootList[1][i][1], 2)));
+  }
+  return ret;
+}
 
+//function rounds a number to a decimal # of decimal places.
 function roundDecimal (num, decimal) {
   var a = Math.pow(10, decimal);
   return (Math.round(num*a)/a);
 }
 //turns an array of [real, img] to 'real + imag*i'
+//this one assumes we are only making one graph for a pair of complex conjugates
 function compArrToStr(comp) {
   let print;
-  if (comp[1] < 0) {//imaginary # is negative.
-    if (comp[1] == -1) {
-      print = comp[0].toString() + ' - i ';
-    }
-    else {
-      print = comp[0].toString() + ' - ' + Math.abs(comp[1]).toString() + 'i';
-    }
+  if (comp[1] == -1 || comp[1] == 1) {
+    print = comp[0].toString() + ' -+ i ';
   }
-  else {//imaginary # is positive
-    if (comp[1] == 1) {
-      print = comp[0].toString() + ' + i';
-    }
-    else {
-      print = comp[0].toString() + ' + ' + comp[1].toString() + 'i';
-    }
+  else {
+    print = comp[0].toString() + ' -+ ' + Math.abs(comp[1]).toString() + 'i';
   }
   return print;
 }
@@ -579,6 +595,15 @@ function compConjugateData(comp, w, sign) {//sign will be -1 or +1
   for (let i=0; i<comp.length; i++) {//loop through complex roots in numerator.
     realPart = comp[i][0];
     imagPart = comp[i][1];
+    /*if (i) {// i > 0
+      if (realPart == compDone[i-1][0] && -1*imagPart == compDone[i-1][1]) {
+        continue;//if this one is complex conjugate of the previous, continue on.
+      }
+      else {
+        compDone.push(comp[i]);
+        //if we haven't already made the data for the conjugate pair
+      }
+    }*/
     w0 = Math.sqrt(realPart*realPart + imagPart*imagPart);
     w0Rounded = roundDecimal(w0, 1);//round to 1 decimal place.
     x = Math.atan2(imagPart,realPart);//y, x -> y/x, opposite/ajdacent
@@ -621,9 +646,9 @@ function compConjugateData(comp, w, sign) {//sign will be -1 or +1
       //exact version starts here:
       //a + jb, a = 1-(w/w0)^2 b = 2*zeta*w/(w0) w[j]. 20*log10(|a+jb|)
       for (let j=0; j<100; j++) {//should we have included this in both the other for loops or had there be only one?
-        a = 1-Math.pow((w[j]/w0), 2);
-        b = 2*zeta*(w[j]/w0);
-        x = Math.sqrt(a*a+b*b);//magnitude |a+jb|
+        realPart = 1-Math.pow((w[j]/w0), 2);
+        imagPart = 2*zeta*(w[j]/w0);//also j, j^2 = -1
+        x = Math.sqrt(realPart*realPart+-1*imagPart*imagPart);//magnitude |a+jb|
         comp_data[i].push([w[j], sign*20*Math.log10(x)]);
         //approx & exact are closer when both 20 or 40.
       }
@@ -730,7 +755,16 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
   }
   if (nComp[0]) {//nComp.length
     let print = [];
+    let compDone = [];
     for (let i=0; i<zComp_dataApprox.length; i++) {
+      /*if (i) {// i > 0
+        if (nComp[i][0] == compDone[i-1][0] && -1*nComp[i][1] == compDone[i-1][1]) {
+          continue;//if this one is complex conjugate of the previous, continue on.
+        }
+        else {
+          compDone.push(nComp[0][i]);
+        }
+      }*/
       print.push(compArrToStr(nComp[i]));
       series.push({
           name: 'Complex Zero '+ print[i] + ' Approximation',//nComp[i][0].toString() + ' + ' + nComp[i][1].toString() +' Approximation',
@@ -862,7 +896,7 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
   });
 }
 //w is input (like #s plugged in for x).
-function bodeDataPhase(w, consT, consT_data, zOrigin_data, pOrigin_data, zReals, pReals, zReal_data, pReal_data, nComp, dComp) {
+function bodeDataPhase(w, consT, consT_data, zOrigin_data, pOrigin_data, zReals, pReals, zReal_data, pReal_data, nComp, dComp, nFactorExp, dFactorExp) {
   var x, w0, theta, zReal = zReals.length, pReal = pReals.length,
   zOrigin = 0, pOrigin = 0, zRealCount = zReal, pRealCount = pReal, zReal_dataApprox, pReal_dataApprox,
   zComp_data = [], pComp_data = [], zComp_dataApprox = [], pComp_dataApprox = [], allPhase_data, allPhase_dataApprox;
@@ -883,13 +917,13 @@ function bodeDataPhase(w, consT, consT_data, zOrigin_data, pOrigin_data, zReals,
       pOrigin_data[i] = [w[i], -90];
       pOrigin = 1;
     }
-  }
+  }//works if either real zeros ar complex, not both bc nFactorExp has exp of all factors.
   if (zReal) {//loop through real zeros. figure out this again.
-    [zReal_data, zReal_dataApprox] = realPhaseData(w, 1, zReals);
+    [zReal_data, zReal_dataApprox] = realPhaseData(w, 1, zReals, nFactorExp);
     //would it be better to change original items w/ zRealArr[i]? we would pass in zRealArr as a parameter.
   }
   if (pReal) {
-    [pReal_data, pReal_dataApprox] = realPhaseData(w, -1, pReals);
+    [pReal_data, pReal_dataApprox] = realPhaseData(w, -1, pReals, dFactorExp);
   }
   //function compConjugatePhaseData (comp, w, sign) {//sign will be -1 or +1
   if (nComp[0]) {
@@ -942,7 +976,7 @@ function realData(w, sign, nRoot, nFactorExp) {
   }
   return [zReal_data, zReal_dataApprox, zOrigin_data, zOrigin, zReals];
 }
-function realPhaseData(w, sign, zReals) {
+function realPhaseData(w, sign, zReals, nFactorExp) {
   var zReal_data = [], zReal_dataApprox = [], theta, x, w0, zReal = zReals.length,
   lowerBound, upperBound, slope, yIntercept;
   for (let i=0; i<zReal; i++) {//loop through real zeros.
@@ -957,10 +991,10 @@ function realPhaseData(w, sign, zReals) {
           zReal_dataApprox[i].push([w[j], 0]);
         }
         else if (w[j]>upperBound) {
-          zReal_dataApprox[i].push([w[j], sign*90]);
+          zReal_dataApprox[i].push([w[j], nFactorExp[i]*sign*90]);
         }
         else {//betweeen the two.
-          slope = 90*sign/(upperBound - lowerBound);
+          slope = nFactorExp[i]*90*sign/(upperBound - lowerBound);
           yIntercept = slope*(-1*lowerBound);// m*(-x1)+y1 in point-slope form. y1 = 0.
           zReal_dataApprox[i].push([w[j], slope*w[j]+yIntercept]);
         }
@@ -984,10 +1018,16 @@ function realPhaseData(w, sign, zReals) {
 function compConjugatePhaseData(comp, w, sign) {//sign will be -1 or +1
   var comp_data = [], comp_dataApprox = [], base, peak, imagPart, realPart,
   x, zeta, w0, upperBound, lowerBound, slope, yIntercept;
+  var compDone = [];//comp already done.
   let a, b;//a + jb, a = 1-(w/w0)^2 b = 2*zeta*w/(w0) w[j]
   for (let i=0; i<comp.length; i++) {//loop through complex roots in numerator.
     realPart = comp[i][0];
     imagPart = comp[i][1];
+    /*if (i) {// i > 0
+      if (realPart == compDone[i-1][0] && -1*imagPart == compDone[i-1][1]) {
+        continue;//if this one is complex conjugate of the previous, continue on.
+      }
+    }*/
     w0 = Math.sqrt(realPart*realPart + imagPart*imagPart);
     x = Math.atan2(imagPart,realPart);//y, x -> y/x, opposite/ajdacent
     zeta = Math.cos(x);//zeta will be a ratio.
