@@ -1064,7 +1064,7 @@ function compConjugatePhaseData(comp, w, sign) {//sign will be -1 or +1
         else {
           slope = 180*sign/(upperBound - lowerBound);
           yIntercept = slope*(-1*lowerBound);// m*(-x1)+y1 in point-slope form. y1 = 0.
-          comp_dataApprox[i].push([w[j], slope*w[j]+yIntercept]);
+          comp_dataApprox[i].push([w[j], slope*Math.log10(w[j])+yIntercept]);
         }
       }
     //}
@@ -1075,7 +1075,8 @@ function compConjugatePhaseData(comp, w, sign) {//sign will be -1 or +1
       b = 1-a*a;
       x = (2*zeta*a)/b;//magnitude |a+jb|
       //ends up being arctan(img/real)
-      comp_data[i].push([w[j], sign*rad2Degrees(Math.atan2(2*zeta*a, b))]);//vs Math.atan2(x)
+      //should Math.abs() be necessary here, or are we doing somehting else wrong?
+      comp_data[i].push([w[j], sign*Math.abs(rad2Degrees(Math.atan2(2*zeta*a, b)))]);//vs Math.atan2(x)
       //we need rad2Degrees bc graph is in degrees & Math.atan2() returns radians.
     }
   }
