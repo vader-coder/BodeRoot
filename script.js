@@ -6,8 +6,8 @@ function onClick() {
   var polyCheck2 = document.getElementById('polyCheck2').checked;//check which checkbox was checked
   var factorCheck2 = document.getElementById('factorCheck2').checked;
   var variable = document.getElementById('variable').value;
-  if (document.getElementById('Polynomial1').value.indexOf(variable) == -1 || document.getElementById('Polynomial2').value.indexOf(variable) == -1) {
-    alert("You need to enter a variable in both fields.");
+  if (document.getElementById('Polynomial1').value.indexOf(variable) == -1 && document.getElementById('Polynomial2').value.indexOf(variable) == -1) {
+    alert("You need to enter a variable in at least the denominator.");
     return;
   }
   var polynomialform = getPoly(polyCheck, factorCheck, '1');//numerator
@@ -57,7 +57,12 @@ function finder(polynomialform) {
   if (factors.text() == nerdamer('expand('+ poly +')')) {//polynomial can't be factored.
     factors = factors.text();
     factorExp = [1];
-    roots = objectToArray(nerdamer('roots('+ poly + ')'));
+    if (poly.indexOf(variable) > -1) {
+      roots = objectToArray(nerdamer('roots('+ poly + ')'));
+    }
+    else {
+      roots = [];//constants don't have any roots.
+    }
   }
   else {//polynomial can be factored.
     factors = factors.toString();//.text() vs .toString()
@@ -388,8 +393,8 @@ function rootsStrArrToChartFormat(roots) {
     }
     else if (typeof(realPart) == typeof(5)) {//it is complex, not just imaginary.
       imagPart = parseInt(nerdamer('imagpart('+roots[i].toString()+')').text(), 10);
-      if (imagPart < 0 && realPart > 0) {
-        continue;//for complex conjugates, we only want to use +i version for data.
+      if (imagPart < 0 && realPart != 0) {//should we weed out imaginary #s?
+        continue;//for complex conjugates, we only want to use +i version for generating conjugate data.
       }
       //roots[i] = [realPart, imagPart];
       comp.push([realPart, imagPart]);
@@ -479,7 +484,13 @@ function desmos(constant, nRoot, dRoot) {
 //takes numAns, denomAns & returns list of data for bode plot
 //each root will only occur once, and its exponet will be listed in numAns['factorExp'] or denomAns['factorExp'];
 function bodeData(numAns, denomAns) {//add pReal & zReal nextx
-  var nRoot = rootsStrArrToChartFormat(numAns['roots']);
+  var nRoot, dRoot, n, d, nFactorExp, dFactorExp;
+  if (numAns['roots'][0]) {
+    nRoot = rootsStrArrToChartFormat(numAns['roots']);
+  }
+  else {
+    nRoot = [[], []];
+  }
   var dRoot = rootsStrArrToChartFormat(denomAns['roots']);
   var nComp = nRoot[1], dComp = dRoot[1], nReal = nRoot[0], dReal = nRoot[0];
   var n = unity(numAns['coef'], numAns['powers']);//make x^0's coefficeint 1
@@ -519,10 +530,10 @@ function bodeData(numAns, denomAns) {//add pReal & zReal nextx
     w.push(roundDecimal(i*0.1, 1));//w.push(roundDecimal(1+ i*0.1, 1)); might want multiple versions of this.
     consT_data.push([w[i-1], x]);
   }
-  if (nRoot[0]) {
+  if (nRoot[0].length) {
     [zReal_data, zReal_dataApprox, zOrigin_data, zOrigin, zReals] = realData(w, 1, nRoot, nFactorExp);
   }
-  if (nComp) {//only call this if there are complex conjugate roots in the numerator.
+  if (nComp.length) {//only call this if there are complex conjugate roots in the numerator.
     [zComp_data, zComp_dataApprox] = compConjugateData(nComp, w, 1);
   }
   //function realData(w, sign, nRoot, nFactorExp) {
@@ -568,15 +579,20 @@ function wBound(nRoot, dRoot) {
   wMax = Math.max(...total);
   wMin = Math.pow(Math.floor(Math.log10(wMin)-1), 10);
   wMax = Math.pow(Math.ceil(Math.log10(wMax)+1), 10);
+  if (wMax == Infinity || wMax < 100) {
+    wMax = 100;
+  }
   return [wMin, wMax];
 }//so far this has not given us reasonable answers.
 function w0List(rootList) {
-  var ret = [];
-  for (let i=0; i<rootList[0].length; i++) {// loop through real roots
-    ret.push(Math.abs(rootList[i]));
-  }
-  for (let i=0; i<rootList[1].length; i++) {//loop through imaginary roots
-    ret.push(Math.sqrt(Math.pow(rootList[1][i][0], 2)+Math.pow(rootList[1][i][1], 2)));
+  var ret = [], realRoots = rootList[0], imagRoots = rootList[1];
+  if (realRoots && imagRoots) {
+    for (let i=0; i<realRoots.length; i++) {// loop through real roots
+      ret.push(Math.abs(rootList[i]));
+    }
+    for (let i=0; i<imagRoots.length; i++) {//loop through imaginary roots
+      ret.push(Math.sqrt(Math.pow(rootList[1][i][0], 2)+Math.pow(rootList[1][i][1], 2)));
+    }
   }
   return ret;
 }
@@ -629,7 +645,7 @@ function compConjugateData(comp, w, sign) {//sign will be -1 or +1
           }
           else if (w[j] == w0Rounded) {//might ask prof cheever about his peak at some point.
             base = sign*40*Math.log10(x);
-            peak = Math.abs(20*Math.log10(2*zeta))*Math.sign(base);
+            peak = 20*Math.abs(Math.log10(2*Math.abs(zeta)))*Math.sign(base);
             //if the peak doesn't have the same size as the base, it iwll look like a valley.
             //zComp_dataApprox[i].push([w[j], base+(peak/3)]);//should we have nFactorExp[i] here?
             //zComp_dataApprox[i].push([w[j], base+(2*peak/3)]);//should we have nFactorExp[i] here?
@@ -647,7 +663,7 @@ function compConjugateData(comp, w, sign) {//sign will be -1 or +1
             comp_dataApprox[i].push([w[j], sign*40*Math.log10(x)]);
           }
         }
-      //}
+      }
       //exact version starts here:
       //a + jb, a = 1-(w/w0)^2 b = 2*zeta*w/(w0) w[j]. 20*log10(|a+jb|)
       for (let j=0; j<jMax; j++) {//should we have included this in both the other for loops or had there be only one?
@@ -657,7 +673,7 @@ function compConjugateData(comp, w, sign) {//sign will be -1 or +1
         comp_data[i].push([w[j], sign*20*Math.log10(x)]);
         //approx & exact are closer when both 20 or 40.
       }
-    }//there is no way the exact way can be this easy.
+    //}//there is no way the exact way can be this easy.
   }
   return [comp_data, comp_dataApprox]
 }
@@ -686,9 +702,6 @@ function allFreq(consT_data, w, zOrigin, zOrigin_data, pOrigin, pOrigin_data, zR
       for (let j=0; j<zComp_data.length; j++) {//is htere any way you can work this into the rest?
         if (zComp_data[j][i] == undefined) {
           console.log('undefined: ' + i.toString() + 'i, ' + j.toString() + 'j');
-        }
-        else {
-          console.log(i.toString() + 'i, ' + j.toString() + 'j');
         }
         calc += parseInt(zComp_data[j][i][1], 10);
       }
@@ -960,8 +973,8 @@ function realData(w, sign, nRoot, nFactorExp) {
   for (let i=0; i<nRoot[0].length; i++) {//loop through real zeros.
     if (nRoot[0][i] == 0) {
       zOrigin = 1;
-      for (let j=0; j<jMax; j++) {
-        zOrigin_data.push([w[j], 20*nFactorExp[i]*Math.log10(w[j])]);
+      for (let j=0; j<jMax; j++) {//might have to redo the nFactorExp[i]
+        zOrigin_data.push([w[j], 20*nFactorExp[i]*sign*Math.log10(w[j])]);
       }
     }
     else if (nRoot[0][i]) {//real number zero
@@ -1029,11 +1042,6 @@ function compConjugatePhaseData(comp, w, sign) {//sign will be -1 or +1
   for (let i=0; i<comp.length; i++) {//loop through complex roots in numerator.
     realPart = comp[i][0];
     imagPart = comp[i][1];
-    /*if (i) {// i > 0
-      if (realPart == compDone[i-1][0] && -1*imagPart == compDone[i-1][1]) {
-        continue;//if this one is complex conjugate of the previous, continue on.
-      }
-    }*/
     w0 = Math.sqrt(realPart*realPart + imagPart*imagPart);
     x = Math.atan2(imagPart,realPart);//y, x -> y/x, opposite/ajdacent
     zeta = Math.cos(x);//zeta will be a ratio.
@@ -1041,7 +1049,7 @@ function compConjugatePhaseData(comp, w, sign) {//sign will be -1 or +1
     //how is this possible for a complex conjugate? one will be -, other will be +.
     comp_data.push([]);
     comp_dataApprox.push([]);
-    if (zeta > 0 && zeta < 1) {//will have to account for a # & it's conjugate being in there (I think? or will zeta take care of that?)
+    //if (zeta > 0 && zeta < 1) {//will have to account for a # & it's conjugate being in there (I think? or will zeta take care of that?)
       for (let j=0; j<jMax; j++) {
         x = w[j];
         //lower & upper boundarises of line in x coordinates
@@ -1059,7 +1067,7 @@ function compConjugatePhaseData(comp, w, sign) {//sign will be -1 or +1
           comp_dataApprox[i].push([w[j], slope*w[j]+yIntercept]);
         }
       }
-    }
+    //}
       //exact version starts here:
       //a + jb, a = 1-(w/w0)^2 b = 2*zeta*w/(w0) w[j]. 20*log10(|a+jb|)
     for (let j=0; j<jMax; j++) {//should we have included this in both the other for loops or had there be only one?
