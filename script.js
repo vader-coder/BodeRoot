@@ -517,7 +517,7 @@ function bodeData(numAns, denomAns) {//add pReal & zReal nextx
     wMax = parseInt(wMax);
   }
   if (n['divisor']) {
-    consT = d['divisor']/n['divisor'];
+    consT = n['divisor']/d['divisor'];
   }
   else {//x^0 coefficient is 0 in numerator.
     consT = 1;//if multiply anything by 1, is still itself.
@@ -530,6 +530,18 @@ function bodeData(numAns, denomAns) {//add pReal & zReal nextx
     w.push(roundDecimal(i*0.1, 1));//w.push(roundDecimal(1+ i*0.1, 1)); might want multiple versions of this.
     consT_data.push([w[i-1], x]);
   }
+  var graphCheck = document.getElementById('graphOptions');
+  graphCheck.innerHTML = "<input type='checkbox' id='consTCheck' checked></input>";
+  graphCheck.innerHTML += "<label for='consTCheck'>Constant "+consT.toString()+"</label><br>";
+  var graphs = document.getElementById('graphs');
+  graphs.innerHTML = "<div id='consT'><div id='consTFreq'></div><br><p class='freqDescription'></p><br>";
+  graphs.innerHTML += "<div id='consTPhase'></div><br><p class='phaseDescription'></p></div><br>";
+
+  var desc = 'Constant '+consT.toString()+' in dB: 20log10(|'+consT.toString()+'|) = ' + x;
+  setDescription('consT', desc, 'freq');
+
+  var zCheckboxes = ['Title', 'zOrigin', 'zReal', 'zComp'];
+  var pCheckboxes = ['pTitle', 'pOrigin', 'pReal', 'pComp'];
   if (nRoot[0].length) {
     [zReal_data, zReal_dataApprox, zOrigin_data, zOrigin, zReals] = realData(w, 1, nRoot, nFactorExp);
   }
@@ -617,7 +629,7 @@ function compArrToStr(comp) {
 //works on dComp or nComp to get their data.
 function compConjugateData(comp, w, sign) {//sign will be -1 or +1
   var comp_data = [], comp_dataApprox = [], base, peak, imagPart,
-  realPart, x, zeta, w0, w0Rounded, jMax = w.length;
+  realPart, x, zeta, w0, w0Rounded, jMax = w.length, xIntercept;
   let a, b;//a + jb, a = 1-(w/w0)^2 b = 2*zeta*w/(w0) w[j]
   for (let i=0; i<comp.length; i++) {//loop through complex roots in numerator.
     realPart = comp[i][0];
@@ -637,12 +649,12 @@ function compConjugateData(comp, w, sign) {//sign will be -1 or +1
       if (zeta < 0.5) {
         for (let j=0; j<jMax; j++) {
           x = w[j];//lines 40*Math.log10(x) & y=0 intersect at x = 1.
-          if (w[j] <= 1) {//for phase w[j] <= w0/(Math.pow(10, zeta))) {
+          if (w[j] <= w0Rounded) {//for phase w[j] <= w0/(Math.pow(10, zeta))) {
             comp_dataApprox[i].push([w[j], 0]);
-          }
-          else if (w[j] > 1 && w[j] != w0Rounded) { //might change to if so they will connect?
-            comp_dataApprox[i].push([w[j], sign*40*Math.log10(x)]);
-          }
+          }//was w0Rounded.
+          else if (w[j] > w0Rounded && w[j] != w0Rounded) { //might change to if so they will connect?
+            comp_dataApprox[i].push([w[j], sign*40*Math.log10(x-w0Rounded+1)]);
+          }//w0Rounded pushes the asymptote so it is more in sync w/ exact function.
           else if (w[j] == w0Rounded) {//might ask prof cheever about his peak at some point.
             base = sign*40*Math.log10(x);
             peak = 20*Math.abs(Math.log10(2*Math.abs(zeta)))*Math.sign(base);
@@ -656,10 +668,10 @@ function compConjugateData(comp, w, sign) {//sign will be -1 or +1
       else if (zeta >= 0.5) {//don't draw peak. it would seem like in this case w[0] doesn't matter.
         for (let j=0; j<jMax; j++) {
           x = w[j];
-          if (w[j] < 1) {//for phase w[j] <= w0/(Math.pow(10, zeta))) {
+          if (w[j] < w0Rounded) {//for phase w[j] <= w0/(Math.pow(10, zeta))) {
             comp_dataApprox[i].push([w[j], 0]);
           }
-          else if (w[j] >= 1) {
+          else if (w[j] >= w0Rounded) {
             comp_dataApprox[i].push([w[j], sign*40*Math.log10(x)]);
           }
         }
@@ -669,7 +681,8 @@ function compConjugateData(comp, w, sign) {//sign will be -1 or +1
       for (let j=0; j<jMax; j++) {//should we have included this in both the other for loops or had there be only one?
         realPart = 1-Math.pow((w[j]/w0), 2);
         imagPart = 2*zeta*(w[j]/w0);//also j, j^2 = -1
-        x = Math.sqrt(realPart*realPart+-1*imagPart*imagPart);//magnitude |a+jb|
+        //+ works, - doesn't.
+        x = Math.sqrt(realPart*realPart+imagPart*imagPart);//magnitude |a+jb|
         comp_data[i].push([w[j], sign*20*Math.log10(x)]);
         //approx & exact are closer when both 20 or 40.
       }
@@ -732,6 +745,11 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
       color: 'rgba(223, 83, 83, 1)',//data is [x, y];
       data: consT_data
   });
+  var consTSeries = [{
+    name: 'Constant ' + consT,
+    color: 'rgba(223, 83, 83, 1)',//data is [x, y];
+    data: consT_data}];
+  highchartsPlot(consTSeries, 'consTFreq', 'Constant '+consT.toString()+' Plot', 'Magnitude dB');
   if (zOrigin_data[0]) {//if no z at origin, will just be 0.
     series.push({
         name: 'Zero at Origin',
@@ -831,105 +849,26 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
         data: allFreq_dataApprox//data for relevant real zero.
     });
   }
-
-  //at some point, numAns or denomAns will need to be able to tell us
-  //how many times each root occurs (1 at minimum)
-  Highcharts.chart('bode', {
-    chart: {
-        type: 'line',
-        zoomType: 'xy'
-    },
-    title: {
-        text: 'Bode Plot'
-    },
-    xAxis: {
-      type: 'logarithmic',//'logarithmic'. can't plot sub-zero values on a logarithmic axis
-        title: {
-            enabled: true,
-            text: 'Frequency ω'//ω, &#x03C9;
-        },
-        startOnTick: true,
-        endOnTick: true,
-        showLastLabel: true
-    },
-    //type: 'linear','logarithmic'
-    yAxis: {
-      type: 'linear',
-        title: {
-            text: 'Magnitude dB'
-        }
-    },
-    /*legend: {
-        layout: 'vertical',
-        align: 'right',//'left'
-        verticalAlign: 'bottom',//'top'
-        x: 100,
-        y: 70,
-        floating: true,
-        backgroundColor: Highcharts.defaultOptions.chart.backgroundColor,
-        borderWidth: 1,
-        title: {
-                text: ':: Drag me'
-            },
-        floating: true,
-        draggable: true
-    }*/legend: {
-            layout: 'vertical',
-            backgroundColor: 'white',
-            align: 'right',
-            verticalAlign: 'top',
-            y: 60,
-            x: -10,
-            borderWidth: 1,
-            borderRadius: 0,
-            title: {
-                text: ':: Drag me'
-            },
-            floating: true,
-            draggable: true,
-            zIndex: 20
-        },
-    plotOptions: {
-        scatter: {
-            marker: {
-                radius: 5,
-                states: {
-                    hover: {
-                        enabled: true,
-                        lineColor: 'rgb(100,100,100)'
-                    }
-                }
-            },
-            states: {
-                hover: {
-                    marker: {
-                        enabled: false
-                    }
-                }
-            },
-            tooltip: {
-                headerFormat: '<b>{series.name}</b><br>',
-                pointFormat: '{point.x} &#x03C9;, {point.y} dB'
-            }
-        }
-    },
-    series: series
-  });
+  highchartsPlot(series, 'bode', 'Bode Plot', 'Magnitude dB');
 }
 //w is input (like #s plugged in for x).
 function bodeDataPhase(w, consT, consT_data, zOrigin_data, pOrigin_data, zReals, pReals, zReal_data, pReal_data, nComp, dComp, nFactorExp, dFactorExp) {
   var x, w0, theta, zReal = zReals.length, pReal = pReals.length,
   zOrigin = 0, pOrigin = 0, zRealCount = zReal, pRealCount = pReal, zReal_dataApprox,
   pReal_dataApprox, zComp_data = [], pComp_data = [], zComp_dataApprox = [],
-  pComp_dataApprox = [], allPhase_data, allPhase_dataApprox, jMax = w.length;
+  pComp_dataApprox = [], allPhase_data, allPhase_dataApprox, jMax = w.length, desc;
   //pRealCount vs pReal might confuse your readers.. mbe try to eliminate the flags you can?
   //get w.
   for (let i=0; i<jMax; i++) {
     if (consT > 0) {
       consT_data[i] = [w[i], 0];
+      desc = 'Constant '+consT.toString()+' > 0, so its phase = 0 degrees.';
+      setDescription('consT', desc, 'phase');
     }
     else if (consT < 0) {
       consT_data[i] = [w[i], 180];//-180 would also work.
+      desc = 'Constant '+consT.toString()+' < 0, so its phase = +-180 degrees.';
+      setDescription('consT', desc, 'phase');
     }
     if (zOrigin_data.length) {//they wouldn't have a length if there was no zero at origin.
       zOrigin_data[i] = [w[i], 90];
@@ -1049,12 +988,20 @@ function compConjugatePhaseData(comp, w, sign) {//sign will be -1 or +1
     //how is this possible for a complex conjugate? one will be -, other will be +.
     comp_data.push([]);
     comp_dataApprox.push([]);
+    //roundDecimal() on lower & upperBound?
+    //0.7, 6.3
+    lowerBound = w0/(Math.pow(10, Math.abs(zeta)));////(x,y) = (lowerBound, 0)
+    upperBound = w0*Math.pow(10, Math.abs(zeta));//(x,y) = (upperBound, sign*180)
+    slope = 180*sign/(upperBound - lowerBound);
+    //slope = sign*180/(Math.log10(upperBound) - Math.log10(lowerBound));
+    yIntercept = slope*(-1*lowerBound);// m*(-x1)+y1 in point-slope form. y1 = 0.*/
+
+    /*slope = sign*180/(Math.log10(upperBound) - Math.log10(lowerBound));
+    yIntercept = sign*180 - slope*Math.log10(upperBound +1-lowerBound);*/
     //if (zeta > 0 && zeta < 1) {//will have to account for a # & it's conjugate being in there (I think? or will zeta take care of that?)
       for (let j=0; j<jMax; j++) {
         x = w[j];
         //lower & upper boundarises of line in x coordinates
-        lowerBound = w0/(Math.pow(10, zeta));////(x,y) = (lowerBound, 0)
-        upperBound = w0*Math.pow(10, zeta);//(x,y) = (upperBound, sign*180)
         if (w[j] < lowerBound) {//for phase w[j] <= w0/(Math.pow(10, zeta))) {
           comp_dataApprox[i].push([w[j], 0]);
         }
@@ -1062,9 +1009,8 @@ function compConjugatePhaseData(comp, w, sign) {//sign will be -1 or +1
           comp_dataApprox[i].push([w[j], sign*180]);
         }
         else {
-          slope = 180*sign/(upperBound - lowerBound);
-          yIntercept = slope*(-1*lowerBound);// m*(-x1)+y1 in point-slope form. y1 = 0.
-          comp_dataApprox[i].push([w[j], slope*Math.log10(w[j])+yIntercept]);
+          comp_dataApprox[i].push([w[j], slope*(w[j]+1-lowerBound)+yIntercept]);
+          //comp_dataApprox[i].push([w[j], slope*(w[j]+1-lowerBound)+yIntercept]);
         }
       }
     //}
@@ -1094,6 +1040,11 @@ function mkBodePhase(consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRea
         color: 'rgba(223, 83, 83, 1)',//data is [x, y];
         data: consT_data
     });
+    var consTSeries = [{
+      name: 'Constant ' + consT,
+      color: 'rgba(223, 83, 83, 1)',//data is [x, y];
+      data: consT_data}];
+    highchartsPlot(consTSeries, 'consTPhase', 'Constant '+consT.toString()+' Phase Plot', 'Phase in Degrees');
   }
   if (zOrigin_data.length) {
     series.push({
@@ -1185,14 +1136,24 @@ function mkBodePhase(consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRea
       });
     }
   }
-
-  Highcharts.chart('bodePhase', {
+  highchartsPlot(series, 'bodePhase', 'Bode Plot: Phase', 'Phase in Degrees');
+}
+//sets a discription within a div with id divId.
+//description type can be 'freq' or 'phase'
+function setDescription(divId, description, type) {
+  var desc = document.getElementById(divId).getElementsByClassName(type+'description')[0];
+  desc.textContent = description;
+}
+//series: data to be plotted. id: id of div to plot it in.
+//title: array w/ title of chart, yAxis has title of yAxis.
+function highchartsPlot(series, id, title, yAxis) {
+  Highcharts.chart(id, {
     chart: {
         type: 'line',
         zoomType: 'xy'
     },
     title: {
-        text: 'Bode Plot: Phase'
+        text: title
     },
     xAxis: {
       type: 'logarithmic',//'logarithmic'. can't plot sub-zero values on a logarithmic axis
@@ -1208,24 +1169,10 @@ function mkBodePhase(consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRea
     yAxis: {
       type: 'linear',
         title: {
-            text: 'Phase'
+            text: yAxis//'Magnitude dB'
         }
     },
-    /*legend: {
-        layout: 'vertical',
-        align: 'right',//'left'
-        verticalAlign: 'bottom',//'top'
-        x: 100,
-        y: 70,
-        floating: true,
-        backgroundColor: Highcharts.defaultOptions.chart.backgroundColor,
-        borderWidth: 1,
-        title: {
-                text: ':: Drag me'
-            },
-        floating: true,
-        draggable: true
-}*/legend: {
+    legend: {
             layout: 'vertical',
             backgroundColor: 'white',
             align: 'right',
