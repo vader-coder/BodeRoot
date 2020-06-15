@@ -1,11 +1,4 @@
 //capital strings refer to input ids, lowercase refres to output id.
-var freqSeries = [];
-var topFreqSeries = [];
-var phaseSeries = [];
-var topPhaseSeries = [];
-//I declared these two variables to be global so that both
-//onGraphPress() & onClick() can access them.
-//otherwise I would need to make a dynamic website.
 function onClick() {
   var roots, roots2;//actual roots. I would like to check...
   var polyCheck = document.getElementById('polyCheck1').checked;//check which checkbox was checked
@@ -740,10 +733,8 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
   pReal_data, zReals, pReals, zComp_data, pComp_data, zRealCount, pRealCount,
   allFreq_data, zReal_dataApprox, pReal_dataApprox, zComp_dataApprox, pComp_dataApprox,
   allFreq_dataApprox, nComp, dComp) {
-  var graphs, graphCheck, checkHtml, graphHtml, checkId, freqId, phaseId, x;
-  freqSeries = [];
-  topFreqSeries = [];
-  //this is the series that will be on top based on chekmarks.
+  var series = [], graphs, graphCheck, checkHtml, graphHtml, checkId, freqId, phaseId, x;
+  var topSeries = [];//this is the series that will be on top based on chekmarks.
   graphCheck = document.getElementById('graphOptions');
   graphs = document.getElementById('graphs');
   checkHtml = "<br>Elements Detected: <br>";
@@ -759,6 +750,10 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
       color: 'rgba(223, 83, 83, 1)',//data is [x, y];
       data: consT_data
   });
+  topSeries.push({
+    name: 'Constant ' + consT,
+    color: 'rgba(223, 83, 83, 1)',//data is [x, y];
+    data: consT_data});
   graphCheck.innerHTML = checkHtml;
   graphs.innerHTML = graphHtml;
 //need to call this?
@@ -768,12 +763,21 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
         color: 'rgba(119, 152, 191, 1)',
         data: zOrigin_data
     });
+    topSeries.push({
+      name: 'Constant ' + consT,
+      color: 'rgba(119, 152, 191, 1)',//data is [x, y];
+      data: zOrigin_data});
     checkHtml = "<input type='checkbox' id='zOriginCheck' checked></input>";
     checkHtml+="<label for='zOriginCheck'>Zero at Origin</label><br>"
     graphCheck.insertAdjacentHTML('beforeend', checkHtml);
   }
   if (pOrigin_data[0]) {//check if 1st item exists
     series.push({
+        name: 'Pole at Origin',
+        color: 'rgba(119, 152, 191, 1)',
+        data: pOrigin_data
+    });
+    topSeries.push({
         name: 'Pole at Origin',
         color: 'rgba(119, 152, 191, 1)',
         data: pOrigin_data
@@ -790,6 +794,16 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
           data: zReal_data[i]//zReal_data[i][1]//data for relevant real zero.
       });
       series.push({
+          name: 'Real Zero '+zReals.toString() + ' Approximation',
+          color: 'rgba(119, 152, 191, 1)',
+          data: zReal_dataApprox[i]//data for relevant real zero.
+      });
+      topSeries.push({
+          name: 'Real Zero '+zReals[i].toString(),
+          color: 'rgba(119, 152, 191, 1)',
+          data: zReal_data[i]//zReal_data[i][1]//data for relevant real zero.
+      });
+      topSeries.push({
           name: 'Real Zero '+zReals.toString() + ' Approximation',
           color: 'rgba(119, 152, 191, 1)',
           data: zReal_dataApprox[i]//data for relevant real zero.
@@ -812,6 +826,16 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
           color: 'rgba(119, 152, 191, 1)',
           data: pReal_dataApprox[i]//data for relevant real zero.
       });
+      topSeries.push({
+          name: 'Real Pole '+pReals[i].toString(),
+          color: 'rgba(119, 152, 191, 1)',
+          data: pReal_data[i]//data for relevant real zero.
+      });
+      topSeries.push({
+          name: 'Real Pole '+pReals[i].toString()+' Approximation',
+          color: 'rgba(119, 152, 191, 1)',
+          data: pReal_dataApprox[i]//data for relevant real zero.
+      });
       checkId = 'pRealCheck_'+pReals[i].toString();
       checkHtml="<input type='checkbox' id="+checkId+" checked></input>";
       checkHtml+="<label for="+checkId+">Real Poles "+pReals[i].toString()+"</label><br>";
@@ -828,9 +852,19 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
           color: 'rgba(5, 191, 5, 1)',
           data: zComp_dataApprox[i]//data for relevant real zero.
       });
+      topSeries.push({
+          name: 'Complex Zero '+ print[i] + ' Approximation',//nComp[i][0].toString() + ' + ' + nComp[i][1].toString() +' Approximation',
+          color: 'rgba(5, 191, 5, 1)',
+          data: zComp_dataApprox[i]//data for relevant real zero.
+      });
     }
     for (let i=0; i<zComp_data.length; i++) {
       series.push({
+          name: 'Complex Zero '+ print[i],//nComp[i][0].toString() + ' + ' + nComp[i][1].toString() +' Approximation',
+          color: 'rgba(5, 191, 5, 1)',
+          data: zComp_data[i]//data for relevant real zero.
+      });
+      topSeries.push({
           name: 'Complex Zero '+ print[i],//nComp[i][0].toString() + ' + ' + nComp[i][1].toString() +' Approximation',
           color: 'rgba(5, 191, 5, 1)',
           data: zComp_data[i]//data for relevant real zero.
@@ -850,9 +884,19 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
           color: 'rgba(5, 191, 5, 1)',
           data: pComp_data[i]//data for relevant real zero.
       });
+      topSeries.push({
+          name: 'Complex Pole '+ print[i],//nComp[i][0].toString() + ' + ' + nComp[i][1].toString() +' Approximation',
+          color: 'rgba(5, 191, 5, 1)',
+          data: pComp_data[i]//data for relevant real zero.
+      });
     }
     for (let i=0; i<pComp_data.length; i++) {
       series.push({
+          name: 'Complex Pole '+ print[i] + ' Approximation',//nComp[i][0].toString() + ' + ' + nComp[i][1].toString() +' Approximation',
+          color: 'rgba(5, 191, 5, 1)',
+          data: pComp_dataApprox[i]//data for relevant real zero.
+      });
+      topSeries.push({
           name: 'Complex Pole '+ print[i] + ' Approximation',//nComp[i][0].toString() + ' + ' + nComp[i][1].toString() +' Approximation',
           color: 'rgba(5, 191, 5, 1)',
           data: pComp_dataApprox[i]//data for relevant real zero.
@@ -874,15 +918,24 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
         color: 'rgba(50, 0, 50, 1)',
         data: allFreq_dataApprox//data for relevant real zero.
     });
+    topSeries.push({
+        name: 'Total Bode',
+        color: 'rgba(0, 0, 0, 1)',
+        data: allFreq_data//data for relevant real zero.
+    });
+    topSeries.push({
+        name: 'Total Bode' + ' Approximation',
+        color: 'rgba(50, 0, 50, 1)',
+        data: allFreq_dataApprox//data for relevant real zero.
+    });
   }
   checkHtml = "<button onclick='graph()'>Graph</button><br>";
   graphCheck.insertAdjacentHTML('beforeend', checkHtml);
-  topSeries = series;
   //try topSeries = series, then go through & change color or something.
   //would probably be less error-prone & take up less space.
   highchartsPlot(series, 'bode', 'Frequency Plot', 'Magnitude dB');
-  highchartsPlot(topSeries, 'freq', 'Frequency Plot', 'Magnitude dB');
-  //  highchartsPlot(topSeries, 'phase', 'Phase Plot', 'Phase in Degrees');
+  highchartsPlot(topSeries, 'bode', 'Frequency Plot', 'Magnitude dB');
+
 }
 //w is input (like #s plugged in for x).
 function bodeDataPhase(w, consT, consT_data, zOrigin_data, pOrigin_data, zReals, pReals, zReal_data, pReal_data, nComp, dComp, nFactorExp, dFactorExp) {
@@ -1060,7 +1113,7 @@ function compConjugatePhaseData(comp, w, sign) {//sign will be -1 or +1
 function mkBodePhase(consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRealArr,
   zReal_dataApprox, pReals, pRealArr, pReal_dataApprox, zComp_data, pComp_data,
   zComp_dataApprox, pComp_data, pComp_dataApprox, nComp, dComp, allPhase_data, allPhase_dataApprox) {
-  var series = [], zOriginSeries = [], desc, topSeries = [];
+  var series = [], zOriginSeries = [], desc;
   if (consT) {
     series.push(
     {//if something is to not be graphed, it's data will be empty.
@@ -1068,13 +1121,18 @@ function mkBodePhase(consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRea
         color: 'rgba(223, 83, 83, 1)',//data is [x, y];
         data: consT_data
     });
+    var consTSeries = [{
+      name: 'Constant ' + consT,
+      color: 'rgba(223, 83, 83, 1)',//data is [x, y];
+      data: consT_data}];
     if (consT > 0) {
       desc = 'Constant '+consT.toString()+' > 0, so its phase = 0 degrees.';
     }
     else {
       desc = 'Constant '+consT.toString()+' < 0, so its phase = +- 180 degrees.';
     }
-    //setDescription('consT', desc, 'phase');
+    setDescription('consT', desc, 'phase');
+    highchartsPlot(consTSeries, 'consTPhase', 'Constant '+consT.toString()+' Phase Plot', 'Phase in Degrees');
   }
   if (zOrigin_data.length) {
     series.push({
@@ -1082,6 +1140,13 @@ function mkBodePhase(consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRea
         color: 'rgba(119, 152, 191, 1)',
         data: zOrigin_data
     });
+    zOriginSeries.push({
+        name: 'Zero at Origin',
+        color: 'rgba(119, 152, 191, 1)',
+        data: zOrigin_data
+    });
+    setDescription('zOrigin', desc, 'phase');
+    highchartsPlot(zOriginSeries, 'zOriginFreq', 'Zero at the Origin Phase Plot', 'Phase in Degrees');
   }
   if (pOrigin_data.length) {//if no pole at origin, will just be 0.
     series.push({
@@ -1166,9 +1231,7 @@ function mkBodePhase(consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRea
       });
     }
   }
-  topSeries = series;
   highchartsPlot(series, 'bodePhase', 'Bode Plot: Phase', 'Phase in Degrees');
-  highchartsPlot(topSeries, 'phase', 'Bode Plot: Phase', 'Phase in Degrees');
 }
 //sets a discription within a div with id divId.
 //description type can be 'freq' or 'phase'
