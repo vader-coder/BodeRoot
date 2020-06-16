@@ -7,7 +7,7 @@ var quantPerResult = [];//out of const, zOrigin, etc, how many of each there are
 var namesOfIds = [];//names of dictionaries containing data, which became the ids of their checkboxes.
 var lastCheckedTopBoxName;
 //I declared these two variables to be global so that both
-//onGraphPress() & onClick() can access them.
+//onGraphPress & onClick can access them.
 //otherwise I would need to make a dynamic website.
 function onClick() {
   var roots, roots2;//actual roots. I would like to check...
@@ -55,61 +55,43 @@ function onGraphPress() {//1st try w/ zero at origin, p at origin.
   //order is consT, zOrigin, pOrigin, zReal, pReal, (might be > 1), zComp, pComp
   //might set array to track # left behind. use name to find stuff.
   var labels = ['Constant', 'Zero at Origin', 'Pole at Origin', 'Real Zero', 'Real Pole', 'Complex Conjugate Zero', 'Complex Conjugate Pole'];
-  var ids = ['consTCheck', 'zOriginCheck', 'pOriginCheck', 'zRealCheck', 'pRealCheck', 'zCompCheck', 'pCompCheck'];
-  var resultNums = quantPerResult;//don't forget 'Total Bode'.
-  var series = freqSeries;//some point, make series phase series.
-  var series2 = phaseSeries;
-  var names = namesOfIds;
+  const resultNums = JSON.parse(JSON.stringify(quantPerResult));//don't forget 'Total Bode'.
+  const names = JSON.parse(JSON.stringify(namesOfIds));
+  var series = JSON.parse(JSON.stringify(freqSeries));//some point, make series phase series.
+  var series2 = JSON.parse(JSON.stringify(phaseSeries));
+  var freqGraphSeries = [], phaseGraphSeries = [];
+  var charts = Highcharts.charts;
+  if (series[1].data == series2[1].data) {
+    console.log("series & series2 are identical");
+  }
+  if (freqSeries[1].data == phaseSeries[1].data) {
+    console.log("freq & phaseSeries are identical");
+  }
   for (let i=0; i<names.length; i++) {
-    if (document.getElementById(names[i]).checked) {
-      for (let j=0; j<series.length; j++) {
-        if (series[j].name == names[i]) {//find the dictionary of data with the right name
-          series = series[j];
-          series2 = series2[j];
-          if (names[i].indexOf('Comp') != -1 || names[i].indexOf('Real') != -1) {
-            //if it is a complex conjugate or real pole/zero, then
-            //the approximation will be immediately after in the series because
-            //of how we wrote mkBode() & mkBodePHase()
-            series.push(freqSeries[j+1]);//add the approximations.
-            series2.push(phaseSeries[j+1]);
+    if (document.getElementById(names[i])) {
+      if (document.getElementById(names[i]).checked) {
+        for (let j=0; j<series.length; j++) {
+          if (series[j].name == names[i]) {//find the dictionary of data with the right name
+            freqGraphSeries.push(series[j]);
+            phaseGraphSeries.push(series2[j]);
+            if (names[i].indexOf('Comp') != -1 || names[i].indexOf('Real') != -1) {
+              //if it is a complex conjugate or real pole/zero, then
+              //the approximation will be immediately after in the series because
+              //of how we wrote mkBode() & mkBodePHase()
+              freqGraphSeries.push(freqSeries[j+1]);//add the approximations.
+              phaseGraphSeries.push(phaseSeries[j+1]);
+            }
+            break;
           }
-          break;
         }
+        break;
       }
-      break;
     }
   }
-  highchartsPlot(series, 'freq', 'Frequency Plot', 'Magnitude dB');
-  highchartsPlot(series2, 'phase', 'Phase Plot', 'Phase in Degrees');
-  //comp ids_real,comp
-  //could this for loop have been more efficient? poles vs zeros.
-  //if resultNums[i] > 0, then the corresponding value in the series will have a checkmark box.
-  /*for (let i=0; i<resultNums.length; i++) {//faster if was just 7? do they keep evaluating it?
-    if (resultNums[i] && i < 3) {
-      if (document.getElementById(ids[i]).checked) {
-        series = series[i];//array of dictionaries, we only want to graph 1.
-        series2 = series2[i];
-        break;//only graphing one at a time on this chart.
-      }
-    }//maybe try using printed stuff?
-    else if (resultNums[i] && i == 3) {//real zeros & poles
-      for (let j=0; j<zReals.length; j++) {
-        if (document.getElementById(ids[i]+'_'+zReals[j].toString())) {
-          series = series[]
-        }
-      }//throgh real zeros.
-    }
-    else if (resultNums[i] && i == 4) {
-      for (let j=0; )//through real poles.
-    }
-    else if (resultNums[i] && i >= 5) {//complex conjugate zeros & poles
-
-    }
-  }*/
-  //hold on, we are only unchecking one!
-  //reverse idea: remove whichever one isn't checked.
-  //draw out a plan in pseudocode ahead of time.
-  //how to keep track of # zreals, z
+  highchartsPlot(freqGraphSeries, 'freq', 'Frequency Plot', 'Magnitude dB');
+  highchartsPlot(phaseGraphSeries, 'phase', 'Phase Plot', 'Phase in Degrees');
+  /*charts[2].update({series: freqGraphSeries});
+  charts[3].update({series: phaseGraphSeries});*/
 }
 //called when a top checkbox is checked. unchecks the other checkboxes.
 //searches throgh list, unchecks all others.
@@ -660,13 +642,23 @@ function bodeData(numAns, denomAns) {//add pReal & zReal nextx
     pReal_data, zReals, pReals, zComp_data, pComp_data, zRealCount, pRealCount,
     allFreq_data, zReal_dataApprox, pReal_dataApprox, zComp_dataApprox, pComp_dataApprox,
     allFreq_dataApprox, nComp, dComp) */
+  var copy = deepCopyObjArr([w, consT, consT_data, zOrigin_data, pOrigin_data, zReals, pReals,
+    zRealArr, pRealArr, nComp, dComp, nFactorExp, dFactorExp]);
   return [[consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
     pReal_data, zReals, pReals, zComp_data, pComp_data, zRealCount,
     pRealCount, allFreq_data, zReal_dataApprox, pReal_dataApprox,
     zComp_dataApprox, pComp_dataApprox, allFreq_dataApprox, nComp, dComp],
-    [w, consT, consT_data, zOrigin_data, pOrigin_data, zReals, pReals,
-      zRealArr, pRealArr, nComp, dComp, nFactorExp, dFactorExp]];
+    copy];
 }//w, consT, consT_data, zOrigin_data, pOrigin_data, zReals, pReals, zRealArr, pRealArr, nComp, dComp)
+//returns a deep copy of each object.
+function deepCopyObjArr(arr) {
+  let len = arr.length;
+  var ret = [];
+  for (let i=0; i<len; i++) {
+    ret.push(JSON.parse(JSON.stringify(arr[i])));
+  }
+  return ret;
+}
 
 //takes roots and uses them to find the bounds of w (omega)
 function wBound(nRoot, dRoot) {
@@ -827,19 +819,19 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
   allFreq_data, zReal_dataApprox, pReal_dataApprox, zComp_dataApprox, pComp_dataApprox,
   allFreq_dataApprox, nComp, dComp) {
   var series = [], graphs, graphCheck, checkHtml, graphHtml, checkId, freqId, phaseId, x;
-  freqSeries = [],
   resultNums = [1, 0, 0, 0, 0, 0, 0];//const, zOrigin, pOrigin, zReal, pReal, zComp, pComp # of items
-  topFreqSeries = [], name, names = [];
+  var name, names = [];
   //this is the series that will be on top based on chekmarks.
   name = 'Constant ' + consT.toString();//was just consT
   graphCheck = document.getElementById('graphOptions');
   graphs = document.getElementById('graphs');
   checkHtml = "<br>Elements Detected: <br>";
-  checkHtml += "<input type='checkbox' id='" + name + "' checked></input>";
+  checkHtml += "<input type='checkbox' id='" + name + "' onclick=\"onTopCheckOne(\'"+name+"\')\" checked></input>";
   checkHtml += "<label for='" + name + "'>"+ name +"</label><br>";
   graphHtml =  "<div id='freq'></div><br><p id='freqDescription'></p><br>";
   graphHtml += "<div id='phase'></div><br><p id='phaseDescription'></p></div><br>";
   //1 description, 1 graph
+  lastCheckedTopBoxName = name;//1st box to be checked is the constant.
   x = consT_data[0][0].toString();
 
   series.push({//if something is to not be graphed, it's data will be empty.
@@ -860,7 +852,7 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
     });
     names.push(name);
     resultNums[1]++;
-    checkHtml = "<input type='checkbox' id='"+name+"' checked></input>";
+    checkHtml = "<input type='checkbox' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
     checkHtml+="<label for='"+name+"'>Zero at Origin</label><br>"
     graphCheck.insertAdjacentHTML('beforeend', checkHtml);
   }
@@ -873,7 +865,7 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
     });
     names.push(name);
     resultNums[2]++;
-    checkHtml="<input type='checkbox' id='"+name+"' checked></input>";
+    checkHtml="<input type='checkbox' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
     checkHtml+="<label for='"+name+"'>Pole at Origin</label><br>"
     graphCheck.insertAdjacentHTML('beforeend', checkHtml);
   }
@@ -892,7 +884,7 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
           color: 'rgba(119, 152, 191, 1)',
           data: zReal_dataApprox[i]//data for relevant real zero.
       });
-      checkHtml="<input type='checkbox' id='"+name+"' checked></input>";
+      checkHtml="<input type='checkbox' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
       checkHtml+="<label for='"+name+"'>"+name+"</label><br>";
       graphCheck.insertAdjacentHTML('beforeend', checkHtml);
     }
@@ -911,7 +903,7 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
           color: 'rgba(119, 152, 191, 1)',
           data: pReal_dataApprox[i]//data for relevant real zero.
       });
-      checkHtml="<input type='checkbox' id='"+name+"' checked></input>";
+      checkHtml="<input type='checkbox' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
       checkHtml+="<label for='"+name+"'>"+name+"</label><br>";
       graphCheck.insertAdjacentHTML('beforeend', checkHtml);
     }
@@ -934,7 +926,7 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
           data: zComp_dataApprox[i]//data for relevant real zero.
       });
       names.push(name);
-      checkHtml="<input type='checkbox' id='"+name+"' checked></input>";
+      checkHtml="<input type='checkbox' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
       checkHtml+="<label for='"+name+"'>"+name+"</label><br>";
       graphCheck.insertAdjacentHTML('beforeend', checkHtml);
     }
@@ -956,7 +948,7 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
           data: pComp_dataApprox[i]//data for relevant real zero.
       });
       names.push(name);
-      checkHtml="<input type='checkbox' id='"+name+"' checked></input>";
+      checkHtml="<input type='checkbox' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
       checkHtml+="<label for='"+name+"'>"+name+"</label><br>";
       graphCheck.insertAdjacentHTML('beforeend', checkHtml);
     }
@@ -973,17 +965,19 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
         data: allFreq_dataApprox//data for relevant real zero.
     });
   }
-  checkHtml = "<button onclick='graph()'>Graph</button><br>";
+  checkHtml = "<button onclick='onGraphPress()'>Graph</button><br>";
   graphCheck.insertAdjacentHTML('beforeend', checkHtml);
-  freqSeries = series;
-  topFreqSeries = series;
+  //assigning freqSeries = series makes freqSeries a reference to series.
+  //we want to copy the contents instead.
+  freqSeries = JSON.parse(JSON.stringify(series));//copies object.
+  topFreqSeries = JSON.parse(JSON.stringify(series));
   quantPerResult = resultNums;//setting global variables to these local ones.
-  namesOfIds = names;
+  namesOfIds = JSON.parse(JSON.stringify(names));
   //try topSeries = series, then go through & change color or something.
   //would probably be less error-prone & take up less space.
   highchartsPlot(series, 'bode', 'Frequency Plot', 'Magnitude dB');
-  highchartsPlot(series, 'freq', 'Frequency Plot', 'Magnitude dB');
-  //  highchartsPlot(topSeries, 'phase', 'Phase Plot', 'Phase in Degrees');
+  //only want to plot constant by default on top graph.
+  highchartsPlot([series[0]], 'freq', 'Frequency Plot', 'Magnitude dB');
 }
 //w is input (like #s plugged in for x).
 function bodeDataPhase(w, consT, consT_data, zOrigin_data, pOrigin_data, zReals, pReals, zReal_data, pReal_data, nComp, dComp, nFactorExp, dFactorExp) {
@@ -1263,10 +1257,10 @@ function mkBodePhase(consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRea
       });
     }
   }
-  phaseSeries = series;
-  topPhaseSeries = series;
+  phaseSeries = JSON.parse(JSON.stringify(series));
+  topPhaseSeries = JSON.parse(JSON.stringify(series));
   highchartsPlot(series, 'bodePhase', 'Bode Plot: Phase', 'Phase in Degrees');
-  highchartsPlot(series, 'phase', 'Bode Plot: Phase', 'Phase in Degrees');
+  highchartsPlot([series[0]], 'phase', 'Bode Plot: Phase', 'Phase in Degrees');
 }
 //sets a discription within a div with id divId.
 //description type can be 'freq' or 'phase'
