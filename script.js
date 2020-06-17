@@ -5,7 +5,7 @@ var phaseSeries = [];
 var topPhaseSeries = [];
 var quantPerResult = [];//out of const, zOrigin, etc, how many of each there are.
 var namesOfIds = [];//names of dictionaries containing data, which became the ids of their checkboxes.
-var lastCheckedTopBoxName;
+var lastClickedTopBoxName;
 var freqGlobalDescs = [];
 var phaseGlobalDescs = [];
 //I declared these two variables to be global so that both
@@ -36,17 +36,18 @@ function onClick() {
 
   var bdata, pdata;
   [bdata, pdata] = bodeData(numAns, denomAns);
-  mkBode(bdata[0], bdata[1], bdata[2], bdata[3], bdata[4], bdata[5], bdata[6],
+  var descData = mkBode(bdata[0], bdata[1], bdata[2], bdata[3], bdata[4], bdata[5], bdata[6],
     bdata[7], bdata[8], bdata[9], bdata[10], bdata[11], bdata[12], bdata[13],
-    bdata[14], bdata[15], bdata[16], bdata[17], bdata[18], bdata[19], bdata[20]);
+    bdata[14], bdata[15], bdata[16], bdata[17], bdata[18], bdata[19], bdata[20]);//bdata[20]
 
 //(consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRealArr, pReals, pRealArr, zComp_data, pComp_data, zComp_dataApprox, pComp_data, pComp_dataApprox, nComp, dComp)
   pdata = bodeDataPhase(pdata[0], pdata[1], pdata[2], pdata[3], pdata[4], pdata[5],
-    pdata[6], pdata[7], pdata[8], pdata[9], pdata[10], pdata[11], pdata[12], pdata[13], pdata[14]);
+    pdata[6], pdata[7], pdata[8], pdata[9], pdata[10], pdata[11], pdata[12]);
+    //why 13, 14, 15?
   //(consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRealArr, pReals, pRealArr, zComp_data, pComp_data, zComp_dataApprox, pComp_data, pComp_dataApprox)
   mkBodePhase(pdata[0], pdata[1], pdata[2], pdata[3], pdata[4], pdata[5], pdata[6],
     pdata[7], pdata[8], pdata[9], pdata[10], pdata[11], pdata[12], pdata[13], pdata[14],
-    pdata[15], pdata[16], pdata[17], pdata[18]);
+    pdata[15], pdata[16], pdata[17], pdata[18], descData);
   document.getElementById('bode').scrollIntoView();
 }
 //pressed to change which element to graph.
@@ -65,8 +66,8 @@ function onGraphPress() {//1st try w/ zero at origin, p at origin.
   var series2 = JSON.parse(JSON.stringify(phaseSeries));
   var freqDescs = JSON.parse(JSON.stringify(freqGlobalDescs));
   var phaseDescs = JSON.parse(JSON.stringify(phaseGlobalDescs));
-  var freqGraphSeries = [], phaseGraphSeries = [], freqDesc, phaseDesc;
-  var charts = Highcharts.charts;
+  var freqGraphSeries = [], phaseGraphSeries = [], freqDescShown, phaseDescShown, descIndex;
+  var charts = Highcharts.charts, descIndex;
   if (series[1].data == series2[1].data) {
     console.log("series & series2 are identical");
   }
@@ -80,8 +81,6 @@ function onGraphPress() {//1st try w/ zero at origin, p at origin.
           if (series[j].name == names[i]) {//find the dictionary of data with the right name
             freqGraphSeries.push(series[j]);
             phaseGraphSeries.push(series2[j]);
-            freqDesc = freqDescs[j];//indexes of series correspond to the indexes of the description.
-            phaseDesc = phaseDesc[j];
             if (names[i].indexOf('Comp') != -1 || names[i].indexOf('Real') != -1) {
               //if it is a complex conjugate or real pole/zero, then
               //the approximation will be immediately after in the series because
@@ -89,6 +88,13 @@ function onGraphPress() {//1st try w/ zero at origin, p at origin.
               freqGraphSeries.push(freqSeries[j+1]);//add the approximations.
               phaseGraphSeries.push(phaseSeries[j+1]);
             }
+            for (descIndex=0; descIndex<freqDescs.length; descIndex++) {
+              if (freqDescs[descIndex].indexOf(names[i]) > -1) {
+                break;
+              }
+            }
+            freqDescShown = freqDescs[descIndex];//indexes of series correspond to the indexes of the description.
+            phaseDescShown = phaseDescs[descIndex];
             break;
           }
         }
@@ -98,6 +104,8 @@ function onGraphPress() {//1st try w/ zero at origin, p at origin.
   }
   highchartsPlot(freqGraphSeries, 'freq', 'Frequency Plot', 'Magnitude dB');
   highchartsPlot(phaseGraphSeries, 'phase', 'Phase Plot', 'Phase in Degrees');
+  document.getElementById('freqDescription').innerHTML = freqDescShown;
+  document.getElementById('phaseDescription').innerHTML = phaseDescShown;
 }
 //called when a top checkbox is checked. unchecks the other checkboxes.
 //searches throgh list, unchecks all others.
@@ -115,9 +123,14 @@ function onTopCheck(name) {
 //relys on a global variable. is this dangerous here?
 //Shouldn't be since Javascript is in 1 thread.
 function onTopCheckOne(name) {
-  document.getElementById(lastCheckedTopBoxName).checked = 0;
-  lastCheckedTopBoxName = name;
-  onGraphPress();
+  if (lastClickedTopBoxName == name) {//make sure you didn't accidentally double click.
+    document.getElementById(lastClickedTopBoxName).checked = 1;
+  }
+  else {
+    document.getElementById(lastClickedTopBoxName).checked = 0;
+    lastClickedTopBoxName = name;
+    onGraphPress();
+  }
 }
 //returns list contaniing polynomial form, coefficients, roots, order, etc.
 function finder(polynomialform) {
@@ -615,7 +628,6 @@ function bodeData(numAns, denomAns) {//add pReal & zReal nextx
     consT_data.push([w[i-1], x]);
   }
   //mbe should have 2 html vars & add to them throughout, then at the end add them to innerHTML
-
   //graphCheck.innerHtML = checkHtml;
   var zCheckboxes = ['Title', 'zOrigin', 'zReal', 'zComp'];
   var pCheckboxes = ['pTitle', 'pOrigin', 'pReal', 'pComp'];
@@ -623,7 +635,7 @@ function bodeData(numAns, denomAns) {//add pReal & zReal nextx
     [zReal_data, zReal_dataApprox, zOrigin_data, zOrigin, zReals, w0ZRealArr] = realData(w, 1, nRoot, nFactorExp);
   }
   if (nComp.length) {//only call this if there are complex conjugate roots in the numerator.
-    [zComp_data, zComp_dataApprox, w0ZCompArr, zetaZCompArr] = compConjugateData(nComp, w, 1, w0Arr);
+    [zComp_data, zComp_dataApprox, w0ZCompArr, zetaZCompArr] = compConjugateData(nComp, w, 1);
   }
   //function realData(w, sign, nRoot, nFactorExp) {
   if (dRoot[0]) {
@@ -643,13 +655,6 @@ function bodeData(numAns, denomAns) {//add pReal & zReal nextx
   allFreq_data = allFreq(consT_data, w, zOrigin, zOrigin_data, pOrigin, pOrigin_data, zReals, zRealCount, zReal_data, pReals, pRealCount, pReal_data, zComp_data, pComp_data);
   //find total approximate frequency plot.
   allFreq_dataApprox = allFreq(consT_data, w, zOrigin, zOrigin_data, pOrigin, pOrigin_data, zReals, zRealCount, zReal_dataApprox, pReals, pRealCount, pReal_dataApprox, zComp_dataApprox, pComp_dataApprox);
-  /*if (JSON.stringify(allFreq_data) == JSON.stringify(allFreq_data2)) {
-    console.log("Yes it works.");
-  }*/
-  /* (consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
-    pReal_data, zReals, pReals, zComp_data, pComp_data, zRealCount, pRealCount,
-    allFreq_data, zReal_dataApprox, pReal_dataApprox, zComp_dataApprox, pComp_dataApprox,
-    allFreq_dataApprox, nComp, dComp) */
   var copy = deepCopyObjArr([w, consT, consT_data, zOrigin_data, pOrigin_data, zReals, pReals,
     zRealArr, pRealArr, nComp, dComp, nFactorExp, dFactorExp]);
   return [[consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
@@ -833,7 +838,7 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
   desc, w0ZRealArr, w0ZCompArr, zetaZCompArr, w0PRealArr, w0PCompArr,
   zetaPCompArr;
   resultNums = [1, 0, 0, 0, 0, 0, 0];//const, zOrigin, pOrigin, zReal, pReal, zComp, pComp # of items
-  var name, names = [];
+  var name, names = [], omega = '&omega;', zeta = '&zeta;';
   //this is the series that will be on top based on chekmarks.
   name = 'Constant ' + consT.toString();//was just consT
   graphCheck = document.getElementById('graphOptions');
@@ -846,7 +851,7 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
   graphCheck.innerHTML = checkHtml;
   graphs.innerHTML = graphHtml;
   freqDescription = document.getElementById('freqDescription');
-  freqDescs.push('Constant dB = 20log10(|K|) = 20log10('+consT.toString()+')');
+  freqDescs.push('Constant ~'+roundDecimal(consT, 4).toString()+': dB = 20log10(|K|) = 20log10('+roundDecimal(consT, 4).toString()+')');
   freqDescription.innerHTML = freqDescs[0];
 
   /*
@@ -855,7 +860,7 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
   phaseDescription.innerHTML = phaseDescs[0];
   */
   //1 description, 1 graph
-  lastCheckedTopBoxName = name;//1st box to be checked is the constant.
+  lastClickedTopBoxName = name;//1st box to be checked is the constant.
   x = consT_data[0][0].toString();
 
   series.push({//if something is to not be graphed, it's data will be empty.
@@ -876,7 +881,7 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
     resultNums[1]++;
     checkHtml = "<input type='checkbox' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
     checkHtml+="<label for='"+name+"'>Zero at Origin</label><br>";
-    freqDescs.push('Zero at Origin: dB = 20*N*log10(&omega)');
+    freqDescs.push('Zero at Origin: dB = 20*N*log10('+omega+')');
     graphCheck.insertAdjacentHTML('beforeend', checkHtml);
   }
   if (pOrigin_data[0]) {//check if 1st item exists
@@ -890,7 +895,7 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
     resultNums[2]++;
     checkHtml="<input type='checkbox' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
     checkHtml+="<label for='"+name+"'>Pole at Origin</label><br>";
-    freqDescs.push('Pole at Origin: dB = -20*N*log10(&omega)');
+    freqDescs.push('Pole at Origin: dB = -20*N*log10('+omega+')');
     graphCheck.insertAdjacentHTML('beforeend', checkHtml);
   }
   //var descDataCopy = [w0ZRealArr, w0ZCompArr, zetaZCompArr, w0PRealArr, w0PCompArr, zetaPCompArr];//list of data for description.
@@ -915,8 +920,8 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
       });
       checkHtml="<input type='checkbox' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
       checkHtml+="<label for='"+name+"'>"+name+"</label><br>";
-      desc = 'Real Zero '+zReals[i].toString()+': dB = 20*N*log10(sqrt([1+(&omega/(&omega'+ '0))^2]))';
-      desc+= '<br>&omaga' + '0 = ' + w0ZRealArr[i].toString();
+      desc = 'Real Zero '+zReals[i].toString()+': dB = 20*N*log10(sqrt([1+('+omega+'/('+omega+'<sub>0</sub>))^2]))';
+      desc+= '<br>'+omega+ '<sub>0</sub> = ' + w0ZRealArr[i].toString();
       freqDescs.push(desc);
       graphCheck.insertAdjacentHTML('beforeend', checkHtml);
     }
@@ -938,8 +943,8 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
       names.push(name);
       checkHtml="<input type='checkbox' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
       checkHtml+="<label for='"+name+"'>"+name+"</label><br>";
-      desc = 'Real Pole '+pReals[i].toString()+': dB = -20*N*log10(sqrt([1+(&omega/(&omega'+ '0))^2]))';
-      desc+= '<br>&omaga' + '0 = ' + w0PRealArr[i].toString();
+      desc = 'Real Pole '+pReals[i].toString()+': dB = -20*N*log10(sqrt([1+('+omega+'/('+omega+'<sub>0</sub>))^2]))';
+      desc+= '<br>'+omega+ '<sub>0</sub> = ' + w0PRealArr[i].toString();
       freqDescs.push(desc);
       graphCheck.insertAdjacentHTML('beforeend', checkHtml);
     }
@@ -964,9 +969,10 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
       names.push(name);
       checkHtml="<input type='checkbox' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
       checkHtml+="<label for='"+name+"'>"+name+"</label><br>";
-      desc = 'Complex Zero '+print[i]+': dB = 20*N*log10(sqrt([(1+2*&zeta*&omega/(&omega0))+(&omega/(&omega'+ '0))^2]))';//+ or - (omega/omega_0)^2? I forgot.
-      desc+= '<br>&omaga' + '0 = ' + w0ZCompArr[i].toString();
-      desc+= '<br>&zeta = ' + zetaZCompArr[i].toString();
+      //desc = 'Complex Zero '+print[i]+': dB = 20*N*log10(sqrt([(1+2*&zeta*&omega/(&omega0))+(&omega/(&omega'+ '0))^2]))';//+ or - (omega/omega_0)^2? I forgot.
+      desc = 'Complex Zero '+print[i]+': dB = 20*N*log10(sqrt([(1+2*'+zeta+'*'+omega+'/('+omega+'<sub>0</sub>))+('+omega+'/('+omega+'<sub>0</sub>))^2]))';//+ or - (omega/omega_0)^2? I forgot.
+      desc+= '<br>'+omega+ '<sub>0</sub> = ' + w0ZCompArr[i].toString();
+      desc+= '<br>'+zeta+' = ' + zetaZCompArr[i].toString();
       freqDescs.push(desc);
       graphCheck.insertAdjacentHTML('beforeend', checkHtml);
     }
@@ -990,9 +996,9 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
       names.push(name);
       checkHtml="<input type='checkbox' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
       checkHtml+="<label for='"+name+"'>"+name+"</label><br>";
-      desc = 'Complex Pole '+print[i]+': dB = -20*N*log10(sqrt([(1+2*&zeta*&omega/(&omega0))+(&omega/(&omega'+ '0))^2]))';//+ or - (omega/omega_0)^2? I forgot.
-      desc+= '<br>&omaga' + '0 = ' + w0PCompArr[i].toString();
-      desc+= '<br>&zeta = ' + zetaPCompArr[i].toString();
+      desc = 'Complex Pole '+print[i]+': dB = -20*N*log10(sqrt([(1+2*'+zeta+'*'+omega+'/('+omega+'<sub>0</sub>))+('+omega+'/('+omega+'<sub>0</sub>))^2]))';//+ or - (omega/omega_0)^2? I forgot.
+      desc+= '<br>&'+omega+ '<sub>0</sub> = ' + w0PCompArr[i].toString();
+      desc+= '<br>'+zeta+' = ' + zetaPCompArr[i].toString();
       freqDescs.push(desc);
       graphCheck.insertAdjacentHTML('beforeend', checkHtml);
     }
@@ -1023,9 +1029,11 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
   highchartsPlot(series, 'bode', 'Frequency Plot', 'Magnitude dB');
   //only want to plot constant by default on top graph.
   highchartsPlot([series[0]], 'freq', 'Frequency Plot', 'Magnitude dB');
+  return descData;
 }
 //w is input (like #s plugged in for x).
-function bodeDataPhase(w, consT, consT_data, zOrigin_data, pOrigin_data, zReals, pReals, zReal_data, pReal_data, nComp, dComp, nFactorExp, dFactorExp) {
+function bodeDataPhase(w, consT, consT_data, zOrigin_data, pOrigin_data, zReals,
+  pReals, zReal_data, pReal_data, nComp, dComp, nFactorExp, dFactorExp) {
   var x, w0, theta, zReal = zReals.length, pReal = pReals.length,
   zOrigin = 0, pOrigin = 0, zRealCount = zReal, pRealCount = pReal, zReal_dataApprox,
   pReal_dataApprox, zComp_data = [], pComp_data = [], zComp_dataApprox = [],
@@ -1201,8 +1209,11 @@ function compConjugatePhaseData(comp, w, sign) {//sign will be -1 or +1
 }
 function mkBodePhase(consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRealArr,
   zReal_dataApprox, pReals, pRealArr, pReal_dataApprox, zComp_data, pComp_data,
-  zComp_dataApprox, pComp_data, pComp_dataApprox, nComp, dComp, allPhase_data, allPhase_dataApprox) {
+  zComp_dataApprox, pComp_data, pComp_dataApprox, nComp, dComp, allPhase_data,
+  allPhase_dataApprox, descData) {
   var series = [], zOriginSeries = [], desc, topSeries = [], phaseDescription, phaseDescs = [];
+  var w0ZRealArr = descData[0], w0ZCompArr = descData[1], zetaZCompArr = descData[2],
+  w0PRealArr = descData[3], w0PCompArr = descData[4], zetaPCompArr = descData[5];
 
   series.push(
   {//if something is to not be graphed, it's data will be empty.
@@ -1210,11 +1221,12 @@ function mkBodePhase(consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRea
       color: 'rgba(223, 83, 83, 1)',//data is [x, y];
       data: consT_data
   });
-  if (parseInt(consT, 10) > 0) {//is consT a number?
-    desc = 'Constant '+consT.toString()+' > 0, so its phase = 0 degrees.';
+  //parseInt() on a decimal number turns it into an integer.
+  if (consT > 0) {//is consT a number?
+    desc = 'Constant ~'+roundDecimal(consT, 4).toString()+' > 0, so its phase = 0 degrees.';
   }
-  else if (parseInt(consT, 10) < 0) {
-    desc = 'Constant '+consT.toString()+' < 0, so its phase = +- 180 degrees.';
+  else if (consT < 0) {
+    desc = 'Constant ~'+roundDecimal(consT, 4).toString()+' < 0, so its phase = +- 180 degrees.';
   }
   phaseDescription = document.getElementById('phaseDescription');
   phaseDescs.push(desc);
@@ -1248,8 +1260,8 @@ function mkBodePhase(consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRea
           color: 'rgba(119, 152, 191, 1)',
           data: zReal_dataApprox[i]
       });
-      desc = 'Real Zero '+zRealArr[i].toString()+': dB = 20*N*log10(sqrt([1+(&omega/(&omega'+ '0))^2]))';
-      desc+= '<br>&omaga' + '0 = ' + w0ZRealArr[i].toString();
+      desc = 'Real Zero '+zReals[i].toString()+': degrees = 180/&pi; * arctan(&omega;/&omega;<sub>0</sub>)';
+      desc+= '<br>&omega;<sub>0</sub> = ' + w0ZRealArr[i].toString();
       phaseDescs.push(desc);
       //marking my spot. this is the next one where we need change the description.
     }
@@ -1266,22 +1278,10 @@ function mkBodePhase(consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRea
           color: 'rgba(119, 152, 191, 1)',
           data: pReal_dataApprox[i]
       });
-      desc = 'Real Pole '+pRealArr[i].toString()+': dB = -20*N*log10(sqrt([1+(&omega/(&omega'+ '0))^2]))';
-      desc+= '<br>&omaga' + '0 = ' + w0PRealArr[i].toString();
+      desc = 'Real Pole '+pReals[i].toString()+' degrees = 180/&pi; * arctan(&omega;/&omega;<sub>0</sub>)';
+      desc+= '<br>&omega;<sub>0</sub> = ' + w0PRealArr[i].toString();
       phaseDescs.push(desc);
     }
-  }
-  if (allPhase_data.length) {
-    series.push({
-        name: 'Total Phase',
-        color: 'rgba(0, 0, 0, 1)',
-        data: allPhase_data//data for relevant real zero.
-    });
-    series.push({
-        name: 'Total Phase Approximation',
-        color: 'rgba(50, 0, 50, 1)',
-        data: allPhase_dataApprox//data for relevant real zero.
-    });
   }
   if (nComp[0]) {//nComp.length
     let print = [];
@@ -1297,9 +1297,9 @@ function mkBodePhase(consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRea
           color: 'rgba(5, 191, 5, 1)',
           data: zComp_dataApprox[i]//data for relevant real zero.
       });
-      desc = 'Complex Zero '+print[i]+': dB = 20*N*log10(sqrt([(1+2*&zeta*&omega/(&omega0))+(&omega/(&omega'+ '0))^2]))';//+ or - (omega/omega_0)^2? I forgot.
-      desc+= '<br>&omaga' + '0 = ' + w0ZCompArr[i].toString();
-      desc+= '<br>&zeta = ' + zetaZCompArr[i].toString();
+      desc = 'Complex Zero '+print[i]+': degrees = 180/&pi; * arctan((2*&zeta;*&omega;)/[1-(&omega;/(&omega;'+ '0))^2])';//+ or - (omega/omega_0)^2? I forgot.
+      desc+= '<br>&omega;<sub>0</sub> = ' + w0ZCompArr[i].toString();
+      desc+= '<br>&zeta; = ' + zetaZCompArr[i].toString();
       phaseDescs.push(desc);
     }
   }
@@ -1317,11 +1317,23 @@ function mkBodePhase(consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRea
           color: 'rgba(5, 191, 5, 1)',
           data: pComp_dataApprox[i]//data for relevant real zero.
       });
-      desc = 'Complex Pole '+print[i]+': dB = -20*N*log10(sqrt([(1+2*&zeta*&omega/(&omega0))+(&omega/(&omega'+ '0))^2]))';//+ or - (omega/omega_0)^2? I forgot.
-      desc+= '<br>&omaga' + '0 = ' + w0PCompArr[i].toString();
-      desc+= '<br>&zeta = ' + zetaPCompArr[i].toString();
+      desc = 'Complex Zero '+print[i]+': degrees = -180/&pi; * arctan((2*&zeta;*&omega;)/[1-(&omega;/(&omega;'+ '0))^2])';//+ or - (omega/omega_0)^2? I forgot.
+      desc+= '<br>&omega;<sub>0</sub> = ' + w0PCompArr[i].toString();
+      desc+= '<br>&zeta; = ' + zetaPCompArr[i].toString();
       phaseDescs.push(desc);
     }
+  }
+  if (allPhase_data.length) {
+    series.push({
+        name: 'Total Phase',
+        color: 'rgba(0, 0, 0, 1)',
+        data: allPhase_data//data for relevant real zero.
+    });
+    series.push({
+        name: 'Total Phase Approximation',
+        color: 'rgba(50, 0, 50, 1)',
+        data: allPhase_dataApprox//data for relevant real zero.
+    });
   }
   phaseSeries = JSON.parse(JSON.stringify(series));
   topPhaseSeries = JSON.parse(JSON.stringify(series));
