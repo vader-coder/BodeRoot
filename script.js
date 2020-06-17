@@ -6,6 +6,8 @@ var topPhaseSeries = [];
 var quantPerResult = [];//out of const, zOrigin, etc, how many of each there are.
 var namesOfIds = [];//names of dictionaries containing data, which became the ids of their checkboxes.
 var lastCheckedTopBoxName;
+var freqGlobalDescs = [];
+var phaseGlobalDescs = [];
 //I declared these two variables to be global so that both
 //onGraphPress & onClick can access them.
 //otherwise I would need to make a dynamic website.
@@ -61,7 +63,9 @@ function onGraphPress() {//1st try w/ zero at origin, p at origin.
   const names = JSON.parse(JSON.stringify(namesOfIds));
   var series = JSON.parse(JSON.stringify(freqSeries));//some point, make series phase series.
   var series2 = JSON.parse(JSON.stringify(phaseSeries));
-  var freqGraphSeries = [], phaseGraphSeries = [];
+  var freqDescs = JSON.parse(JSON.stringify(freqGlobalDescs));
+  var phaseDescs = JSON.parse(JSON.stringify(phaseGlobalDescs));
+  var freqGraphSeries = [], phaseGraphSeries = [], freqDesc, phaseDesc;
   var charts = Highcharts.charts;
   if (series[1].data == series2[1].data) {
     console.log("series & series2 are identical");
@@ -76,6 +80,8 @@ function onGraphPress() {//1st try w/ zero at origin, p at origin.
           if (series[j].name == names[i]) {//find the dictionary of data with the right name
             freqGraphSeries.push(series[j]);
             phaseGraphSeries.push(series2[j]);
+            freqDesc = freqDescs[j];//indexes of series correspond to the indexes of the description.
+            phaseDesc = phaseDesc[j];
             if (names[i].indexOf('Comp') != -1 || names[i].indexOf('Real') != -1) {
               //if it is a complex conjugate or real pole/zero, then
               //the approximation will be immediately after in the series because
@@ -910,8 +916,8 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
       checkHtml="<input type='checkbox' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
       checkHtml+="<label for='"+name+"'>"+name+"</label><br>";
       desc = 'Real Zero '+zReals[i].toString()+': dB = 20*N*log10(sqrt([1+(&omega/(&omega'+ '0))^2]))';
-      desc+= '<br>'
-      freqDescs.push('Real Zero '+zReals[i].toString()+': dB = 20*N*log10(sqrt([1+(&omega/(&omega'+ '0))^2]))');
+      desc+= '<br>&omaga' + '0 = ' + w0ZRealArr[i].toString();
+      freqDescs.push(desc);
       graphCheck.insertAdjacentHTML('beforeend', checkHtml);
     }
   }
@@ -932,6 +938,9 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
       names.push(name);
       checkHtml="<input type='checkbox' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
       checkHtml+="<label for='"+name+"'>"+name+"</label><br>";
+      desc = 'Real Pole '+pReals[i].toString()+': dB = -20*N*log10(sqrt([1+(&omega/(&omega'+ '0))^2]))';
+      desc+= '<br>&omaga' + '0 = ' + w0PRealArr[i].toString();
+      freqDescs.push(desc);
       graphCheck.insertAdjacentHTML('beforeend', checkHtml);
     }
   }
@@ -955,6 +964,10 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
       names.push(name);
       checkHtml="<input type='checkbox' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
       checkHtml+="<label for='"+name+"'>"+name+"</label><br>";
+      desc = 'Complex Zero '+print[i]+': dB = 20*N*log10(sqrt([(1+2*&zeta*&omega/(&omega0))+(&omega/(&omega'+ '0))^2]))';//+ or - (omega/omega_0)^2? I forgot.
+      desc+= '<br>&omaga' + '0 = ' + w0ZCompArr[i].toString();
+      desc+= '<br>&zeta = ' + zetaZCompArr[i].toString();
+      freqDescs.push(desc);
       graphCheck.insertAdjacentHTML('beforeend', checkHtml);
     }
   }
@@ -977,6 +990,10 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
       names.push(name);
       checkHtml="<input type='checkbox' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
       checkHtml+="<label for='"+name+"'>"+name+"</label><br>";
+      desc = 'Complex Pole '+print[i]+': dB = -20*N*log10(sqrt([(1+2*&zeta*&omega/(&omega0))+(&omega/(&omega'+ '0))^2]))';//+ or - (omega/omega_0)^2? I forgot.
+      desc+= '<br>&omaga' + '0 = ' + w0PCompArr[i].toString();
+      desc+= '<br>&zeta = ' + zetaPCompArr[i].toString();
+      freqDescs.push(desc);
       graphCheck.insertAdjacentHTML('beforeend', checkHtml);
     }
   }
@@ -1000,6 +1017,7 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
   topFreqSeries = JSON.parse(JSON.stringify(series));
   quantPerResult = resultNums;//setting global variables to these local ones.
   namesOfIds = JSON.parse(JSON.stringify(names));
+  freqGlobalDescs = JSON.parse(JSON.stringify(freqDescs));
   //try topSeries = series, then go through & change color or something.
   //would probably be less error-prone & take up less space.
   highchartsPlot(series, 'bode', 'Frequency Plot', 'Magnitude dB');
@@ -1184,28 +1202,31 @@ function compConjugatePhaseData(comp, w, sign) {//sign will be -1 or +1
 function mkBodePhase(consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRealArr,
   zReal_dataApprox, pReals, pRealArr, pReal_dataApprox, zComp_data, pComp_data,
   zComp_dataApprox, pComp_data, pComp_dataApprox, nComp, dComp, allPhase_data, allPhase_dataApprox) {
-  var series = [], zOriginSeries = [], desc, topSeries = [];
-  if (consT) {
-    series.push(
-    {//if something is to not be graphed, it's data will be empty.
-        name: 'Constant ' + consT.toString(),
-        color: 'rgba(223, 83, 83, 1)',//data is [x, y];
-        data: consT_data
-    });
-    if (parseInt(consT, 10) > 0) {//is consT a number?
-      desc = 'Constant '+consT.toString()+' > 0, so its phase = 0 degrees.';
-    }
-    else {
-      desc = 'Constant '+consT.toString()+' < 0, so its phase = +- 180 degrees.';
-    }
-    //setDescription('consT', desc, 'phase');
+  var series = [], zOriginSeries = [], desc, topSeries = [], phaseDescription, phaseDescs = [];
+
+  series.push(
+  {//if something is to not be graphed, it's data will be empty.
+      name: 'Constant ' + consT.toString(),
+      color: 'rgba(223, 83, 83, 1)',//data is [x, y];
+      data: consT_data
+  });
+  if (parseInt(consT, 10) > 0) {//is consT a number?
+    desc = 'Constant '+consT.toString()+' > 0, so its phase = 0 degrees.';
   }
+  else if (parseInt(consT, 10) < 0) {
+    desc = 'Constant '+consT.toString()+' < 0, so its phase = +- 180 degrees.';
+  }
+  phaseDescription = document.getElementById('phaseDescription');
+  phaseDescs.push(desc);
+  phaseDescription.innerHTML = phaseDescs[0];//default is consT
+  //setDescription('consT', desc, 'phase');
   if (zOrigin_data.length) {
     series.push({
         name: 'Zero at Origin',
         color: 'rgba(119, 152, 191, 1)',
         data: zOrigin_data
     });
+    phaseDescs.push('Zero at Origin: degrees = 90');
   }
   if (pOrigin_data.length) {//if no pole at origin, will just be 0.
     series.push({
@@ -1213,6 +1234,7 @@ function mkBodePhase(consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRea
         color: 'rgba(119, 152, 191, 1)',
         data: pOrigin_data
     });
+    phaseDescs.push('Pole at Origin: degrees = -90');
   }
   if (zReals.length) {
     for (let i=0; i<zRealArr.length; i++) {
@@ -1226,6 +1248,10 @@ function mkBodePhase(consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRea
           color: 'rgba(119, 152, 191, 1)',
           data: zReal_dataApprox[i]
       });
+      desc = 'Real Zero '+zRealArr[i].toString()+': dB = 20*N*log10(sqrt([1+(&omega/(&omega'+ '0))^2]))';
+      desc+= '<br>&omaga' + '0 = ' + w0ZRealArr[i].toString();
+      phaseDescs.push(desc);
+      //marking my spot. this is the next one where we need change the description.
     }
   }
   if (pReals.length) {
@@ -1240,6 +1266,9 @@ function mkBodePhase(consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRea
           color: 'rgba(119, 152, 191, 1)',
           data: pReal_dataApprox[i]
       });
+      desc = 'Real Pole '+pRealArr[i].toString()+': dB = -20*N*log10(sqrt([1+(&omega/(&omega'+ '0))^2]))';
+      desc+= '<br>&omaga' + '0 = ' + w0PRealArr[i].toString();
+      phaseDescs.push(desc);
     }
   }
   if (allPhase_data.length) {
@@ -1268,6 +1297,10 @@ function mkBodePhase(consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRea
           color: 'rgba(5, 191, 5, 1)',
           data: zComp_dataApprox[i]//data for relevant real zero.
       });
+      desc = 'Complex Zero '+print[i]+': dB = 20*N*log10(sqrt([(1+2*&zeta*&omega/(&omega0))+(&omega/(&omega'+ '0))^2]))';//+ or - (omega/omega_0)^2? I forgot.
+      desc+= '<br>&omaga' + '0 = ' + w0ZCompArr[i].toString();
+      desc+= '<br>&zeta = ' + zetaZCompArr[i].toString();
+      phaseDescs.push(desc);
     }
   }
   if (dComp[0]) {//dComp.length
@@ -1284,10 +1317,15 @@ function mkBodePhase(consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRea
           color: 'rgba(5, 191, 5, 1)',
           data: pComp_dataApprox[i]//data for relevant real zero.
       });
+      desc = 'Complex Pole '+print[i]+': dB = -20*N*log10(sqrt([(1+2*&zeta*&omega/(&omega0))+(&omega/(&omega'+ '0))^2]))';//+ or - (omega/omega_0)^2? I forgot.
+      desc+= '<br>&omaga' + '0 = ' + w0PCompArr[i].toString();
+      desc+= '<br>&zeta = ' + zetaPCompArr[i].toString();
+      phaseDescs.push(desc);
     }
   }
   phaseSeries = JSON.parse(JSON.stringify(series));
   topPhaseSeries = JSON.parse(JSON.stringify(series));
+  phaseGlobalDescs = JSON.parse(JSON.stringify(phaseDescs));
   highchartsPlot(series, 'bodePhase', 'Bode Plot: Phase', 'Phase in Degrees');
   highchartsPlot([series[0]], 'phase', 'Bode Plot: Phase', 'Phase in Degrees');
 }
