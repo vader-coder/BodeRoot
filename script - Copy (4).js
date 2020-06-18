@@ -851,8 +851,6 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
   checkHtml += "<label for='" + name + "'>"+ name +"</label><br>";
   graphHtml =  "<div id='freq'></div><br><p id='freqDescription'></p><br>";
   graphHtml += "<div id='phase'></div><br><p id='phaseDescription'></p></div><br>";
-  freqDescs.push('Constant ~'+roundDecimal(consT, 4).toString()+': dB = 20log10(|K|) = 20log10('+roundDecimal(consT, 4).toString()+')');
-
   /*graphCheck.innerHTML = checkHtml;
   graphs.innerHTML = graphHtml;*/
   //freqDescription.innerHTML = freqDescs[0];
@@ -1031,8 +1029,9 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
   graphCheck.innerHTML = checkHtml;
   graphs.innerHTML = graphHtml;
   freqDescription = document.getElementById('freqDescription');
+  freqDescs.push('Constant ~'+roundDecimal(consT, 4).toString()+': dB = 20log10(|K|) = 20log10('+roundDecimal(consT, 4).toString()+')');
   freqDescription.innerHTML = freqDescs[0];
-
+  
   freqSeries = JSON.parse(JSON.stringify(series));//copies object.
   topFreqSeries = JSON.parse(JSON.stringify(series));
   quantPerResult = resultNums;//setting global variables to these local ones.
