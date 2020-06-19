@@ -87,7 +87,7 @@ function onGraphPress() {//1st try w/ zero at origin, p at origin.
   }
   //plots the series with the ones not selected faded.
   highchartsPlot(series, 'freq', 'Frequency Plot', 'Magnitude dB');
-  highchartsPlot(series2, 'phase', 'Phase Plot', 'Phase in Degrees');
+  highchartsPlot(series2, 'phase', 'Phase Plot', 'Phase in Degrees', 90);
   document.getElementById('freqDescription').innerHTML = freqDescShown;
   document.getElementById('phaseDescription').innerHTML = phaseDescShown;
   freqSeries = copyObject(series);//update global variables.
@@ -1381,8 +1381,8 @@ function mkBodePhase(consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRea
   phaseGlobalDescs = copyObject(phaseDescs);
   //might be more efficient to add new push statements in earlier if statements.
   //figure out: push statements vs new for loop & splice.
-  highchartsPlot(series, 'bodePhase', 'Bode Plot: Phase', 'Phase in Degrees');
-  highchartsPlot(phaseSeries, 'phase', 'Bode Plot: Phase', 'Phase in Degrees');
+  highchartsPlot(series, 'bodePhase', 'Bode Plot: Phase', 'Phase in Degrees', 90);
+  highchartsPlot(phaseSeries, 'phase', 'Bode Plot: Phase', 'Phase in Degrees', 90);
 }
 //sets a discription within a div with id divId.
 //description type can be 'freq' or 'phase'
@@ -1392,7 +1392,7 @@ function setDescription(divId, description, type) {
 }
 //phaseSeries: data to be plotted. id: id of div to plot it in.
 //title: array w/ title of chart, yAxis has title of yAxis.
-function highchartsPlot(series, id, title, yAxis) {
+function highchartsPlot(series, id, title, yAxis, tickInt) {
   Highcharts.chart(id, {
     chart: {
         type: 'line',
@@ -1414,6 +1414,7 @@ function highchartsPlot(series, id, title, yAxis) {
     //type: 'linear','logarithmic'
     yAxis: {
       type: 'linear',
+      tickInterval: tickInt,
         title: {
             text: yAxis//'Magnitude dB'
         }
