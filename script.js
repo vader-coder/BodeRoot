@@ -734,7 +734,8 @@ function compArrToStr(comp) {
 //works on dComp or nComp to get their data.
 function compConjugateData(comp, w, sign) {//sign will be -1 or +1
   var comp_data = [], comp_dataApprox = [], base, peak, imagPart, zetaArr = [],
-  realPart, x, zeta, w0, w0Rounded, jMax = w.length, xIntercept, w0Arr = [], zetaArr = [];
+  realPart, x, zeta, w0, w0Rounded, jMax = w.length, xIntercept,
+  w0Arr = [], zetaArr = [];
   let a, b;//a + jb, a = 1-(w/w0)^2 b = 2*zeta*w/(w0) w[j]
   for (let i=0; i<comp.length; i++) {//loop through complex roots in numerator.
     realPart = comp[i][0];
@@ -742,7 +743,7 @@ function compConjugateData(comp, w, sign) {//sign will be -1 or +1
     w0 = Math.sqrt(realPart*realPart + imagPart*imagPart);
     w0Rounded = roundDecimal(w0, 1);//round to 1 decimal place.
     x = Math.atan2(imagPart,realPart);//y, x -> y/x, opposite/ajdacent
-    zeta = Math.cos(x);
+    zeta = Math.cos(x);//in case it is -.
     //w/ x^2+2x+5, roots are complex conjugate but zeta is -, so not btw 0 & 1.
     //once had Math.cos in abs so wouldn't have to worry about - & 0 < zeta < 1
     //got NaN on that one.
@@ -776,10 +777,14 @@ function compConjugateData(comp, w, sign) {//sign will be -1 or +1
       else if (zeta >= 0.5) {//don't draw peak. it would seem like in this case w[0] doesn't matter.
         for (let j=0; j<jMax; j++) {
           x = w[j];
-          if (w[j] < w0Rounded) {//for phase w[j] <= w0/(Math.pow(10, zeta))) {
+          if (w[j] <= wRounded) {// w0Rounded for phase w[j] <= w0/(Math.pow(10, zeta))) {
             comp_dataApprox[i].push([w[j], 0]);
           }
-          else if (w[j] >= w0Rounded) {
+          /*else if (w[j] > wLow && w[j] < wHigh) {
+            //theta = (Math.log10(w[j]/wLow)/middleDenominator)*sign*180;
+            comp_dataApprox[i].push([w[j], theta]);
+          }*/
+          else if (w[j] > w0Rounded) {
             comp_dataApprox[i].push([w[j], sign*40*Math.log10(x)]);
             //comp_dataApprox[i].push([w[j], sign*20*Math.log10(x/w0)]);
           }
@@ -861,7 +866,7 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
   checkHtml += "<label for='" + name + "'>"+ name +"</label><br>";
   graphHtml =  "<div id='freq'></div><br><p id='freqDescription'></p><br>";
   graphHtml += "<div id='phase'></div><br><p id='phaseDescription'></p></div><br>";
-  freqDescs.push('Constant ~'+roundDecimal(consT, 4).toString()+': dB = 20log10(|K|) = 20log10('+roundDecimal(consT, 4).toString()+')');
+  freqDescs.push('The constant term is K= ~'+roundDecimal(consT, 4).toString()+' = '+consT_data[0][1].toString()+'dB = 20log10(|K|)');
   var bold = '1', faded = '0.2', topSeries = [];//phase in mkBodePhase, frequency in mkBode.
   //1 description, 1 graph
   lastClickedTopBoxName = name;//1st box to be checked is the constant.
@@ -1145,13 +1150,14 @@ function realData(w, sign, nRoot, nFactorExp) {
 }
 function realPhaseData(w, sign, zReals, nFactorExp) {
   var zReal_data = [], zReal_dataApprox = [], theta, x, w0, zReal = zReals.length,
-  lowerBound, upperBound, slope, yIntercept, jMax = w.length, ret;
+  lowerBound, upperBound, slope, yIntercept, jMax = w.length, ret, middleDenominator;
   for (let i=0; i<zReal; i++) {//loop through real zeros.
       zReal_data.push([]);
       zReal_dataApprox.push([]);
       w0 = Math.abs(zReals[i]);//w0, reciprocal of zero.
       lowerBound = 0.1*w0;
       upperBound = 10*w0;
+      middleDenominator = Math.log10(upperBound/lowerBound);
       for (let j=0; j<jMax; j++) {
         //approximate:
         if (w[j]<lowerBound) {
@@ -1164,9 +1170,10 @@ function realPhaseData(w, sign, zReals, nFactorExp) {
         }
         else {//betweeen the two.
           //nFactorExp[i] in slope
-          slope = 90*sign/(upperBound - lowerBound);
+          /*slope = 90*sign/(upperBound - lowerBound);
           yIntercept = slope*(-1*lowerBound);// m*(-x1)+y1 in point-slope form. y1 = 0.
-          theta = slope*w[j]+yIntercept;
+          theta = slope*w[j]+yIntercept;*/
+          theta = (Math.log10(w[j]/lowerBound)/middleDenominator)*sign*90;
           zReal_dataApprox[i].push([w[j], theta]);
         }
         //exact
@@ -1181,7 +1188,8 @@ function realPhaseData(w, sign, zReals, nFactorExp) {
 //should we pass it w0, zeta, etc from other functions?
 function compConjugatePhaseData(comp, w, sign) {//sign will be -1 or +1
   var comp_data = [], comp_dataApprox = [], base, peak, imagPart, realPart,
-  x, zeta, w0, upperBound, lowerBound, slope, yIntercept, jMax = w.length;
+  x, zeta, w0, upperBound, lowerBound, slope, yIntercept, jMax = w.length,
+  middleDenominator, theta, phaseHigh;
   var compDone = [];//comp already done.
   let a, b;//a + jb, a = 1-(w/w0)^2 b = 2*zeta*w/(w0) w[j]
   for (let i=0; i<comp.length; i++) {//loop through complex roots in numerator.
@@ -1201,6 +1209,7 @@ function compConjugatePhaseData(comp, w, sign) {//sign will be -1 or +1
     slope = 180*sign/(upperBound - lowerBound);
     //slope = sign*180/(Math.log10(upperBound) - Math.log10(lowerBound));
     yIntercept = slope*(-1*lowerBound);// m*(-x1)+y1 in point-slope form. y1 = 0.*/
+    middleDenominator = Math.log10(upperBound/lowerBound);
 
     /*slope = sign*180/(Math.log10(upperBound) - Math.log10(lowerBound));
     yIntercept = sign*180 - slope*Math.log10(upperBound +1-lowerBound);*/
@@ -1215,8 +1224,9 @@ function compConjugatePhaseData(comp, w, sign) {//sign will be -1 or +1
           comp_dataApprox[i].push([w[j], sign*180]);
         }
         else {
-          comp_dataApprox[i].push([w[j], slope*(w[j]+1-lowerBound)+yIntercept]);
           //comp_dataApprox[i].push([w[j], slope*(w[j]+1-lowerBound)+yIntercept]);
+          theta = (Math.log10(w[j]/lowerBound)/middleDenominator)*sign*180;
+          comp_dataApprox[i].push([w[j], theta]);
         }
       }
     //}
