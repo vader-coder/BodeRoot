@@ -1180,7 +1180,7 @@ function realData(w, sign, nRoot, nFactorExp) {
       zReals.push(nRoot[0][i]);
       zReal_data.push([]);
       zReal_dataApprox.push([]);
-      w0 = Math.abs(nRoot[0][i]);//w0, reciprocal of zero.
+      w0 = Math.abs(nRoot[0][i]);//w0, abs of a zero.
       w0Arr.push(w0);
       for (let j=0; j<jMax; j++) {
         //approximate:
