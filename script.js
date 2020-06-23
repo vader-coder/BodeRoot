@@ -1027,7 +1027,7 @@ function mkBode(consT, consT_data, zOrigin_data, pOrigin_data, zReal_data,
       checkHtml+="<label for='"+name+"'>"+name+"</label><br>";
       //desc = 'Complex Zero '+print[i]+': dB = 20*N*log10(sqrt([(1+2*&zeta*&omega/(&omega0))+(&omega/(&omega'+ '0))^2]))';//+ or - (omega/omega_0)^2? I forgot.
       desc = 'For the magnitude plot we draw a straight line at 0 dB from up to '+w0Mag+', thereafter the line rises at 40dB/decade.';
-      if (zMag < 0.5) {
+      if (parseFloat(zMag) < 0.5) {
         desc += '<br>Since '+zMag+'<0.5, we draw a peak of 20log<sub>10</sub>(2&zeta;) = ';
         desc += (20*Math.log10(2*parseFloat(zMag,10))).toString()+'db at &omega; = '+w0Mag+'.';
       }
@@ -1255,35 +1255,28 @@ function compConjugatePhaseData(comp, w, sign) {//sign will be -1 or +1
     comp_data.push([]);
     comp_dataApprox.push([]);
     //roundDecimal() on lower & upperBound?
-    //0.7, 6.3
+    //slope = 180*sign/(upperBound - lowerBound);
+    //slope = sign*180/(Math.log10(upperBound) - Math.log10(lowerBound));
+    //yIntercept = slope*(-1*lowerBound);// m*(-x1)+y1 in point-slope form. y1 = 0.*/
     lowerBound = w0/(Math.pow(10, Math.abs(zeta)));////(x,y) = (lowerBound, 0)
     upperBound = w0*Math.pow(10, Math.abs(zeta));//(x,y) = (upperBound, sign*180)
-    slope = 180*sign/(upperBound - lowerBound);
-    //slope = sign*180/(Math.log10(upperBound) - Math.log10(lowerBound));
-    yIntercept = slope*(-1*lowerBound);// m*(-x1)+y1 in point-slope form. y1 = 0.*/
     middleDenominator = Math.log10(upperBound/lowerBound);
-
-    /*slope = sign*180/(Math.log10(upperBound) - Math.log10(lowerBound));
-    yIntercept = sign*180 - slope*Math.log10(upperBound +1-lowerBound);*/
-    //if (zeta > 0 && zeta < 1) {//will have to account for a # & it's conjugate being in there (I think? or will zeta take care of that?)
-      for (let j=0; j<jMax; j++) {
-        x = w[j];
-        //lower & upper boundarises of line in x coordinates
-        if (w[j] < lowerBound) {//for phase w[j] <= w0/(Math.pow(10, zeta))) {
-          comp_dataApprox[i].push([w[j], 0]);
-        }
-        else if (w[j] > upperBound) {
-          comp_dataApprox[i].push([w[j], sign*180]);
-        }
-        else {
-          //comp_dataApprox[i].push([w[j], slope*(w[j]+1-lowerBound)+yIntercept]);
-          theta = (Math.log10(w[j]/lowerBound)/middleDenominator)*sign*180;
-          comp_dataApprox[i].push([w[j], theta]);
-        }
+    for (let j=0; j<jMax; j++) {
+      x = w[j];
+      //lower & upper boundarises of line in x coordinates
+      if (w[j] < lowerBound) {//for phase w[j] <= w0/(Math.pow(10, zeta))) {
+        comp_dataApprox[i].push([w[j], 0]);
       }
-    //}
-      //exact version starts here:
-      //a + jb, a = 1-(w/w0)^2 b = 2*zeta*w/(w0) w[j]. 20*log10(|a+jb|)
+      else if (w[j] > upperBound) {
+        comp_dataApprox[i].push([w[j], sign*180]);
+      }
+      else {
+        theta = (Math.log10(w[j]/lowerBound)/middleDenominator)*sign*180;
+        comp_dataApprox[i].push([w[j], theta]);
+      }
+    }
+    //exact version starts here:
+    //a + jb, a = 1-(w/w0)^2 b = 2*zeta*w/(w0) w[j]. 20*log10(|a+jb|)
     for (let j=0; j<jMax; j++) {//should we have included this in both the other for loops or had there be only one?
       a = w[j]/w0;
       b = 1-a*a;
@@ -1312,12 +1305,7 @@ function mkBodePhase(consT, consT_data, zOrigin_data, pOrigin_data, zReals, zRea
             'rgba(119,172,148,'+bold+')',
             'rgba(77,190,238,'+bold+')',
             'rgba(162,20,47,'+bold+')'], colorIndex = 0;
-  series.push(
-  {//if something is to not be graphed, it's data will be empty.
-      name: 'Constant ' + consT.toString(),
-      color: colors[colorIndex],
-      data: consT_data
-  });
+  series.push({name: 'Constant ' + consT.toString(),color: colors[colorIndex],data: consT_data});
   colorIndex++;
   topSeries.push(copyObject(series[0]));
   //parseInt() on a decimal number turns it into an integer.

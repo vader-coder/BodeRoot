@@ -1,7 +1,6 @@
 'use strict';
 
 var BDO; // Bode Draw Object
-
 // Create Bode Draw Object
 function BDO_Obj() {
     this.num = ''; // Numerator polynomial
@@ -12,6 +11,11 @@ function BDO_Obj() {
     this.prec = 3; // precision for rounding
     this.numTerms = 0; // number of terms
     this.w = [];//input for graphs.
+    this.allFreq = [];
+    this.allPhase = [];
+    this.allFreqApprox = [];
+    this.allPhaseApprox = [];
+    this.lastClickedTopBoxName;
 };
 
 // Create the object that has information needed for each "term"
@@ -27,6 +31,7 @@ function termObj() {
     this.tXz = ''; // TeX for zeta...
     this.tHz = ''; // html for zeta...  (Not currently using this)
     this.mH = ''; // html for string showing multiplicity.
+    this.w0 = 0;//w0, 0 by default.
     this.freqData = [];//array for containing the data that will be graphed in frequency plot..
     this.phaseData = [];//array for containing data for phase plot
     this.freqDataApprox = [];//approximation of frequency data.
@@ -43,7 +48,6 @@ $(function () {
 // function called when polynomial is changed.
 function BDOupdate() {
     getTerms();
-    //getData();
     dispTerms();
     getData();
 }
@@ -243,9 +247,6 @@ function getTerms() {
             BDO.terms[j++] = terms[i];
         }
     }
-
-
-
     console.log(BDO);
 }
 
@@ -253,7 +254,10 @@ function getTerms() {
 function getData() {
   let terms = BDO.terms;
   let w = BDO.w, constantK = parseInt(BDO.K);
-  let constFreq = [], constPhase = [];
+  let constFreq = [], constPhase = [], freqSeries = [], phaseSeries = [];
+  let desc, freqDescs = [], phaseDescs = [], w0Mag, zMag, print, name, descIndex,
+  bold = '1', faded = '0.2', checkHtml, graphHtml, names = [], phaseDescription, freqDescription;
+  var colors = ['rgba(0,114,189,'+bold+')','rgba(217,83,25,'+bold+')','rgba(237,177,32,'+bold+')','rgba(126,47,142,'+bold+')','rgba(119,172,148,'+bold+')','rgba(77,190,238,'+bold+')', 'rgba(162,20,47,'+bold+')'], colorIndex = 0;
   for (let i=1; i<10001; i++) {
     w.push(roundDecimal(i*0.1, 1));//w.push(roundDecimal(1+ i*0.1, 1)); might want multiple versions of this.
     constFreq.push([w[i-1], 20*Math.log10(constantK)]);
@@ -262,38 +266,273 @@ function getData() {
     for (let i=0; i<w.length; i++) {
       constPhase.push([w[i], 0]);
     }
+    desc = 'Since the constant is positive, its phase is 0&deg;.';
   }
   else if (constantK < 0) {
     for (let i=0; i<w.length; i++) {
       constPhase.push([w[i], 180]);
     }
+    desc =  'Since the constant is positive, its phase is +- 180&deg;.<br>We have chosen to represent it as +180#&deg;.';
   }
   terms[0].freqData = constFreq;
   terms[0].phaseData = constPhase;
-  for (let i=1; i<terms[i].length; i++) {
+  terms[0].freqDataApprox = constFreq;
+  terms[0].phaseDataApprox = constPhase;
+
+  name = 'Constant ' + constantK.toString();//was just constantK
+  checkHtml = "<br>Elements Detected: <br>";
+  checkHtml += "<input type='checkbox' id='" + name + "' onclick=\"onTopCheckOne(\'"+name+"\')\" checked></input>";
+  checkHtml += "<label for='" + name + "'>"+ name +"</label><br>";
+  graphHtml = "<p id='topDescription'></p><br>";
+  graphHtml +=  "<div id='freq'></div><br><p id='freqDescription'></p><br>";
+  graphHtml += "<div id='phase'></div><br><p id='phaseDescription'></p></div><br>";
+  freqDescs.push('The constant term is K= ~'+roundDecimal(constantK, 4).toString()+' = '+terms[0].freqData[0][1].toString()+'dB = 20log10(|K|).');
+  //1 description, 1 graph
+  BDO.lastClickedTopBoxName = name;//1st box to be checked is the constant.
+  freqSeries.push({name: 'Constant ' + constantK.toString(),
+  color: colors[colorIndex],data: constFreq});
+  phaseSeries.push({name: 'Constant ' + constantK.toString(),
+  color: colors[colorIndex],data: constPhase});
+  colorIndex++;
+  desc += '<br><a href="https://lpsa.swarthmore.edu/Bode/BodeHow.html#A%20Constant%20Term">Details</a>';
+  phaseDescs.push(desc);
+  /*phaseDescription = document.getElementById('phaseDescription');
+  phaseDescription.innerHTML = phaseDescs[0];//default is constantK
+  document.getElementById('topDescription').insertAdjacentHTML('beforeend', '<br>'+phaseDescs[0]);*/
+
+  for (let i=1; i<terms.length; i++) {
     if (terms[i].termType == "OriginZero") {
       [terms[i].freqData, terms[i].phaseData] = originData(w, 1, i);
       terms[i].freqDataApprox = terms[i].freqData;
       terms[i].phaseDataApprox = terms[i].phaseData;
+      name = 'Zero at Origin';
+      freqSeries.push({
+        name: name,
+        color: colors[colorIndex],
+        data: terms[i].freqData
+      });
+      phaseSeries.push({
+        name: name,
+        color: colors[colorIndex],
+        data: terms[i].phaseData
+      });
+      names.push(name);
+      checkHtml+= "<input type='checkbox' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
+      checkHtml+="<label for='"+name+"'>Zero at Origin</label><br>";
+      freqDescs.push('The magnitude plot rises 20dB/decade and goes through 0 dB at 1 rad sec.<br>');
+      colorIndex++;
+      desc = 'The phase plot of a zero at the origin is a horizontal line at +90&deg;.';
+      desc += '<br><a href="https://lpsa.swarthmore.edu/Bode/BodeHow.html#A%20Zero%20at%20the%20Origin">Details</a>';
+      phaseDescs.push(desc);
     }
     else if (terms[i].termType == "OriginPole") {
       [terms[i].freqData, terms[i].phaseData] = originData(w, -1, i);
       terms[i].freqDataApprox = terms[i].freqData;
       terms[i].phaseDataApprox = terms[i].phaseData;
+      name = 'Pole at Origin';
+      freqSeries.push({
+        name: name,
+        color: colors[colorIndex],
+        data: terms[i].freqData
+      });
+      phaseSeries.push({
+        name: name,
+        color: colors[colorIndex],
+        data: terms[i].phaseData
+      });
+      checkHtml+="<input type='checkbox' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
+      checkHtml+="<label for='"+name+"'>Pole at Origin</label><br>";
+      desc = 'The magnitude plot drops 20dB/decade and goes through 0 dB at 1 rad sec.<br>';
+      freqDescs.push(desc);
+      desc = 'The phase plot of a pole at the origin is a horizontal line at -90&deg;.';
+      desc += '<br><a href="https://lpsa.swarthmore.edu/Bode/BodeHow.html#A%20Pole%20at%20the%20Origin">Details</a>';
+      phaseDescs.push(desc);
+      names.push(name);
+      colorIndex++;
     }
     else if (terms[i].termType == "RealZero") {
       [terms[i].freqData, terms[i].phaseData, terms[i].freqDataApprox, terms[i].phaseDataApprox] = realData(w, 1, i);
+      name = 'Real Zero ' + terms[i].value + ' Approximation';
+      freqSeries.push({
+        name: 'Real Zero ' + terms[i].value,
+        color: colors[colorIndex],
+        data: terms[i].freqData
+      });
+      freqSeries.push({
+        name: name,
+        color: colors[colorIndex],
+        data: terms[i].freqDataApprox
+      });
+      phaseSeries.push({
+        name: 'Real Zero ' + terms[i].value,
+        color: colors[colorIndex],
+        data: terms[i].phaseData
+      });
+      phaseSeries.push({
+        name: name,
+        color: colors[colorIndex],
+        data: terms[i].phaseDataApprox
+      });
+      names.push(name);
+      w0Mag = BDO.terms[i].w0.toString();
+      checkHtml+="<label for='"+name+"'>"+name+"</label><br>";
+      desc = 'The real zero is at &omega; = &omega;<sub>0</sub> = '+w0Mag+' rad/sec.';
+      desc+= ' For the magnitude plot we draw a straight line ';
+      desc += 'at 0 dB from up to '+w0Mag+', thereafter the line rises at 20dB/decade.';
+      freqDescs.push(desc);
+      desc = 'The phase plot is 0 up to &omega; = &omega;<sub>0</sub> = '+w0Mag+'/10,';
+      desc += ' then drops to +90 at '+w0Mag+'*10 going through +45 at '+w0Mag + '.';
+      desc+='<br><a href = "https://lpsa.swarthmore.edu/Bode/BodeHow.html#A%20Real%20Zero">Details</a>';
+      phaseDescs.push(desc);
+      colorIndex++;
     }
     else if (terms[i].termType == "RealPole") {
       [terms[i].freqData, terms[i].phaseData, terms[i].freqDataApprox, terms[i].phaseDataApprox] = realData(w, -1, i);
+      w0Mag = BDO.terms[i].w0.toString();
+      name = 'Real Pole ' + terms[i].value + ' Approximation';
+      freqSeries.push({
+        name: 'Real Pole ' + terms[i].value,
+        color: colors[colorIndex],
+        data: terms[i].freqData
+      });
+      freqSeries.push({
+        name: name,
+        color: colors[colorIndex],
+        data: terms[i].freqDataApprox
+      });
+      phaseSeries.push({
+        name: 'Real Pole ' + terms[i].value,
+        color: colors[colorIndex],
+        data: terms[i].phaseData
+      });
+      phaseSeries.push({
+        name: name,
+        color: colors[colorIndex],
+        data: terms[i].phaseDataApprox
+      });
+      names.push(name);
+      checkHtml+="<input type='checkbox' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
+      checkHtml+="<label for='"+name+"'>"+name+"</label><br>";
+      desc = 'The real pole is at &omega; = &omega;<sub>0</sub> = '+w0Mag+' rad/sec.';
+      desc+= ' For the magnitude plot we draw a straight line ';
+      desc += 'at 0 dB from up to '+w0Mag+', thereafter the line drops at 20dB/decade.';
+      freqDescs.push(desc);
+
+      desc = 'The phase plot is 0 up to &omega; = &omega;<sub>0</sub> = '+w0Mag+'/10,';
+      desc += ' then drops to -90 at '+w0Mag+'*10 going through -45 at '+w0Mag+'.';
+      desc += '<br><a href = "https://lpsa.swarthmore.edu/Bode/BodeHow.html#A%20Real%20Pole">Details</a>';
+      phaseDescs.push(desc);
+      colorIndex++;
     }
-    /*else if (terms[i].termType == "ComplexZero") {
-      [terms[i].freqData, terms[i].phaseData, [terms[i].freqDataApprox, terms[i].phaseDataApprox] = compConjugateData(w, 1, i);
+    else if (terms[i].termType == "ComplexZero") {
+      [terms[i].freqData, terms[i].phaseData, terms[i].freqDataApprox, terms[i].phaseDataApprox] = compConjugateData(w, 1, i);
+      print = compToStr(terms[i].value);
+      name = 'Complex Zero ' + print + ' Approximation';
+      freqSeries.push({
+        name: 'Complex Zero ' + print,
+        color: colors[colorIndex],
+        data: terms[i].freqData
+      });
+      freqSeries.push({
+        name: name,
+        color: colors[colorIndex],
+        data: terms[i].freqDataApprox
+      });
+      phaseSeries.push({
+        name: 'Complex Zero ' + print,
+        color: colors[colorIndex],
+        data: terms[i].phaseData
+      });
+      phaseSeries.push({
+        name: name,
+        color: colors[colorIndex],
+        data: terms[i].phaseDataApprox
+      });
+      w0Mag = BDO.terms[i].w0.toString();
+      zMag = zBDO.terms[i].zeta.toString();
+      checkHtml+="<input type='checkbox' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
+      checkHtml+="<label for='"+name+"'>"+name+"</label><br>";
+      desc = 'For the magnitude plot we draw a straight line at 0 dB from up to '+w0Mag+', thereafter the line rises at 40dB/decade.';
+      if (parseFloat(zMag) < 0.5) {
+        desc += '<br>Since '+zMag+'<0.5, we draw a peak of 20log<sub>10</sub>(2&zeta;) = ';
+        desc += (20*Math.log10(2*parseFloat(zMag,10))).toString()+'db at &omega; = '+w0Mag+'.';
+      }
+      freqDescs.push(desc);
+
+      desc = 'The phase plot is 0 up to '+w0Mag+'/10<sup>'+zMag+'</sup, ';
+      desc += 'then climbs to 180 at '+w0Mag+'*10<sup>'+zMag+'</sup> going through 90 at '+w0Mag+'.';
+      desc += '<br><a href="https://lpsa.swarthmore.edu/Bode/BodeHow.html#A%20Complex%20Conjugate%20Pair%20of%20Zeros">Details</a>';
+      phaseDescs.push(desc);
+      colorIndex++;
     }
     else if (terms[i].termType == "ComplexPole") {
-      [terms[i].freqData, terms[i].phaseData, [terms[i].freqDataApprox, terms[i].phaseDataApprox] = compConjugateData(w, -1, i);
-    }*/
+      [terms[i].freqData, terms[i].phaseData, terms[i].freqDataApprox, terms[i].phaseDataApprox] = compConjugateData(w, -1, i);
+      print = compToStr(terms[i].value);
+      name = 'Complex Pole ' + print + ' Approximation';
+      freqSeries.push({
+        name: 'Complex Pole ' + print,
+        color: colors[colorIndex],
+        data: terms[i].freqData
+      });
+      freqSeries.push({
+        name: name,
+        color: colors[colorIndex],
+        data: terms[i].freqDataApprox
+      });
+      phaseSeries.push({
+        name: 'Complex Pole ' + print,
+        color: colors[colorIndex],
+        data: terms[i].phaseData
+      });
+      phaseSeries.push({
+        name: name,
+        color: colors[colorIndex],
+        data: terms[i].phaseDataApprox
+      });
+      w0Mag = BDO.terms[i].w0.toString();
+      zMag = BDO.terms[i].zeta.toString();
+      checkHtml+="<input type='checkbox' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
+      checkHtml+="<label for='"+name+"'>"+name+"</label><br>";
+      desc = 'For the magnitude plot we draw a straight line at 0 dB from up to '
+      desc += w0Mag+', thereafter the line drops at 40dB/decade.';
+      if (zMag < 0.5) {
+        desc+= '<br>Since '+zMag+'<0.5, we draw a peak of -20log<sub>10</sub>(2&zeta;) = ';
+        desc += (-20*Math.log10(2*parseFloat(zMag,10))).toString()+'db at &omega; = '+w0Mag;
+      }
+      freqDescs.push(desc);
+      desc = 'The phase plot is 0 up to '+w0Mag+'/10<sup>'+zMag+'</sup, ';
+      desc += 'then climbs to 180 at '+w0Mag+'*10<sup>'+zMag+'</sup> going through 90 at '+w0Mag+'.';
+      desc += '<br><a href="https://lpsa.swarthmore.edu/Bode/BodeHow.html#A%20Complex%20Conjugate%20Pair%20of%20Zeros">Details</a>';
+      phaseDescs.push(desc);
+      colorIndex++;
+    }
   }
+  [BDO.allFreq, BDO.allPhase, BDO.allFreqApprox, BDO.allPhaseApprox] = allData(w, terms);
+  freqSeries.push({
+    name: 'Total Frequency',
+    color: colors[colorIndex],
+    data: BDO.allFreq
+  });
+  freqSeries.push({
+    name: 'Total Frequency Approximation',
+    color: colors[colorIndex],
+    data: BDO.allFreqApprox
+  });
+  phaseSeries.push({
+    name: 'Total Phase',
+    color: colors[colorIndex],
+    data: BDO.allPhase
+  });
+  phaseSeries.push({
+    name: 'Total Phase Approximation',
+    color: colors[colorIndex],
+    data: BDO.allPhaseApprox
+  });
+  colorIndex++;
+  highchartsPlot(freqSeries, 'bode', 'Frequency Plot', 'Magnitude dB');
+  highchartsPlot(phaseSeries, 'bodePhase', 'Bode Plot: Phase', 'Phase in Degrees', 90);
+  //only want to plot constant by default on top graph.
+  //highchartsPlot(freqSeries, 'freq', 'Frequency Plot', 'Magnitude dB');
 }
 //function rounds a number to a decimal # of decimal places.
 function roundDecimal (num, decimal) {
@@ -307,6 +546,23 @@ function getZeta (img, real) {
   var temp = Math.atan2(img, real);//y, x -> y/x, opposite/ajdacent
   return Math.cos(temp);
 }
+//turns an object of {re: 'a', im: 'b'} into 'a+bi'
+//this one assumes we are only making one graph for a pair of complex conjugates
+function compToStr(comp) {
+  let print;
+  let imagPart = parseFloat(comp.im);
+  if (imagPart == -1.00 || imagPart == 1.00) {
+    print = comp.re + ' -+ i ';
+  }
+  else if (imagPart == parseInt(comp.im)){
+    imagPart = parseInt(comp.im);
+    print = comp.re + ' -+ ' + Math.abs(imagPart).toString() + 'i';
+  }
+  else {
+    print = comp.re + ' -+ ' + Math.abs(imagPart).toString() + 'i';
+  }
+  return print;
+}
 function originData(w, sign, termIndex) {
   let freqData = [], phaseData = [], exp = BDO.terms[termIndex].mult;
   for (let i=0; i<w.length; i++) {
@@ -316,10 +572,11 @@ function originData(w, sign, termIndex) {
   return [freqData, phaseData];
 }
 function realData (w, sign, termIndex) {
-  let w0 = Math.abs(parseFloat(BO.terms[termIndex].value));//w0, abs of a zero.
+  let w0 = Math.abs(parseFloat(BDO.terms[termIndex].value));//w0, abs of a zero.
+  BDO.terms[termIndex].w0 = w0;
   let freqApproxData = [], phaseApproxData = [], freqExactData = [], phaseExactData = [];
-  let exp = BO.terms[termIndex].mult, lowerBound = 0.1*w0, upperBound = 10*w0,
-  middleDenominator = Math.log10(upperBound/lowerBound), theta;
+  let exp = BDO.terms[termIndex].mult, lowerBound = 0.1*w0, upperBound = 10*w0,
+  middleDenominator = Math.log10(upperBound/lowerBound), theta, x;
 
   for (let j=0; j<w.length; j++) {
     //approximate fequency:
@@ -331,19 +588,19 @@ function realData (w, sign, termIndex) {
       freqApproxData.push([w[j], sign*20*exp*Math.log10(x)]);
     }
     //exact frequency
-    freqExactData[i].push([w[j], sign*20*exp*Math.log10(Math.pow((1 + x*x), 0.5))]);
+    freqExactData.push([w[j], sign*20*exp*Math.log10(Math.pow((1 + x*x), 0.5))]);
     if (w[j]<lowerBound) {
         phaseApproxData.push([w[j], 0]);
     }
     else if (w[j]>upperBound) {
-      phaseApproxData.push([w[j], sign*90]);
+      phaseApproxData.push([w[j], sign*exp*90]);
     }
     else {
-      theta = (Math.log10(w[j]/lowerBound)/middleDenominator)*sign*90;
+      theta = (Math.log10(w[j]/lowerBound)/middleDenominator)*sign*exp*90;
       phaseApproxData.push([w[j], theta]);
     }
     //exact
-    theta = rad2Degrees(sign*Math.atan2(w[j], w0));
+    theta = rad2Degrees(sign*exp*Math.atan2(w[j], w0));
     phaseExactData.push([w[j], theta]);
   }
   return [freqExactData, phaseExactData, freqApproxData, phaseApproxData];
@@ -354,14 +611,103 @@ function compConjugateData(w, sign, termIndex) {
   let w0 = Math.sqrt(realPart*realPart + imagPart*imagPart);
   let w0Rounded = roundDecimal(w0, 1);//round to 1 decimal place.
   let freqApproxData = [], phaseApproxData = [], freqExactData = [], phaseExactData = [];
-  let exp = BO.terms[termIndex].mult, zeta = zeta(BO.terms[termIndex].value),
-  jMax = w.length;
-  BO.terms[termIndex].zeta = zeta;
+  let exp = BDO.terms[termIndex].mult, zetaTemp = zeta(BDO.terms[termIndex].value),
+  jMax = w.length, x, base, peak, lowerBound, upperBound,
+  middleDenominator, a, b, theta;
+  BDO.terms[termIndex].zeta = zetaTemp;
   if (zeta < 0) {
     alert('A negative damping ratio is not permitted');
   }
-  
+  //approximate frequency:
+  if (zetaTemp < 0.5) {
+    for (let j=0; j<jMax; j++) {
+      if (w[j] <= w0Rounded) {//for phase w[j] <= w0/(Math.pow(10, zeta))) {
+        freqApproxData.push([w[j], 0]);
+      }//was w0Rounded.
+      else if (w[j] > w0Rounded && w[j] != w0Rounded) { //might change to if so they will connect?
+        freqApproxData.push([w[j], sign*40*exp*Math.log10(x-w0Rounded+1)]);
+      }//w0Rounded pushes the asymptote so it is more in sync w/ exact function.
+      else if (w[j] == w0Rounded) {//might ask prof cheever about his peak at some point.
+        base = sign*40*exp*Math.log10(x);
+        peak = 20*Math.abs(Math.log10(2*Math.abs(zetaTemp)))*Math.sign(base);
+        freqApproxData.push([w[j], base+peak]);//should we have nFactorExp[i] here?
+      }
+    }
+  }
+  else if (zetaTemp >= 0.5) {//don't draw peak. it would seem like in this case w[0] doesn't matter.
+    for (let j=0; j<jMax; j++) {
+      x = w[j];
+      if (w[j] <= w0Rounded) {// w0Rounded for phase w[j] <= w0/(Math.pow(10, zeta))) {
+        freqApproxData.push([w[j], 0]);
+      }
+      else if (w[j] > w0Rounded) {
+        freqApproxData.push([w[j], sign*40*exp*Math.log10(x)]);
+      }
+    }
+  }
+  //exact frequency version starts here:
+  //a + jb, a = 1-(w/w0)^2 b = 2*zeta*w/(w0) w[j]. 20*log10(|a+jb|)
+  for (let j=0; j<jMax; j++) {//should we have included this in both the other for loops or had there be only one?
+    realPart = 1-Math.pow((w[j]/w0), 2);
+    imagPart = 2*zetaTemp*(w[j]/w0);//also j, j^2 = -1
+    //+ works, - doesn't.
+    x = Math.sqrt(realPart*realPart+imagPart*imagPart);//magnitude |a+jb|
+    freqExactData.push([w[j], sign*20*exp*Math.log10(x)]);
+    //approx & exact are closer when both 20 or 40.
+  }
+  lowerBound = w0/(Math.pow(10, Math.abs(zetaTemp)));////(x,y) = (lowerBound, 0)
+  upperBound = w0*Math.pow(10, Math.abs(zetaTemp));//(x,y) = (upperBound, sign*180)
+  middleDenominator = Math.log10(upperBound/lowerBound);
+  //phase approximation
+  for (let j=0; j<jMax; j++) {
+    x = w[j];
+    //lower & upper boundarises of line in x coordinates
+    if (w[j] < lowerBound) {//for phase w[j] <= w0/(Math.pow(10, zeta))) {
+      phaseApproxData.push([w[j], 0]);
+    }
+    else if (w[j] > upperBound) {
+      phaseApproxData.push([w[j], sign*exp*180]);
+    }
+    else {
+      theta = (Math.log10(w[j]/lowerBound)/middleDenominator)*sign*exp*180;
+      phaseApproxData.push([w[j], theta]);
+    }
+  }
+  //exact phase version starts here:
+  //a + jb, a = 1-(w/w0)^2 b = 2*zeta*w/(w0) w[j]. 20*log10(|a+jb|)
+  for (let j=0; j<jMax; j++) {//should we have included this in both the other for loops or had there be only one?
+    a = w[j]/w0;
+    b = 1-a*a;
+    x = (2*zetaTemp*a)/b;//magnitude |a+jb|
+    //ends up being arctan(img/real)
+    //should Math.abs() be necessary here, or are we doing somehting else wrong?
+    phaseExactData.push([w[j], sign*exp*Math.abs(rad2Degrees(Math.atan2(2*zetaTemp*a, b)))]);//vs Math.atan2(x)
+    //we need rad2Degrees bc graph is in degrees & Math.atan2() returns radians.
+  }
+  //}//there is no way the exact way can be this easy.
   return [freqExactData, phaseExactData, freqApproxData, phaseExactData];
+}
+//finds summary of data:
+function allData(w, terms) {
+  let freqApproxData = copyObject(terms[0].freqDataApprox),
+  phaseApproxData = copyObject(terms[0].phaseDataApprox),
+  freqExactData = copyObject(terms[0].freqData),
+  phaseExactData = copyObject(terms[0].phaseData);
+  let wTerm = [];
+  var bold = '1.0', faded = '0.2', topSeries = [], zMag, w0Mag;
+  for (let i=1; i<terms.length; i++) {
+    for (let j=0; j<w.length; j++) {
+      freqExactData[j] = [w[j], freqExactData[j][1]+terms[i].freqData[j][1]];
+      freqApproxData[j] = [w[j], freqApproxData[j][1]+terms[i].freqDataApprox[j][1]];
+      phaseExactData[j] = [w[j], phaseExactData[j][1]+terms[i].phaseData[j][1]];
+      phaseApproxData[j] = [w[j], phaseApproxData[j][1]+terms[i].phaseDataApprox[j][1]];
+    }
+  }
+  return [freqExactData, phaseExactData, freqApproxData, phaseExactData];
+}// [BDO.allFreq, BDO.allPhase, BDO.allFreqApprox, BDO.allPhaseApprox]
+
+function copyObject(obj) {
+  return JSON.parse(JSON.stringify(obj));
 }
 
 /* This function creates all the TeX and html for displaying the equations.
@@ -469,7 +815,7 @@ function omega0(s) { //get omega0 of complex number
     return (s.abs().toPrecision(BDO.prec));
 }
 
-function zeta(s) {
+function zeta(s) {//zeta(BDO.terms[i].value)
     return (Math.abs(s.im / s.abs()).toPrecision(BDO.prec));
 }
 
@@ -490,4 +836,74 @@ function roundToPrec(r, n) { // n = digits of precision, r=nedamer object with r
         rArray[i] = new Complex(rl, im);
     }
     return (rArray);
+}
+function highchartsPlot(series, id, title, yAxis, tickInt) {
+  Highcharts.chart(id, {
+    chart: {
+        type: 'line',
+        zoomType: 'xy'
+    },
+    title: {
+        text: title
+    },
+    xAxis: {
+      type: 'logarithmic',//'logarithmic'. can't plot sub-zero values on a logarithmic axis
+        title: {
+            enabled: true,
+            text: 'Frequency ω'//ω, &#x03C9;
+        },
+        startOnTick: true,
+        endOnTick: true,
+        showLastLabel: true
+    },
+    //type: 'linear','logarithmic'
+    yAxis: {
+      type: 'linear',
+      tickInterval: tickInt,
+        title: {
+            text: yAxis//'Magnitude dB'
+        }
+    },
+    legend: {
+            layout: 'vertical',
+            backgroundColor: 'white',
+            align: 'right',
+            verticalAlign: 'top',
+            y: 60,
+            x: -10,
+            borderWidth: 1,
+            borderRadius: 0,
+            title: {
+                text: ':: Drag me'
+            },
+            floating: true,
+            draggable: true,
+            zIndex: 20
+        },
+    plotOptions: {
+        scatter: {
+            marker: {
+                radius: 5,
+                states: {
+                    hover: {
+                        enabled: true,
+                        lineColor: 'rgb(100,100,100)'
+                    }
+                }
+            },
+            states: {
+                hover: {
+                    marker: {
+                        enabled: false
+                    }
+                }
+            },
+            tooltip: {
+                headerFormat: '<b>{series.name}</b><br>',
+                pointFormat: '{point.x} &#x03C9;, {point.y} dB'
+            }
+        }
+    },
+    series: series
+  });
 }
