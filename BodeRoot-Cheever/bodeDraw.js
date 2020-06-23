@@ -15,7 +15,14 @@ function BDO_Obj() {
     this.allPhase = [];
     this.allFreqApprox = [];
     this.allPhaseApprox = [];
+    this.namesOfIds = [];
+    this.freqDescs = [];
+    this.phaseDescs = [];
     this.lastClickedTopBoxName;
+    this.topFreqSeries = [];
+    this.topPhaseSeries = [];
+    this.freqSeries = [];
+    this.phaseSeries = [];
 };
 
 // Create the object that has information needed for each "term"
@@ -254,10 +261,12 @@ function getTerms() {
 function getData() {
   let terms = BDO.terms;
   let w = BDO.w, constantK = parseInt(BDO.K);
-  let constFreq = [], constPhase = [], freqSeries = [], phaseSeries = [];
-  let desc, freqDescs = [], phaseDescs = [], w0Mag, zMag, print, name, descIndex,
-  bold = '1', faded = '0.2', checkHtml, graphHtml, names = [], phaseDescription, freqDescription;
+  let constFreq = [], constPhase = [], freqSeries = [], phaseSeries = [],
+  topFreqSeries = [], topPhaseSeries = [], desc, freqDescs = [], phaseDescs = [],
+  w0Mag, zMag, print, name, descIndex, bold = '1', faded = '0.2', checkHtml,
+  graphHtml, graphs, graphCheck, names = [], phaseDescription, freqDescription;
   var colors = ['rgba(0,114,189,'+bold+')','rgba(217,83,25,'+bold+')','rgba(237,177,32,'+bold+')','rgba(126,47,142,'+bold+')','rgba(119,172,148,'+bold+')','rgba(77,190,238,'+bold+')', 'rgba(162,20,47,'+bold+')'], colorIndex = 0;
+
   for (let i=1; i<10001; i++) {
     w.push(roundDecimal(i*0.1, 1));//w.push(roundDecimal(1+ i*0.1, 1)); might want multiple versions of this.
     constFreq.push([w[i-1], 20*Math.log10(constantK)]);
@@ -284,8 +293,8 @@ function getData() {
   checkHtml += "<input type='checkbox' id='" + name + "' onclick=\"onTopCheckOne(\'"+name+"\')\" checked></input>";
   checkHtml += "<label for='" + name + "'>"+ name +"</label><br>";
   graphHtml = "<p id='topDescription'></p><br>";
-  graphHtml +=  "<div id='freq'></div><br><p id='freqDescription'></p><br>";
-  graphHtml += "<div id='phase'></div><br><p id='phaseDescription'></p></div><br>";
+  graphHtml +=  "<div id='freq'></div><br>";
+  graphHtml += "<div id='phase'></div><br>";
   freqDescs.push('The constant term is K= ~'+roundDecimal(constantK, 4).toString()+' = '+terms[0].freqData[0][1].toString()+'dB = 20log10(|K|).');
   //1 description, 1 graph
   BDO.lastClickedTopBoxName = name;//1st box to be checked is the constant.
@@ -293,6 +302,8 @@ function getData() {
   color: colors[colorIndex],data: constFreq});
   phaseSeries.push({name: 'Constant ' + constantK.toString(),
   color: colors[colorIndex],data: constPhase});
+  topFreqSeries.push(copyObject(freqSeries[freqSeries.length-1]));
+  topPhaseSeries.push(copyObject(phaseSeries[phaseSeries.length-1]));
   colorIndex++;
   desc += '<br><a href="https://lpsa.swarthmore.edu/Bode/BodeHow.html#A%20Constant%20Term">Details</a>';
   phaseDescs.push(desc);
@@ -316,6 +327,10 @@ function getData() {
         color: colors[colorIndex],
         data: terms[i].phaseData
       });
+      topFreqSeries.push(copyObject(freqSeries[freqSeries.length-1]));
+      topFreqSeries[topFreqSeries.length-1] = updateAlpha(topFreqSeries[topFreqSeries.length-1], faded);
+      topPhaseSeries.push(copyObject(phaseSeries[phaseSeries.length-1]));
+      topPhaseSeries[topPhaseSeries.length-1] = updateAlpha(topPhaseSeries[topPhaseSeries.length-1], faded);
       names.push(name);
       checkHtml+= "<input type='checkbox' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
       checkHtml+="<label for='"+name+"'>Zero at Origin</label><br>";
@@ -340,6 +355,10 @@ function getData() {
         color: colors[colorIndex],
         data: terms[i].phaseData
       });
+      topFreqSeries.push(copyObject(freqSeries[freqSeries.length-1]));
+      topFreqSeries[topFreqSeries.length-1] = updateAlpha(topFreqSeries[topFreqSeries.length-1], faded);
+      topPhaseSeries.push(copyObject(phaseSeries[phaseSeries.length-1]));
+      topPhaseSeries[topPhaseSeries.length-1] = updateAlpha(topPhaseSeries[topPhaseSeries.length-1], faded);
       checkHtml+="<input type='checkbox' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
       checkHtml+="<label for='"+name+"'>Pole at Origin</label><br>";
       desc = 'The magnitude plot drops 20dB/decade and goes through 0 dB at 1 rad sec.<br>';
@@ -373,8 +392,13 @@ function getData() {
         color: colors[colorIndex],
         data: terms[i].phaseDataApprox
       });
+      topFreqSeries.push(copyObject(freqSeries[freqSeries.length-1]));
+      topFreqSeries[topFreqSeries.length-1] = updateAlpha(topFreqSeries[topFreqSeries.length-1], faded);
+      topPhaseSeries.push(copyObject(phaseSeries[phaseSeries.length-1]));
+      topPhaseSeries[topPhaseSeries.length-1] = updateAlpha(topPhaseSeries[topPhaseSeries.length-1], faded);
       names.push(name);
       w0Mag = BDO.terms[i].w0.toString();
+      checkHtml+="<input type='checkbox' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
       checkHtml+="<label for='"+name+"'>"+name+"</label><br>";
       desc = 'The real zero is at &omega; = &omega;<sub>0</sub> = '+w0Mag+' rad/sec.';
       desc+= ' For the magnitude plot we draw a straight line ';
@@ -410,6 +434,10 @@ function getData() {
         color: colors[colorIndex],
         data: terms[i].phaseDataApprox
       });
+      topFreqSeries.push(copyObject(freqSeries[freqSeries.length-1]));
+      topFreqSeries[topFreqSeries.length-1] = updateAlpha(topFreqSeries[topFreqSeries.length-1], faded);
+      topPhaseSeries.push(copyObject(phaseSeries[phaseSeries.length-1]));
+      topPhaseSeries[topPhaseSeries.length-1] = updateAlpha(topPhaseSeries[topPhaseSeries.length-1], faded);
       names.push(name);
       checkHtml+="<input type='checkbox' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
       checkHtml+="<label for='"+name+"'>"+name+"</label><br>";
@@ -448,6 +476,10 @@ function getData() {
         color: colors[colorIndex],
         data: terms[i].phaseDataApprox
       });
+      topFreqSeries.push(copyObject(freqSeries[freqSeries.length-1]));
+      topFreqSeries[topFreqSeries.length-1] = updateAlpha(topFreqSeries[topFreqSeries.length-1], faded);
+      topPhaseSeries.push(copyObject(phaseSeries[phaseSeries.length-1]));
+      topPhaseSeries[topPhaseSeries.length-1] = updateAlpha(topPhaseSeries[topPhaseSeries.length-1], faded);
       w0Mag = BDO.terms[i].w0.toString();
       zMag = zBDO.terms[i].zeta.toString();
       checkHtml+="<input type='checkbox' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
@@ -489,6 +521,10 @@ function getData() {
         color: colors[colorIndex],
         data: terms[i].phaseDataApprox
       });
+      topFreqSeries.push(copyObject(freqSeries[freqSeries.length-1]));
+      topFreqSeries[topFreqSeries.length-1] = updateAlpha(topFreqSeries[topFreqSeries.length-1], faded);
+      topPhaseSeries.push(copyObject(phaseSeries[phaseSeries.length-1]));
+      topPhaseSeries[topPhaseSeries.length-1] = updateAlpha(topPhaseSeries[topPhaseSeries.length-1], faded);
       w0Mag = BDO.terms[i].w0.toString();
       zMag = BDO.terms[i].zeta.toString();
       checkHtml+="<input type='checkbox' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
@@ -529,10 +565,83 @@ function getData() {
     data: BDO.allPhaseApprox
   });
   colorIndex++;
+  graphCheck = document.getElementById('graphOptions');
+  graphs = document.getElementById('graphs');
+  graphCheck.innerHTML = checkHtml;
+  graphs.innerHTML = graphHtml;
+  document.getElementById('topDescription').innerHTML = freqDescs[0]+'<br>'+phaseDescs[0];
   highchartsPlot(freqSeries, 'bode', 'Frequency Plot', 'Magnitude dB');
   highchartsPlot(phaseSeries, 'bodePhase', 'Bode Plot: Phase', 'Phase in Degrees', 90);
+  highchartsPlot(topFreqSeries, 'freq', 'Frequency Plot', 'Magnitude dB');
+  highchartsPlot(topPhaseSeries, 'phase', 'Bode Plot: Phase', 'Phase in Degrees', 90);
+  BDO.freqSeries = freqSeries;
+  BDO.phaseSeries = phaseSeries;
+  BDO.topFreqSeries = topFreqSeries;
+  BDO.topPhaseSeries = topPhaseSeries;
+  BDO.freqDescs = freqDescs;
+  BDO.phaseDescs = phaseDescs;
+  BDO.namesOfIds = names;
   //only want to plot constant by default on top graph.
   //highchartsPlot(freqSeries, 'freq', 'Frequency Plot', 'Magnitude dB');
+}
+//called when one of the checkboxes is checked.
+function onTopCheckOne(name) {
+  if (BDO.lastClickedTopBoxName == name) {//make sure you didn't accidentally double click.
+    document.getElementById(BDO.lastClickedTopBoxName).checked = 1;
+  }
+  else {
+    document.getElementById(BDO.lastClickedTopBoxName).checked = 0;
+    onGraphPress();
+    BDO.lastClickedTopBoxName = name;
+  }
+}
+//input series item, returns series item w/ updated alpha in color: 'rgba(0, 0, 0, 1)'
+function updateAlpha(item, alpha) {
+  let rgba = item.color;
+  let alphaStart = rgba.lastIndexOf(',');
+  rgba = rgba.slice(0, alphaStart+1) + alpha + ')';
+  item.color = rgba;
+  return item;
+}
+function onGraphPress() {//1st try w/ zero at origin, p at origin.
+  //order is consT, zOrigin, pOrigin, zReal, pReal, (might be > 1), zComp, pComp
+  //might set array to track # left behind. use name to find stuff.
+  //const resultNums = copyObject(quantPerResult);//don't forget 'Total Bode'.
+  /*const names = copyObject(namesOfIds);
+  var series = copyObject(BDO.topFreqSeries);//some point, make series phase series.
+  var series2 = copyObject(BDO.topPhaseSeries);
+  var freqDescs = copyObject(freqGlobalDescs);
+  var phaseDescs = copyObject(phaseGlobalDescs);*/
+  const names = BDO.namesOfIds;
+  var series = BDO.topFreqSeries;
+  var series2 = BDO.topPhaseSeries;
+  var freqDescs = BDO.freqDescs;
+  var phaseDescs = BDO.phaseDescs;
+  var freqDescShown, phaseDescShown;
+  var bold = '1', faded = '0.2';
+  for (let i=0; i<names.length; i++) {
+    if (document.getElementById(names[i])) {
+      if (document.getElementById(names[i]).checked) {
+        for (let j=0; j<series.length; j++) {
+          if (series[j].name == names[i]) {//find the dictionary of data with the right name
+            series[j] = updateAlpha(series[j], bold);
+            series2[j] = updateAlpha(series2[j], bold);
+            freqDescShown = freqDescs[j];//descriptions correspond to names.
+            phaseDescShown = phaseDescs[j];
+          }
+          else if (series[j].name == BDO.lastClickedTopBoxName) {
+            series[j] = updateAlpha(series[j], faded);
+            series2[j] = updateAlpha(series2[j], faded);
+          }
+        }
+        break;
+      }
+    }
+  }
+  //plots the series with the ones not selected faded.
+  highchartsPlot(series, 'freq', 'Frequency Plot', 'Magnitude dB');
+  highchartsPlot(series2, 'phase', 'Phase Plot', 'Phase in Degrees', 90);
+  document.getElementById('topDescription').innerHTML = freqDescShown+'<br>'+phaseDescShown;
 }
 //function rounds a number to a decimal # of decimal places.
 function roundDecimal (num, decimal) {
