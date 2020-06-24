@@ -25,6 +25,9 @@ function BDO_Obj() {
     this.phaseSeries = [];
     this.freqFormula = '';//gives formula for all frequency & phase.
     this.phaseFormula = '';
+    this.omega;
+    this.phi;
+    this.sinusoidInput;
 };
 
 // Create the object that has information needed for each "term"
@@ -56,9 +59,21 @@ $(function () {
 
 // function called when polynomial is changed.
 function BDOupdate() {
+    /*getTerms();
+    dispTerms();*/
+    let cheevStart, cheevStop, patStart, patStop, cheevTime, patTime;
+    cheevStart = new Date().getTime();
     getTerms();
     dispTerms();
+    cheevStop = new Date().getTime();
     getData();
+    patStop = new Date().getTime();
+    patStart = cheevStop;
+    cheevTime = cheevStop - cheevStart;
+    patTime = patStop - patStart;
+    console.log("Prof. Cheever's code took "+cheevTime.toString() + "ms to run.");
+    console.log("Patrick's code took "+patTime.toString() + "ms to run.");
+    //cheever's time couold have been spent on that resource.
 }
 
 /* This function
@@ -274,13 +289,13 @@ function getData() {
     w.push(roundDecimal(i*0.1, 1));//w.push(roundDecimal(1+ i*0.1, 1)); might want multiple versions of this.
     constFreq.push([w[i-1], 20*Math.log10(constantK)]);
   }
-  BDO.freqFormula += '20log<sub>10<sub>('+constantK.toString()+') ';
+  BDO.freqFormula += 'Frequency: <br>20log<sub>10</sub>('+constantK.toString()+') ';
   if (constantK > 0) {
     for (let i=0; i<w.length; i++) {
       constPhase.push([w[i], 0]);
     }
     desc = 'Since the constant is positive, its phase is 0&deg;.';
-    BDO.phaseFormula += '0&deg; ';
+    BDO.phaseFormula += 'Phase: <br>0&deg; ';
   }
   else if (constantK < 0) {
     for (let i=0; i<w.length; i++) {
@@ -295,6 +310,7 @@ function getData() {
   terms[0].phaseDataApprox = constPhase;
 
   name = 'Constant ' + constantK.toString();//was just constantK
+  names.push(name);
   checkHtml = "<br>Elements Detected: <br>";
   checkHtml += "<input type='checkbox' id='" + name + "' onclick=\"onTopCheckOne(\'"+name+"\')\" checked></input>";
   checkHtml += "<label for='" + name + "'>"+ name +"</label><br>";
@@ -501,6 +517,7 @@ function getData() {
       desc += 'then climbs to 180 at '+w0Mag+'*10<sup>'+zMag+'</sup> going through 90 at '+w0Mag+'.';
       desc += '<br><a href="https://lpsa.swarthmore.edu/Bode/BodeHow.html#A%20Complex%20Conjugate%20Pair%20of%20Zeros">Details</a>';
       phaseDescs.push(desc);
+      names.push(name);
       colorIndex++;
     }
     else if (terms[i].termType == "ComplexPole") {
@@ -546,6 +563,7 @@ function getData() {
       desc += 'then climbs to 180 at '+w0Mag+'*10<sup>'+zMag+'</sup> going through 90 at '+w0Mag+'.';
       desc += '<br><a href="https://lpsa.swarthmore.edu/Bode/BodeHow.html#A%20Complex%20Conjugate%20Pair%20of%20Zeros">Details</a>';
       phaseDescs.push(desc);
+      names.push(name);
       colorIndex++;
     }
   }
@@ -571,21 +589,28 @@ function getData() {
     data: BDO.allPhaseApprox
   });
   togetherFreqSeries = copyObject(topFreqSeries);
+  togetherFreqSeries.push(copyObject(freqSeries[freqSeries.length-2]));
   togetherFreqSeries.push(copyObject(freqSeries[freqSeries.length-1]));
   togetherFreqSeries[0] = updateAlpha(togetherFreqSeries[0], faded);
   togetherPhaseSeries = copyObject(topPhaseSeries);
+  togetherPhaseSeries.push(copyObject(phaseSeries[phaseSeries.length-2]));
   togetherPhaseSeries.push(copyObject(phaseSeries[phaseSeries.length-1]));
   togetherPhaseSeries[0] = updateAlpha(togetherPhaseSeries[0], faded);
-  let together = document.getElementById('together');
   let togetherHtml = "To get the total frequency and phase plot, we add the equations for the approximate and exact terms together.";
-  togetherHtml+='<br>'+BDO.freqFormula+'<br>'+BDO.phaseFormula+'<br>'+'<div id=\'togetherFreq\'></div'+'<br>'+'<div id=\'togetherPhase\'></div>';
-
+  togetherHtml+="<br>"+BDO.freqFormula+"<br>"+BDO.phaseFormula+"<br><div id='togetherFreq'></div>"+"<br><div id='togetherPhase'></div>";
+  togetherHtml+="<br>Input sinusoid of form cos(&omega;t + &phi;).";
+  togetherHtml+="<br><label for='freqInput'>Input a frequency &omega;</label><input type='text' id='freqInput' value='1.0'></input>";
+  togetherHtml+="<br><label for='phaseInput'>Input a phase &phi;</label><input type='text' id='phaseInput' value='1.0'></input>";
+  togetherHtml+="<br><label for='sinusoidInput'>Input sinusoid: </label><div id='sinusoidInput'>cos(1.0t + 1.0)</div>";
+  togetherHtml+="<br><input type='button' onclick='onOutputPress()' value='Find Output Function'></input>";
+  togetherHtml+="<br><label for='sinusoidOutput'>Output sinusoid: </label><div id='sinusoidOutput'>cos(&omega;t + &phi;)</div>";
   colorIndex++;
   graphCheck = document.getElementById('graphOptions');
   graphs = document.getElementById('graphs');
+  let together = document.getElementById('together');
   graphCheck.innerHTML = checkHtml;
   graphs.innerHTML = graphHtml;
-  together.innerHtml = togetherHtml;
+  together.innerHTML = togetherHtml;
   document.getElementById('topDescription').innerHTML = freqDescs[0]+'<br>'+phaseDescs[0];
   highchartsPlot(freqSeries, 'bode', 'Frequency Plot', 'Magnitude dB');
   highchartsPlot(phaseSeries, 'bodePhase', 'Bode Plot: Phase', 'Phase in Degrees', 90);
@@ -601,8 +626,34 @@ function getData() {
   BDO.freqDescs = freqDescs;
   BDO.phaseDescs = phaseDescs;
   BDO.namesOfIds = names;
+  BDO.omega = document.querySelector('#freqInput');
+  BDO.phi = document.querySelector('#phaseInput');
+  BDO.sinusoidInput = document.getElementById('sinusoidInput');
+  BDO.omega.addEventListener('#freqInput', updateSinusoidInput);
+  BDO.phi.addEventListener('#phaseInput', updateSinusoidInput2);
   //only want to plot constant by default on top graph.
   //highchartsPlot(freqSeries, 'freq', 'Frequency Plot', 'Magnitude dB');
+}
+//call when input frequency or phase changes.
+function updateSinusoidInput(e) {
+  BDO.sinusoidInput.textContent = 'cos('+e.target.value+'t + '+BDO.phi.value+')';
+  BDO.omega.value = e.target.value;
+}
+function updateSinusoidInput2(e) {
+  BDO.sinusoidInput.textContent = 'cos('+BDO.omega.value+'t + '+e.target.value+')';
+  BDO.phi.value = e.target.value;
+}
+function onOutputPress() {
+  let wIndex = BDO.w.indexOf(roundDecimal(parseFloat(BDO.omega.value), 1));
+  let mag = BDO.allFreq[wIndex][1].toString();
+  let phi = BDO.allPhase[wIndex][1], html;
+  if (phi > 0) {
+    html = mag+'cos('+BDO.omega.value+'t + '+phi.toString()+')';
+  }
+  else {
+    html = mag+'cos('+BDO.omega.value+'t - '+Math.abs(phi).toString()+')';
+  }
+  document.getElementById('sinusoidOutput').innerHTML = html;
 }
 //called when one of the checkboxes is checked.
 function onTopCheckOne(name) {
@@ -747,9 +798,9 @@ function realData (w, sign, termIndex) {
   else {
     sign = '-';
   }
-  BDO.freqFormula += ('<br>+ {&omega;<='+w0+':0,&omega;>w0:'+sign+exp+'*20log<sub>10</sub>(&omega;)} ');
-  BDO.phaseFormula += '<br>+ {&omega;<'+lowerBound+':0, '+'&omega;>upperBound: '+sign+exp+'90, ';
-  BDO.phaseFormula += lowerBound+'<&omega<'+upperBound+': '+sign+exp+'*90log<sub>10</sub>(&omega;/'+lowerBound +')';
+  BDO.freqFormula += ('<br>+ {&omega;<='+w0+':0, &omega;>&omega;<sub>0</sub>:'+sign+exp+'*20log<sub>10</sub>(&omega;)} ');
+  BDO.phaseFormula += '<br>+ {&omega;<'+lowerBound+':0, '+'&omega;>'+upperBound+': '+sign+exp+'90, ';
+  BDO.phaseFormula += lowerBound+'<&omega;<'+upperBound+': '+sign+exp+'*90log<sub>10</sub>(&omega;/'+lowerBound +')';
   BDO.phaseFormula += '/'+middleDenominator+'} ';
   return [freqExactData, phaseExactData, freqApproxData, phaseApproxData];
 }
@@ -844,18 +895,18 @@ function compConjugateData(w, sign, termIndex) {
   else {
     sign = '-';
   }
-  BDO.freqFormula += '<br>+ {&omega;<'+w0Rounded+':0,&omega;>w0:'+sign+exp+'*40log<sub>10</sub>(&omega;-'+w0Rounded'+1),';
+  BDO.freqFormula += '<br>+ {&omega;<'+w0Rounded+':0, &omega;>&omega;<sub>0</sub>: '+sign+exp+'*40log<sub>10</sub>(&omega;-'+w0Rounded+'+1)';
   if (zetaTemp < 0.5) {
-    BDO.freqFormula += '&omega;='+w0Rounded+': ' +sign+exp+'40*log<sub>10</sub>(&omega;) '+sign+' 20*log<sub>10</sub>(2*&zeta;)} ';
+    BDO.freqFormula += ', &omega;='+w0Rounded+': ' +sign+exp+'40*log<sub>10</sub>(&omega;) '+sign+' 20*log<sub>10</sub>(2*&zeta;)} ';
   }
   else {
     BDO.freqFormula += '} ';
   }
-  BDO.phaseFormula += '<br>+ {&omega;<'+lowerBound':0, '+'&omega;>upperBound: '+sign+exp+'90, ';
-  BDO.phaseFormula += lowerBound+'<&omega<'+upperBound+': '+sign+exp+'*90log<sub>10</sub>(&omega;/'+lowerBound +')';
+  BDO.phaseFormula += '<br>+ {&omega;<'+lowerBound+':0, '+'&omega;>'+upperBound+': '+sign+exp+'90, ';
+  BDO.phaseFormula += lowerBound+'<&omega;<'+upperBound+': '+sign+exp+'*90log<sub>10</sub>(&omega;/'+lowerBound +')';
   BDO.phaseFormula += '/'+middleDenominator+'} ';
   //}//there is no way the exact way can be this easy.
-  return [freqExactData, phaseExactData, freqApproxData, phaseExactData];
+  return [freqExactData, phaseExactData, freqApproxData, phaseApproxData];
 }
 //finds summary of data:
 function allData(w, terms) {
@@ -873,7 +924,7 @@ function allData(w, terms) {
       phaseApproxData[j] = [w[j], phaseApproxData[j][1]+terms[i].phaseDataApprox[j][1]];
     }
   }
-  return [freqExactData, phaseExactData, freqApproxData, phaseExactData];
+  return [freqExactData, phaseExactData, freqApproxData, phaseApproxData];
 }// [BDO.allFreq, BDO.allPhase, BDO.allFreqApprox, BDO.allPhaseApprox]
 
 function copyObject(obj) {
