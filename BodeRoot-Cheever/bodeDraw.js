@@ -23,6 +23,8 @@ function BDO_Obj() {
     this.topPhaseSeries = [];
     this.freqSeries = [];
     this.phaseSeries = [];
+    this.freqFormula = '';//gives formula for all frequency & phase.
+    this.phaseFormula = '';
 };
 
 // Create the object that has information needed for each "term"
@@ -263,25 +265,29 @@ function getData() {
   let w = BDO.w, constantK = parseInt(BDO.K);
   let constFreq = [], constPhase = [], freqSeries = [], phaseSeries = [],
   topFreqSeries = [], topPhaseSeries = [], desc, freqDescs = [], phaseDescs = [],
-  w0Mag, zMag, print, name, descIndex, bold = '1', faded = '0.2', checkHtml,
-  graphHtml, graphs, graphCheck, names = [], phaseDescription, freqDescription;
+  togetherFreqSeries = [], togetherPhaseSeries = [], w0Mag, zMag, print, name,
+  descIndex, bold = '1', faded = '0.2', checkHtml, graphHtml, graphs, graphCheck,
+  names = [], phaseDescription, freqDescription;
   var colors = ['rgba(0,114,189,'+bold+')','rgba(217,83,25,'+bold+')','rgba(237,177,32,'+bold+')','rgba(126,47,142,'+bold+')','rgba(119,172,148,'+bold+')','rgba(77,190,238,'+bold+')', 'rgba(162,20,47,'+bold+')'], colorIndex = 0;
 
   for (let i=1; i<10001; i++) {
     w.push(roundDecimal(i*0.1, 1));//w.push(roundDecimal(1+ i*0.1, 1)); might want multiple versions of this.
     constFreq.push([w[i-1], 20*Math.log10(constantK)]);
   }
+  BDO.freqFormula += '20log<sub>10<sub>('+constantK.toString()+') ';
   if (constantK > 0) {
     for (let i=0; i<w.length; i++) {
       constPhase.push([w[i], 0]);
     }
     desc = 'Since the constant is positive, its phase is 0&deg;.';
+    BDO.phaseFormula += '0&deg; ';
   }
   else if (constantK < 0) {
     for (let i=0; i<w.length; i++) {
       constPhase.push([w[i], 180]);
     }
     desc =  'Since the constant is positive, its phase is +- 180&deg;.<br>We have chosen to represent it as +180#&deg;.';
+    BDO.phaseFormula += '180&deg; ';
   }
   terms[0].freqData = constFreq;
   terms[0].phaseData = constPhase;
@@ -564,16 +570,30 @@ function getData() {
     color: colors[colorIndex],
     data: BDO.allPhaseApprox
   });
+  togetherFreqSeries = copyObject(topFreqSeries);
+  togetherFreqSeries.push(copyObject(freqSeries[freqSeries.length-1]));
+  togetherFreqSeries[0] = updateAlpha(togetherFreqSeries[0], faded);
+  togetherPhaseSeries = copyObject(topPhaseSeries);
+  togetherPhaseSeries.push(copyObject(phaseSeries[phaseSeries.length-1]));
+  togetherPhaseSeries[0] = updateAlpha(togetherPhaseSeries[0], faded);
+  let together = document.getElementById('together');
+  let togetherHtml = "To get the total frequency and phase plot, we add the equations for the approximate and exact terms together.";
+  togetherHtml+='<br>'+BDO.freqFormula+'<br>'+BDO.phaseFormula+'<br>'+'<div id=\'togetherFreq\'></div'+'<br>'+'<div id=\'togetherPhase\'></div>';
+
   colorIndex++;
   graphCheck = document.getElementById('graphOptions');
   graphs = document.getElementById('graphs');
   graphCheck.innerHTML = checkHtml;
   graphs.innerHTML = graphHtml;
+  together.innerHtml = togetherHtml;
   document.getElementById('topDescription').innerHTML = freqDescs[0]+'<br>'+phaseDescs[0];
   highchartsPlot(freqSeries, 'bode', 'Frequency Plot', 'Magnitude dB');
   highchartsPlot(phaseSeries, 'bodePhase', 'Bode Plot: Phase', 'Phase in Degrees', 90);
   highchartsPlot(topFreqSeries, 'freq', 'Frequency Plot', 'Magnitude dB');
   highchartsPlot(topPhaseSeries, 'phase', 'Bode Plot: Phase', 'Phase in Degrees', 90);
+  highchartsPlot(togetherFreqSeries, 'togetherFreq', 'Frequency Plot', 'Magnitude dB');
+  highchartsPlot(togetherPhaseSeries, 'togetherPhase', 'Bode Plot: Phase', 'Phase in Degrees', 90);
+
   BDO.freqSeries = freqSeries;
   BDO.phaseSeries = phaseSeries;
   BDO.topFreqSeries = topFreqSeries;
@@ -606,12 +626,6 @@ function updateAlpha(item, alpha) {
 function onGraphPress() {//1st try w/ zero at origin, p at origin.
   //order is consT, zOrigin, pOrigin, zReal, pReal, (might be > 1), zComp, pComp
   //might set array to track # left behind. use name to find stuff.
-  //const resultNums = copyObject(quantPerResult);//don't forget 'Total Bode'.
-  /*const names = copyObject(namesOfIds);
-  var series = copyObject(BDO.topFreqSeries);//some point, make series phase series.
-  var series2 = copyObject(BDO.topPhaseSeries);
-  var freqDescs = copyObject(freqGlobalDescs);
-  var phaseDescs = copyObject(phaseGlobalDescs);*/
   const names = BDO.namesOfIds;
   var series = BDO.topFreqSeries;
   var series2 = BDO.topPhaseSeries;
@@ -676,8 +690,17 @@ function originData(w, sign, termIndex) {
   let freqData = [], phaseData = [], exp = BDO.terms[termIndex].mult;
   for (let i=0; i<w.length; i++) {
     freqData.push([w[i], 20*exp*sign*Math.log10(w[i])]);
-    phaseData.push([w[i], sign*90]);
+    phaseData.push([w[i], sign*exp*90]);
   }
+  exp = exp.toString();
+  if (sign > 0) {
+    sign = '+';
+  }
+  else {
+    sign = '-';
+  }
+  BDO.freqFormula += ('<br>'+sign +' 20*'+exp+'*log<sub>10</sub>(&omega;) ');
+  BDO.phaseFormula += ('<br>'+sign +' '+exp+'*90 ');
   return [freqData, phaseData];
 }
 function realData (w, sign, termIndex) {
@@ -698,6 +721,7 @@ function realData (w, sign, termIndex) {
     }
     //exact frequency
     freqExactData.push([w[j], sign*20*exp*Math.log10(Math.pow((1 + x*x), 0.5))]);
+    //phase approximation
     if (w[j]<lowerBound) {
         phaseApproxData.push([w[j], 0]);
     }
@@ -712,6 +736,21 @@ function realData (w, sign, termIndex) {
     theta = rad2Degrees(sign*exp*Math.atan2(w[j], w0));
     phaseExactData.push([w[j], theta]);
   }
+  exp = exp.toString();
+  w0 = w0.toString();
+  lowerBound = lowerBound.toString();
+  upperBound = upperBound.toString();
+  middleDenominator = middleDenominator.toString();
+  if (sign > 0) {
+    sign = '+';
+  }
+  else {
+    sign = '-';
+  }
+  BDO.freqFormula += ('<br>+ {&omega;<='+w0+':0,&omega;>w0:'+sign+exp+'*20log<sub>10</sub>(&omega;)} ');
+  BDO.phaseFormula += '<br>+ {&omega;<'+lowerBound+':0, '+'&omega;>upperBound: '+sign+exp+'90, ';
+  BDO.phaseFormula += lowerBound+'<&omega<'+upperBound+': '+sign+exp+'*90log<sub>10</sub>(&omega;/'+lowerBound +')';
+  BDO.phaseFormula += '/'+middleDenominator+'} ';
   return [freqExactData, phaseExactData, freqApproxData, phaseApproxData];
 }
 function compConjugateData(w, sign, termIndex) {
@@ -730,7 +769,8 @@ function compConjugateData(w, sign, termIndex) {
   //approximate frequency:
   if (zetaTemp < 0.5) {
     for (let j=0; j<jMax; j++) {
-      if (w[j] <= w0Rounded) {//for phase w[j] <= w0/(Math.pow(10, zeta))) {
+      x = w[j];
+      if (w[j] < w0Rounded) {//for phase w[j] <= w0/(Math.pow(10, zeta))) {
         freqApproxData.push([w[j], 0]);
       }//was w0Rounded.
       else if (w[j] > w0Rounded && w[j] != w0Rounded) { //might change to if so they will connect?
@@ -793,6 +833,27 @@ function compConjugateData(w, sign, termIndex) {
     phaseExactData.push([w[j], sign*exp*Math.abs(rad2Degrees(Math.atan2(2*zetaTemp*a, b)))]);//vs Math.atan2(x)
     //we need rad2Degrees bc graph is in degrees & Math.atan2() returns radians.
   }
+  exp = exp.toString();
+  w0 = w0.toString();
+  lowerBound = lowerBound.toString();
+  upperBound = upperBound.toString();
+  middleDenominator = middleDenominator.toString();
+  if (sign > 0) {
+    sign = '+';
+  }
+  else {
+    sign = '-';
+  }
+  BDO.freqFormula += '<br>+ {&omega;<'+w0Rounded+':0,&omega;>w0:'+sign+exp+'*40log<sub>10</sub>(&omega;-'+w0Rounded'+1),';
+  if (zetaTemp < 0.5) {
+    BDO.freqFormula += '&omega;='+w0Rounded+': ' +sign+exp+'40*log<sub>10</sub>(&omega;) '+sign+' 20*log<sub>10</sub>(2*&zeta;)} ';
+  }
+  else {
+    BDO.freqFormula += '} ';
+  }
+  BDO.phaseFormula += '<br>+ {&omega;<'+lowerBound':0, '+'&omega;>upperBound: '+sign+exp+'90, ';
+  BDO.phaseFormula += lowerBound+'<&omega<'+upperBound+': '+sign+exp+'*90log<sub>10</sub>(&omega;/'+lowerBound +')';
+  BDO.phaseFormula += '/'+middleDenominator+'} ';
   //}//there is no way the exact way can be this easy.
   return [freqExactData, phaseExactData, freqApproxData, phaseExactData];
 }
