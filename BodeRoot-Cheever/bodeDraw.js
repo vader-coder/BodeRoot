@@ -282,7 +282,7 @@ function getData() {
   topFreqSeries = [], topPhaseSeries = [], desc, freqDescs = [], phaseDescs = [],
   togetherFreqSeries = [], togetherPhaseSeries = [], w0Mag, zMag, print, print2, name,
   descIndex, bold = '1', faded = '0.2', checkHtml, graphHtml, graphs, graphCheck,
-  names = [], phaseDescription, freqDescription;
+  names = [], phaseDescription, freqDescription, blackRGBA = 'rgba(0, 0, 0, 1)';
   var colors = ['rgba(0,114,189,'+bold+')','rgba(217,83,25,'+bold+')','rgba(237,177,32,'+bold+')','rgba(126,47,142,'+bold+')','rgba(119,172,148,'+bold+')','rgba(77,190,238,'+bold+')', 'rgba(162,20,47,'+bold+')'], colorIndex = 0;
 
   for (let i=1; i<10001; i++) {
@@ -313,7 +313,7 @@ function getData() {
   names.push(name);
   checkHtml = "<br>Elements Detected: <br>";
   checkHtml += "<input type='radio' id='" + name + "' onclick=\"onTopCheckOne(\'"+name+"\')\" checked></input>";
-  checkHtml += "<label for='" + name + "'>"+ name +"</label><br>";
+  checkHtml += "<label for='" + name + "'>"+ name +"</label>";
   graphHtml = "<p id='topDescription'></p><br>";
   graphHtml +=  "<div id='freq'></div><br>";
   graphHtml += "<div id='phase'></div><br>";
@@ -326,6 +326,7 @@ function getData() {
   color: colors[colorIndex],data: constPhase});
   topFreqSeries.push(copyObject(freqSeries[freqSeries.length-1]));
   topPhaseSeries.push(copyObject(phaseSeries[phaseSeries.length-1]));
+  checkHtml += getBox(topFreqSeries[topFreqSeries.length-1].color, name)+"<br>";
   colorIndex++;
   desc += '<br><a href="https://lpsa.swarthmore.edu/Bode/BodeHow.html#A%20Constant%20Term">Details</a>';
   phaseDescs.push(desc);
@@ -355,7 +356,8 @@ function getData() {
       topPhaseSeries[topPhaseSeries.length-1] = updateAlpha(topPhaseSeries[topPhaseSeries.length-1], faded);
       names.push(name);
       checkHtml+= "<input type='radio' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
-      checkHtml+="<label for='"+name+"'>Zero at Origin</label><br>";
+      checkHtml+="<label for='"+name+"'>Zero at Origin</label>"
+      checkHtml += getBox(topFreqSeries[topFreqSeries.length-1].color, name)+"<br>";
       freqDescs.push('The magnitude plot rises 20dB/decade and goes through 0 dB at 1 rad sec.<br>');
       colorIndex++;
       desc = 'The phase plot of a zero at the origin is a horizontal line at +90&deg;.';
@@ -382,7 +384,8 @@ function getData() {
       topPhaseSeries.push(copyObject(phaseSeries[phaseSeries.length-1]));
       topPhaseSeries[topPhaseSeries.length-1] = updateAlpha(topPhaseSeries[topPhaseSeries.length-1], faded);
       checkHtml+="<input type='radio' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
-      checkHtml+="<label for='"+name+"'>Pole at Origin</label><br>";
+      checkHtml+="<label for='"+name+"'>Pole at Origin</label>";
+      checkHtml += getBox(topFreqSeries[topFreqSeries.length-1].color, name)+"<br>";
       desc = 'The magnitude plot drops 20dB/decade and goes through 0 dB at 1 rad sec.<br>';
       freqDescs.push(desc);
       desc = 'The phase plot of a pole at the origin is a horizontal line at -90&deg;.';
@@ -421,7 +424,8 @@ function getData() {
       names.push(name);
       w0Mag = BDO.terms[i].w0.toString();
       checkHtml+="<input type='radio' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
-      checkHtml+="<label for='"+name+"'>"+name+"</label><br>";
+      checkHtml+="<label for='"+name+"'>"+name+"</label>";
+      checkHtml += getBox(topFreqSeries[topFreqSeries.length-1].color, name)+"<br>";
       desc = 'The real zero is at &omega; = &omega;<sub>0</sub> = '+w0Mag+' rad/sec.';
       desc+= ' For the magnitude plot we draw a straight line ';
       desc += 'at 0 dB from up to '+w0Mag+', thereafter the line rises at 20dB/decade.';
@@ -462,7 +466,8 @@ function getData() {
       topPhaseSeries[topPhaseSeries.length-1] = updateAlpha(topPhaseSeries[topPhaseSeries.length-1], faded);
       names.push(name);
       checkHtml+="<input type='radio' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
-      checkHtml+="<label for='"+name+"'>"+name+"</label><br>";
+      checkHtml+="<label for='"+name+"'>"+name+"</label>";
+      checkHtml += getBox(topFreqSeries[topFreqSeries.length-1].color, name)+"<br>";
       desc = 'The real pole is at &omega; = &omega;<sub>0</sub> = '+w0Mag+' rad/sec.';
       desc+= ' For the magnitude plot we draw a straight line ';
       desc += 'at 0 dB from up to '+w0Mag+', thereafter the line drops at 20dB/decade.';
@@ -505,7 +510,8 @@ function getData() {
       w0Mag = BDO.terms[i].w0.toString();
       zMag = zBDO.terms[i].zeta.toString();
       checkHtml+="<input type='radio' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
-      checkHtml+="<label for='"+name+"'>"+name+"</label><br>";
+      checkHtml+="<label for='"+name+"'>"+name+"</label>";
+      checkHtml += getBox(topFreqSeries[topFreqSeries.length-1].color, name)+"<br>";
       desc = 'For the magnitude plot we draw a straight line at 0 dB from up to '+w0Mag+', thereafter the line rises at 40dB/decade.';
       if (parseFloat(zMag) < 0.5) {
         desc += '<br>Since '+zMag+'<0.5, we draw a peak of 20log<sub>10</sub>(2&zeta;) = ';
@@ -551,7 +557,8 @@ function getData() {
       w0Mag = BDO.terms[i].w0.toString();
       zMag = BDO.terms[i].zeta.toString();
       checkHtml+="<input type='radio' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
-      checkHtml+="<label for='"+name+"'>"+name+"</label><br>";
+      checkHtml+="<label for='"+name+"'>"+name+"</label>";
+      checkHtml += getBox(topFreqSeries[topFreqSeries.length-1].color, name)+"<br>";
       desc = 'For the magnitude plot we draw a straight line at 0 dB from up to '
       desc += w0Mag+', thereafter the line drops at 40dB/decade.';
       if (zMag < 0.5) {
@@ -570,23 +577,25 @@ function getData() {
   [BDO.allFreq, BDO.allPhase, BDO.allFreqApprox, BDO.allPhaseApprox] = allData(w, terms);
   freqSeries.push({
     name: 'Total Frequency',
-    color: colors[colorIndex],
+    color: blackRGBA,//I like black. colors[colorIndex],
     data: BDO.allFreq
   });
   freqSeries.push({
     name: 'Total Frequency Approximation',
-    color: colors[colorIndex],
-    data: BDO.allFreqApprox
+    color: blackRGBA,
+    data: BDO.allFreqApprox, 
+    dashStyle: 'shortdot'
   });
   phaseSeries.push({
     name: 'Total Phase',
-    color: colors[colorIndex],
+    color: blackRGBA,
     data: BDO.allPhase
   });
   phaseSeries.push({
     name: 'Total Phase Approximation',
-    color: colors[colorIndex],
-    data: BDO.allPhaseApprox
+    color: blackRGBA,
+    data: BDO.allPhaseApprox,
+    dashStyle: 'shortdot'
   });
   togetherFreqSeries = copyObject(topFreqSeries);
   togetherFreqSeries.push(copyObject(freqSeries[freqSeries.length-2]));
@@ -693,10 +702,12 @@ function onGraphPress() {//1st try w/ zero at origin, p at origin.
             series2[j] = updateAlpha(series2[j], bold);
             freqDescShown = freqDescs[j];//descriptions correspond to names.
             phaseDescShown = phaseDescs[j];
+            updateBox(series[j].color, names[i]+" box");//series[j].name also works.
           }
           else if (series[j].name == BDO.lastClickedTopBoxName) {
             series[j] = updateAlpha(series[j], faded);
             series2[j] = updateAlpha(series2[j], faded);
+            updateBox(series[j].color, series[j].name+" box");
           }
         }
         break;
@@ -933,6 +944,17 @@ function allData(w, terms) {
 
 function copyObject(obj) {
   return JSON.parse(JSON.stringify(obj));
+}
+//returns html for box of rgba colors.
+function getBox(rgba, name) {
+  let id = name + " box";
+  let box = "<div id='"+id+"' style='width:10px; height:10px; margin:5px; ";
+  box += "background-color:"+rgba+"; display:inline-block;'></div>";
+  return box;
+}
+//updates the background color of box w/ id boxId 
+function updateBox(rgba, boxId) {
+  document.getElementById(boxId).style.backgroundColor = rgba;
 }
 
 /* This function creates all the TeX and html for displaying the equations.
