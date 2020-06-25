@@ -280,7 +280,7 @@ function getData() {
   let w = BDO.w, constantK = parseInt(BDO.K);
   let constFreq = [], constPhase = [], freqSeries = [], phaseSeries = [],
   topFreqSeries = [], topPhaseSeries = [], desc, freqDescs = [], phaseDescs = [],
-  togetherFreqSeries = [], togetherPhaseSeries = [], w0Mag, zMag, print, name,
+  togetherFreqSeries = [], togetherPhaseSeries = [], w0Mag, zMag, print, print2, name,
   descIndex, bold = '1', faded = '0.2', checkHtml, graphHtml, graphs, graphCheck,
   names = [], phaseDescription, freqDescription;
   var colors = ['rgba(0,114,189,'+bold+')','rgba(217,83,25,'+bold+')','rgba(237,177,32,'+bold+')','rgba(126,47,142,'+bold+')','rgba(119,172,148,'+bold+')','rgba(77,190,238,'+bold+')', 'rgba(162,20,47,'+bold+')'], colorIndex = 0;
@@ -301,7 +301,7 @@ function getData() {
     for (let i=0; i<w.length; i++) {
       constPhase.push([w[i], 180]);
     }
-    desc =  'Since the constant is positive, its phase is +- 180&deg;.<br>We have chosen to represent it as +180#&deg;.';
+    desc =  'Since the constant is positive, its phase is &plusmn; 180&deg;.<br>We have chosen to represent it as +180#&deg;.';
     BDO.phaseFormula += '180&deg; ';
   }
   terms[0].freqData = constFreq;
@@ -312,7 +312,7 @@ function getData() {
   name = 'Constant ' + constantK.toString();//was just constantK
   names.push(name);
   checkHtml = "<br>Elements Detected: <br>";
-  checkHtml += "<input type='checkbox' id='" + name + "' onclick=\"onTopCheckOne(\'"+name+"\')\" checked></input>";
+  checkHtml += "<input type='radio' id='" + name + "' onclick=\"onTopCheckOne(\'"+name+"\')\" checked></input>";
   checkHtml += "<label for='" + name + "'>"+ name +"</label><br>";
   graphHtml = "<p id='topDescription'></p><br>";
   graphHtml +=  "<div id='freq'></div><br>";
@@ -354,7 +354,7 @@ function getData() {
       topPhaseSeries.push(copyObject(phaseSeries[phaseSeries.length-1]));
       topPhaseSeries[topPhaseSeries.length-1] = updateAlpha(topPhaseSeries[topPhaseSeries.length-1], faded);
       names.push(name);
-      checkHtml+= "<input type='checkbox' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
+      checkHtml+= "<input type='radio' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
       checkHtml+="<label for='"+name+"'>Zero at Origin</label><br>";
       freqDescs.push('The magnitude plot rises 20dB/decade and goes through 0 dB at 1 rad sec.<br>');
       colorIndex++;
@@ -381,7 +381,7 @@ function getData() {
       topFreqSeries[topFreqSeries.length-1] = updateAlpha(topFreqSeries[topFreqSeries.length-1], faded);
       topPhaseSeries.push(copyObject(phaseSeries[phaseSeries.length-1]));
       topPhaseSeries[topPhaseSeries.length-1] = updateAlpha(topPhaseSeries[topPhaseSeries.length-1], faded);
-      checkHtml+="<input type='checkbox' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
+      checkHtml+="<input type='radio' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
       checkHtml+="<label for='"+name+"'>Pole at Origin</label><br>";
       desc = 'The magnitude plot drops 20dB/decade and goes through 0 dB at 1 rad sec.<br>';
       freqDescs.push(desc);
@@ -420,7 +420,7 @@ function getData() {
       topPhaseSeries[topPhaseSeries.length-1] = updateAlpha(topPhaseSeries[topPhaseSeries.length-1], faded);
       names.push(name);
       w0Mag = BDO.terms[i].w0.toString();
-      checkHtml+="<input type='checkbox' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
+      checkHtml+="<input type='radio' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
       checkHtml+="<label for='"+name+"'>"+name+"</label><br>";
       desc = 'The real zero is at &omega; = &omega;<sub>0</sub> = '+w0Mag+' rad/sec.';
       desc+= ' For the magnitude plot we draw a straight line ';
@@ -461,7 +461,7 @@ function getData() {
       topPhaseSeries.push(copyObject(phaseSeries[phaseSeries.length-1]));
       topPhaseSeries[topPhaseSeries.length-1] = updateAlpha(topPhaseSeries[topPhaseSeries.length-1], faded);
       names.push(name);
-      checkHtml+="<input type='checkbox' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
+      checkHtml+="<input type='radio' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
       checkHtml+="<label for='"+name+"'>"+name+"</label><br>";
       desc = 'The real pole is at &omega; = &omega;<sub>0</sub> = '+w0Mag+' rad/sec.';
       desc+= ' For the magnitude plot we draw a straight line ';
@@ -476,8 +476,8 @@ function getData() {
     }
     else if (terms[i].termType == "ComplexZero") {
       [terms[i].freqData, terms[i].phaseData, terms[i].freqDataApprox, terms[i].phaseDataApprox] = compConjugateData(w, 1, i);
-      print = compToStr(terms[i].value);
-      name = 'Complex Zero ' + print + ' Approximation';
+      [print, print2] = compToStr(terms[i].value);
+      name = 'Complex Zero ' + print2 + ' Approximation';
       freqSeries.push({
         name: 'Complex Zero ' + print,
         color: colors[colorIndex],
@@ -504,7 +504,7 @@ function getData() {
       topPhaseSeries[topPhaseSeries.length-1] = updateAlpha(topPhaseSeries[topPhaseSeries.length-1], faded);
       w0Mag = BDO.terms[i].w0.toString();
       zMag = zBDO.terms[i].zeta.toString();
-      checkHtml+="<input type='checkbox' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
+      checkHtml+="<input type='radio' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
       checkHtml+="<label for='"+name+"'>"+name+"</label><br>";
       desc = 'For the magnitude plot we draw a straight line at 0 dB from up to '+w0Mag+', thereafter the line rises at 40dB/decade.';
       if (parseFloat(zMag) < 0.5) {
@@ -522,8 +522,8 @@ function getData() {
     }
     else if (terms[i].termType == "ComplexPole") {
       [terms[i].freqData, terms[i].phaseData, terms[i].freqDataApprox, terms[i].phaseDataApprox] = compConjugateData(w, -1, i);
-      print = compToStr(terms[i].value);
-      name = 'Complex Pole ' + print + ' Approximation';
+      [print, print2] = compToStr(terms[i].value);
+      name = 'Complex Pole ' + print2 + ' Approximation';
       freqSeries.push({
         name: 'Complex Pole ' + print,
         color: colors[colorIndex],
@@ -550,7 +550,7 @@ function getData() {
       topPhaseSeries[topPhaseSeries.length-1] = updateAlpha(topPhaseSeries[topPhaseSeries.length-1], faded);
       w0Mag = BDO.terms[i].w0.toString();
       zMag = BDO.terms[i].zeta.toString();
-      checkHtml+="<input type='checkbox' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
+      checkHtml+="<input type='radio' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
       checkHtml+="<label for='"+name+"'>"+name+"</label><br>";
       desc = 'For the magnitude plot we draw a straight line at 0 dB from up to '
       desc += w0Mag+', thereafter the line drops at 40dB/decade.';
@@ -723,19 +723,23 @@ function getZeta (img, real) {
 //turns an object of {re: 'a', im: 'b'} into 'a+bi'
 //this one assumes we are only making one graph for a pair of complex conjugates
 function compToStr(comp) {
-  let print;
+  let print, print2;
   let imagPart = parseFloat(comp.im);
   if (imagPart == -1.00 || imagPart == 1.00) {
-    print = comp.re + ' -+ i ';
+    print = comp.re + ' &plusmn; i ';
+    print2 = comp.re + ' +/- i ';
   }
   else if (imagPart == parseInt(comp.im)){
-    imagPart = parseInt(comp.im);
-    print = comp.re + ' -+ ' + Math.abs(imagPart).toString() + 'i';
+    imagPart = Math.abs(parseInt(comp.im)).toString();
+    print = comp.re + ' &plusmn; ' + imagPart + 'i';
+    print2 = comp.re + ' +/- ' + imagPart + 'i';
   }
   else {
-    print = comp.re + ' -+ ' + Math.abs(imagPart).toString() + 'i';
+    imagPart = Math.abs(imagPart).toString();
+    print = comp.re + ' &plusmn; ' + imagPart + 'i';
+    print2 = comp.re + ' +/- ' + imagPart + 'i';
   }
-  return print;
+  return [print, print2];
 }
 function originData(w, sign, termIndex) {
   let freqData = [], phaseData = [], exp = BDO.terms[termIndex].mult;
@@ -814,7 +818,7 @@ function compConjugateData(w, sign, termIndex) {
   jMax = w.length, x, base, peak, lowerBound, upperBound,
   middleDenominator, a, b, theta;
   BDO.terms[termIndex].zeta = zetaTemp;
-  if (zeta < 0) {
+  if (zetaTemp < 0) {
     alert('A negative damping ratio is not permitted');
   }
   //approximate frequency:
@@ -825,12 +829,12 @@ function compConjugateData(w, sign, termIndex) {
         freqApproxData.push([w[j], 0]);
       }//was w0Rounded.
       else if (w[j] > w0Rounded && w[j] != w0Rounded) { //might change to if so they will connect?
-        freqApproxData.push([w[j], sign*40*exp*Math.log10(x-w0Rounded+1)]);
+        freqApproxData.push([w[j], sign*40*exp*Math.log10(x)]);//-w0Rounded+1)]);
       }//w0Rounded pushes the asymptote so it is more in sync w/ exact function.
       else if (w[j] == w0Rounded) {//might ask prof cheever about his peak at some point.
         base = sign*40*exp*Math.log10(x);
         peak = 20*Math.abs(Math.log10(2*Math.abs(zetaTemp)))*Math.sign(base);
-        freqApproxData.push([w[j], base+peak]);//should we have nFactorExp[i] here?
+        freqApproxData.push([w[j], base+peak]);
       }
     }
   }
