@@ -222,7 +222,7 @@ function getTerms() {
             terms[i].tHw = "&omega;<sub>z"+idx.toString()+"</sub>";//`&omega;<sub>z${idx}</sub>`;
             terms[i].t1X = "(s + "+terms[i].tXw.toString()+")"+to_m(m).toString();//`(s + ${terms[i].tXw})${to_m(m)}`;
             terms[i].t2X = "(1 + s/"+terms[i].tXw.toString()+")"+to_m(m).toString();//`(1 + s/${terms[i].tXw})${to_m(m)}`;
-            terms[i].mH = m == 1 ? '' : ", of muliplicity "+m.toString()+"; // multiplicity phrase
+            terms[i].mH = m == 1 ? '' : ", of muliplicity "+m.toString(); // multiplicity phrase
             BDO.terms[j++] = terms[i];
         }
     }
@@ -1075,7 +1075,8 @@ function dispTerms() {
 
   lS = `${lS}</ul></blockquote>`
   //  \[H(s)=C\frac{s^2 + 5s + 6}{s^5 + 4s^4 + 7s^3 + 6s^2 + 2s}\]
-  //was `$H(s)=C\\frac{${BDO.num}}{${BDO.den}}$`
+
+  //let H1S = `H(s)=C\\frac{${BDO.num}}{${BDO.den}}`;
   let H1S = "\\[H(s)=C\\frac{"+BDO.num.toString()+"}{"+BDO.den+"}\\]";
   $('#H1').html(H1S);
 
@@ -1097,7 +1098,7 @@ function dispTerms() {
   let H5S = "\\[H(s) = K"+oS.toString()+"\\frac{"+nS2.toString()+"}{"+dS2.toString()+"}\\]";
   $('#H5').html(H5S);
 
-  MathJax.Hub.Queue(["Typeset", MathJax.Hub, "TFS"]);
+  //MathJax.Hub.Queue(["Typeset", MathJax.Hub, "TFS"]);
   setTimeout(function () {
       MathJax.Hub.Queue(["Typeset", MathJax.Hub, "TFS"])
   }, 2000);

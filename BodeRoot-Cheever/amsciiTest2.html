@@ -6,21 +6,23 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/latest.js?config=AM_CHTML"></script>
     <!--<script src="https://vader-coder.github.io/asciimathml/ASCIIMathML.js"></script>-->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script type="text/x-mathjax-config;executed=true">
+    <script type="text/x-mathjax-config">
         MathJax.Hub.Config({  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
+        MathJax.Hub.Register.StartupHook("End",function () {
+          console.log("Mathjax loaded");
+          console.log(typeof MathJax);
+            MathJax.Hub.Queue(["Typeset", MathJax.Hub, "TFS"]);
+        });
      </script>
      <script type="text/javascript">
      //MathJax.Hub.Queue(["Typeset", MathJax.Hub, "TFS"]);
-        let num = 5;
-        let output = '`H(s)=C\\frac{N(s)}{D(s)}`';
-        let output2 = '`\\frac{${num}}{D(s)}`';
+        let output = `H(s)=C\\frac{N(s)}{D(s)}`;
         //output = '[\\H(s)=C\\frac{N(s)}{D(s)}\\]';
         $(document).ready(function(){
             $('#works').html("jQuery Works");
             $('#eq').html(output);
-            $('#eq2').html(output2);
         });
-        MathJax.Hub.Queue(["Typeset", MathJax.Hub, "TFS"]);
+        
         /*setTimeout(function () {
             MathJax.Hub.Queue(["Typeset", MathJax.Hub, "TFS"])
         }, 2000);*/
@@ -31,6 +33,5 @@
     `sum_(i=1)^n i^3=((n(n+1))/2)^2`<br>
     <p id='works'></p>
     <p id='eq'></p>
-    <p id='eq2'></p>
   </body>
 </html>

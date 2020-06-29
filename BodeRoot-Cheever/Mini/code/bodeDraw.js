@@ -20,13 +20,15 @@ function termObj() {
     this.termType = ''; // type of term "RealPole", "RealZero", "ComplexPole"...
     this.mult = 1; // multiplicity of term, m
     this.t1X = ''; // TeX for form 1 (s+wp1)^m  (more elaborate for complex...)
+    this.t1H = ''; // html for form 1 (s+wp1)^m
     this.t2X = ''; // TeX for form 2 (1+s/wp1)^m
+    this.t2H = ''; // html for form 2 (1+s/wp1)^m
     this.tXw = ''; // TeX for wp1...
     this.tHw = ''; // html for wp1...  (Not currently using this)
     this.tXz = ''; // TeX for zeta...
     this.tHz = ''; // html for zeta...  (Not currently using this)
     this.mH = ''; // html for string showing multiplicity.
-}
+} //tHw & tHz instead of tXw & tXz 
 
 // Reset function
 $(function () {
@@ -81,7 +83,9 @@ function getTerms() {
     terms[0].value = 0; // Place Holder, we'll change to K later.
     terms[0].termType = 'Constant';
     terms[0].t1X = 'K'; // TeX for form 1 (s+wp1)^m
-    terms[0].t2 = 'K'; // TeX for form 2 (1+s/wp1)^m
+    terms[0].t1H = 'K';
+    terms[0].t2X = 'K'; // TeX for form 2 (1+s/wp1)^m
+    terms[0].t2H = 'K';
     BDO.numTerms++;
 
     // Find all the different kinds of poles, and get ther value (i.e., location)
@@ -164,10 +168,12 @@ function getTerms() {
         if (terms[i].termType == 'RealPole') {
             idx++; // increase index for the real poles.
             let m = terms[i].mult
-            terms[i].tXw = `\\omega_{p${idx}}`;
+            terms[i].tXw = `\\omega_{p${idx}}`;//originally x had & and ;
             terms[i].tHw = `&omega;<sub>p${idx}</sub>`;
             terms[i].t1X = `(s + ${terms[i].tXw})${to_m(m)}`;
             terms[i].t2X = `(1 + s/${terms[i].tXw})${to_m(m)}`;
+            terms[i].t1H = `(s + ${terms[i].tHw})${to_m(m, 1)}`;
+            terms[i].t2H = `(1 + s/${terms[i].tHw})${to_m(m, 1)}`;
             // we'll use this phrase whenever the situation arieses that includes a multiple pole or zero.
             terms[i].mH = m == 1 ? '' : `, of muliplicity ${m}`;
             BDO.terms[j++] = terms[i];
@@ -183,6 +189,8 @@ function getTerms() {
             terms[i].tHw = `&omega;<sub>z${idx}</sub>`;
             terms[i].t1X = `(s + ${terms[i].tXw})${to_m(m)}`;
             terms[i].t2X = `(1 + s/${terms[i].tXw})${to_m(m)}`;
+            terms[i].t1H = `(s + ${terms[i].tHw})${to_m(m, 1)}`;
+            terms[i].t2H = `(1 + s/${terms[i].tHw})${to_m(m, 1)}`;
             terms[i].mH = m == 1 ? '' : `, of muliplicity ${m}`; // multiplicity phrase
             BDO.terms[j++] = terms[i];
         }
@@ -198,6 +206,8 @@ function getTerms() {
             terms[i].tHz = `&zeta;<sub>p${idx}</sub>`;
             terms[i].t1X = `(s^2 + 2${terms[i].tXz}${terms[i].tXw}s + ${terms[i].tXw}^2)${to_m(m)}`;
             terms[i].t2X = `(1 + 2${terms[i].tXz}(s/${terms[i].tXw}) +  (s/${terms[i].tXw}^2))${to_m(m)}`
+            terms[i].t1H = `(s + ${terms[i].tHw})${to_m(m, 1)}`;
+            terms[i].t2H = `(1 + s/${terms[i].tHw})${to_m(m, 1)}`;
             terms[i].mH = m == 1 ? '' : `, of muliplicity ${m}`; // multiplicity phrase
             BDO.terms[j++] = terms[i];
         }
@@ -213,6 +223,8 @@ function getTerms() {
             terms[i].tHz = `&zeta;<sub>z${idx}</sub>`;
             terms[i].t1X = `(s^2 + 2${terms[i].tXz}${terms[i].tXw}s + ${terms[i].tXw}^2)${to_m(m)}`;
             terms[i].t2X = `(1 + 2${terms[i].tXz}(s/${terms[i].tXw}) +  (s/${terms[i].tXw}^2))${to_m(m)}`;
+            terms[i].t1H = `(s + ${terms[i].tHw})${to_m(m, 1)}`;
+            terms[i].t2H = `(1 + s/${terms[i].tHw})${to_m(m, 1)}`;
             terms[i].mH = m == 1 ? '' : `, of muliplicity ${m}`; // multiplicity phrase
             BDO.terms[j++] = terms[i];
         }
@@ -222,6 +234,8 @@ function getTerms() {
             let m = terms[i].mult
             terms[i].t1X = `\\left( \\frac{1}{s} \\right)${to_m(m)}`;
             terms[i].t2X = `\\left( \\frac{1}{s} \\right)${to_m(m)}`;
+            terms[i].t1H = `(s + ${terms[i].tHw})${to_m(m, 1)}`;
+            terms[i].t2H = `(1 + s/${terms[i].tHw})${to_m(m, 1)}`;
             terms[i].mH = m == 1 ? '' : `, of muliplicity ${m}`; // multiplicity phrase
             BDO.terms[j++] = terms[i];
         }
@@ -231,6 +245,8 @@ function getTerms() {
             let m = terms[i].mult
             terms[i].t1X = `s${to_m(m)}`;
             terms[i].t2X = `s${to_m(m)}`;
+            terms[i].t1H = `(s + ${terms[i].tHw})${to_m(m, 1)}`;
+            terms[i].t2H = `(1 + s/${terms[i].tHw})${to_m(m, 1)}`;
             terms[i].mH = m == 1 ? '' : `, of muliplicity ${m}`; // multiplicity phrase
             BDO.terms[j++] = terms[i];
         }
@@ -250,14 +266,24 @@ function dispTerms() {
     let cnS = '';
     let oS = ''; // String for origin poles and zeros
     let lS = `<blockquote><p class="noindent">With:</p><ul style="margin-left:3em">
-        <li>Constant: C=${BDO.C}</li>`
+        <li>Constant: C=${BDO.C}</li>`;
+    let lSHtml = '<blockquote><p class="noindent">With:</p><ul style="margin-left:3em"> <li>Constant: C='+BDO.C.toString()+'</li>';
     let K = BDO.C; // We'll calculate K as we go.
-
+    let pt = [0, 1, 2, 3, 4, 5];
+    //tHw & tHz instead of tXw & tXz
+    //t1H & t2H 
     for (let i = 1; i < BDO.numTerms; i++) {
         if (BDO.terms[i].termType == 'RealPole') {
             lS = `${lS}<li>A real pole at s=${BDO.terms[i].value}${BDO.terms[i].mH}.<br />
-            This is the $${BDO.terms[i].t1X}$ term in the denominator, with 
-            $${BDO.terms[i].tXw}$=${-BDO.terms[i].value}.</li>`;
+            This is the ${BDO.terms[i].t1X} term in the denominator, with 
+            ${BDO.terms[i].tXw}=${-BDO.terms[i].value}.</li>`;
+            //-1.00 w/ multiplicity 2. 
+            pt[0] = BDO.terms[i].value.toString()+BDO.terms[i].mH.toString();
+            pt[1] = BDO.terms[i].t1H.toString();
+            pt[2] = BDO.terms[i].tHw.toString();
+            pt[3] = -BDO.terms[i].value.toString();
+            lSHtml += '<li>A real pole at s='+pt[0]+'.<br /> This is the '+pt[1]+' term in the denominator, with '+pt[2]+'='+pt[3]+'.</li>'
+            //originally had $${BDO.terms[i].tXw} & .value.
             dS1 = `${dS1}${BDO.terms[i].t1X}`;
             dS2 = `${dS2}${BDO.terms[i].t2X}`;
             cdS = `${cdS}${BDO.terms[i].tXw}${to_m(BDO.terms[i].mult)}`;
@@ -268,6 +294,11 @@ function dispTerms() {
             lS = `${lS}<li>A real zero at s=${BDO.terms[i].value}${BDO.terms[i].mH}.<br />
             This is the $${BDO.terms[i].t1X}$ term in the numerator, with 
             $${BDO.terms[i].tXw}$=${-BDO.terms[i].value}.</li>`;
+            pt[0] = BDO.terms[i].value.toString()+BDO.terms[i].mH.toString();
+            pt[1] = BDO.terms[i].t1H.toString();
+            pt[2] = BDO.terms[i].tHw.toString();
+            pt[3] = -BDO.terms[i].value.toString();
+            lSHtml += '<li>A real zero at s='+pt[0]+'.<br /> This is the '+pt[1]+' term in the denominator, with '+pt[2]+'='+pt[3]+'.</li>'
             nS1 = `${nS1}${BDO.terms[i].t1X}`;
             nS2 = `${nS2}${BDO.terms[i].t2X}`;
             cnS = `${cnS}${BDO.terms[i].tXw}${to_m(BDO.terms[i].mult)}`;
@@ -279,6 +310,14 @@ function dispTerms() {
             This is the $${BDO.terms[i].t1X}$ term in the denominator, 
             with $${BDO.terms[i].tXw}$=${omega0(BDO.terms[i].value)}, 
             $${BDO.terms[i].tXz}$=${zeta(BDO.terms[i].value)}.</li>`;
+            //we are here in filling out lSHtml. For whatever reason lS tex is not working for us.
+            pt[0] = dispConj(BDO.terms[i].value).toString()+BDO.terms[i].mH.toString();
+            pt[1] = BDO.terms[i].t1H.toString();
+            pt[2] = BDO.terms[i].tHw.toString();
+            pt[3] = omega0(BDO.terms[i].value).toString();
+            pt[4] = BDO.terms[i].tHz.toString();
+            pt[5] = zeta(BDO.terms[i].value).toString();
+            lSHtml += '<li>Complex poles, at s = '+pt[0]+'. <br /> This is the '+pt[1]+' term in the denominator, with '+pt[2]+'='+pt[3]+', '+pt[4]+'='+pt[5]+'.</li>';
             dS1 = `${dS1}${BDO.terms[i].t1X}`;
             dS2 = `${dS2}${BDO.terms[i].t2X}`;
             cdS = `${cdS}${BDO.terms[i].tXw}${to_m(2*BDO.terms[i].mult)}`;
@@ -290,6 +329,13 @@ function dispTerms() {
             This is the $${BDO.terms[i].t1X}$ term in the numerator, 
             with $${BDO.terms[i].tXw}$=${omega0(BDO.terms[i].value)}, 
             $${BDO.terms[i].tXz}$=${zeta(BDO.terms[i].value)}.</li>`;
+            pt[0] = dispConj(BDO.terms[i].value).toString()+BDO.terms[i].mH.toString();
+            pt[1] = BDO.terms[i].t1H.toString();
+            pt[2] = BDO.terms[i].tHw.toString();
+            pt[3] = omega0(BDO.terms[i].value).toString();
+            pt[4] = BDO.terms[i].tHz.toString();
+            pt[5] = zeta(BDO.terms[i].value).toString();
+            lSHtml += '<li>Complex zeros, at s = '+pt[0]+'. <br /> This is the '+pt[1]+' term in the denominator, with '+pt[2]+'='+pt[3]+', '+pt[4]+'='+pt[5]+'.</li>';
             nS1 = `${nS1}${BDO.terms[i].t1X}`;
             nS2 = `${nS2}${BDO.terms[i].t2X}`;
             cnS = `${cnS}(${BDO.terms[i].tXw}${to_m(2*BDO.terms[i].mult)}`;
@@ -298,11 +344,13 @@ function dispTerms() {
 
         if (BDO.terms[i].termType == 'OriginPole') {
             lS = `${lS}<li>A pole at the origin${BDO.terms[i].mH}.</li>`;
+            lSHtml += '<li>A pole at the origin'+BDO.terms[i].mH.toString()+'.</li>';
             oS = BDO.terms[i].t1X;
         }
 
         if (BDO.terms[i].termType == 'OriginZero') {
             lS = `${lS}<li>A zero at the origin${BDO.terms[i].mH}.</li>`;
+            lSHtml += '<li>A zero at the origin'+BDO.terms[i].mH.toString()+'.</li>';
             oS = BDO.terms[i].t1X;
         }
     }
@@ -319,7 +367,8 @@ function dispTerms() {
     let H2S = "\\[H(s) = C"+oS.toString()+"\\frac{"+nS1.toString()+"}{"+dS1.toString()+"}\\]";
     $('#H2').html(H2S);
 
-    $('#TermDisp').html(lS);//find lS somewhere.
+    //$('#TermDisp').html(lS.toString());//find lS somewhere.
+    $('#TermDisp').html(lSHtml);
 
     //let H3S = `H(s) = C\\frac{${cnS}}{${cdS}}${oS}\frac{${nS2}}{${dS2}}`;
     let H3S = "\\[H(s) = C\\frac{"+cnS.toString()+"}{"+cdS.toString()+"}{"+oS.toString()+"}\\frac{"+nS2.toString()+"}{"+dS2.toString()+"}\\]";
@@ -353,8 +402,13 @@ function zeta(s) {
     return (Math.abs(s.im / s.abs()).toPrecision(BDO.prec));
 }
 
-function to_m(m) { // a string for raising to the mth power (show nothing if m=1).
-    return (m == 1 ? '' : `^${m}`);
+function to_m(m, html) { // a string for raising to the mth power (show nothing if m=1).
+    if (html == undefined) {
+        return (m == 1 ? '' : `^${m}`);
+    }
+    else {
+        return (m == 1 ? '' : `<sup>${m}</sup>`);
+    }
 }
 
 // Round all roots to "prec" to make checks for equality possible.
