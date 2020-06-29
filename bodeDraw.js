@@ -47,6 +47,7 @@ function termObj() {
     this.tXz = ''; // TeX for zeta...
     this.tHz = ''; // html for zeta...  (Not currently using this)
     this.mH = ''; // html for string showing multiplicity.
+    this.desc = '';//descripton that will be used in putting it all together.
     this.w0;//w0.
     this.magData = [];//array for containing the data that will be graphed in Magnitude plot..
     this.phaseData = [];//array for containing data for phase plot
@@ -302,9 +303,10 @@ function getData() {
   topMagSeries = [], topPhaseSeries = [], desc, magDescs = [], phaseDescs = [],
   togetherMagSeries = [], togetherPhaseSeries = [], w0Mag, zMag, print, print2, name,
   descIndex, bold = BDO.bold, faded = BDO.faded, checkHtml, graphHtml, graphs, graphCheck, iLen,
-  names = [], phaseDescription, magDescription, blackRGBA = 'rgba(0, 0, 0, 1)';
+  names = [], togetherPhaseDesc, togetherMagDesc, blackRGBA = 'rgba(0, 0, 0, 1)';
   var colors = ['rgba(0,114,189,'+bold+')','rgba(217,83,25,'+bold+')','rgba(237,177,32,'+bold+')','rgba(126,47,142,'+bold+')','rgba(119,172,148,'+bold+')','rgba(77,190,238,'+bold+')', 'rgba(162,20,47,'+bold+')'], colorIndex = 0;
-
+  let magYIntFormula, phaseYIntFormula, magYIntDesc, phaseYIntDesc;
+  magYIntDesc = 'Since we have K = ';
   for (let i=1; i<10001; i++) {
     w.push(roundDecimal(i*0.1, 1));//w.push(roundDecimal(1+ i*0.1, 1)); might want multiple versions of this.
     constMag.push([w[i-1], 20*Math.log10(constantK)]);
@@ -329,7 +331,8 @@ function getData() {
   terms[0].phaseData = constPhase;
   terms[0].magDataApprox = constMag;
   terms[0].phaseDataApprox = constPhase;
-
+  magYIntDesc += BDO.C;
+  magYIntFormula = BDO.K;
   name = 'Constant ' + constantK.toString();//was just constantK
   names.push(name);
   checkHtml = "<br>Elements Detected: <br>";
@@ -386,6 +389,8 @@ function getData() {
       desc = 'The phase plot of a zero at the origin is a horizontal line at +90&deg;.';
       desc += '<br><a href="https://lpsa.swarthmore.edu/Bode/BodeHow.html#A%20Zero%20at%20the%20Origin">Details</a>';
       phaseDescs.push(desc);
+      magYIntFormula += ' - '+ '20*'+terms[i].mult.toString() + ' dB';
+      magYIntDesc += terms[i].desc;
     }
     else if (terms[i].termType == "OriginPole") {
       [terms[i].magData, terms[i].phaseData] = originData(w, -1, i);
@@ -417,6 +422,8 @@ function getData() {
       phaseDescs.push(desc);
       names.push(name);
       colorIndex++;
+      magYIntFormula += ' + '+ '20*'+terms[i].mult.toString() + ' dB';
+      magYIntDesc += terms[i].desc;
     }
     else if (terms[i].termType == "RealZero") {
       [terms[i].magData, terms[i].phaseData, terms[i].magDataApprox, terms[i].phaseDataApprox] = realData(w, 1, i);
@@ -633,15 +640,7 @@ function getData() {
   togetherPhaseSeries.push(copyObject(phaseSeries[phaseSeries.length-2]));
   togetherPhaseSeries.push(copyObject(phaseSeries[phaseSeries.length-1]));
   togetherPhaseSeries[0] = updateAlpha(togetherPhaseSeries[0], faded);
-  let togetherHtml = "To get the total Magnitude and phase plot, we add the equations for the approximate and exact terms together.";
-  togetherHtml+="<br>"+BDO.magFormula+"<br>"+BDO.phaseFormula+"<br><div id='togetherMag'></div>"+"<br><div id='togetherPhase'></div>";
-  togetherHtml+="<br>Input sinusoid of form cos(&omega;t + &phi;).";
-  togetherHtml+="<br><label for='freqInput'>Input a Frequency &omega;</label><input type='text' id='freqInput' value='1.0'></input>";
-  togetherHtml+="<br><label for='phaseInput'>Input a phase &phi;</label><input type='text' id='phaseInput' value='1.0'></input>";
-  togetherHtml+="<br><label for='sinusoidInput'>Input sinusoid: </label><div id='sinusoidInput'>cos(1.0t + 1.0)</div>";
-  togetherHtml+="<br><input type='button' onclick='onOutputPress()' value='Find Output Function'></input>";
-  togetherHtml+="<br><label for='sinusoidOutput'>Output sinusoid: </label><div id='sinusoidOutput'>cos(&omega;t + &phi; + &theta;)</div>";
-  togetherHtml+="<br><div id='sinusoidPlot'></div>";
+  let togetherHtml = magYIntDesc+magYIntFormula;
   colorIndex++;
   graphCheck = document.getElementById('graphOptions');
   graphs = document.getElementById('graphs');
@@ -1095,7 +1094,7 @@ function dispTerms() {
   let cnS = '';
   let oS = ''; // String for origin poles and zeros
   let lS = `<blockquote><p class="noindent">With:</p><ul style="margin-left:3em">
-      <li>Constant: C=${BDO.C}</li>`;
+    <li>Constant: C=${BDO.C}</li>`;
   let lSHtml = '<blockquote><p class="noindent">With:</p><ul style="margin-left:3em"> <li>Constant: C='+BDO.C.toString()+'</li>';
   let K = BDO.C; // We'll calculate K as we go.
   let pt = [0, 1, 2, 3, 4, 5];
@@ -1112,6 +1111,7 @@ function dispTerms() {
           pt[2] = BDO.terms[i].tHw.toString();
           pt[3] = -BDO.terms[i].value.toString();
           lSHtml += '<li>A real pole at s='+pt[0]+'.<br /> This is the '+pt[1]+' term in the denominator, with '+pt[2]+'='+pt[3]+'.</li>'
+          BDO.terms[i].desc = 'a real pole at s='+pt[0];
           //originally had $${BDO.terms[i].tXw} & .value.
           dS1 = `${dS1}${BDO.terms[i].t1X}`;
           dS2 = `${dS2}${BDO.terms[i].t2X}`;
@@ -1128,6 +1128,7 @@ function dispTerms() {
           pt[2] = BDO.terms[i].tHw.toString();
           pt[3] = -BDO.terms[i].value.toString();
           lSHtml += '<li>A real zero at s='+pt[0]+'.<br /> This is the '+pt[1]+' term in the denominator, with '+pt[2]+'='+pt[3]+'.</li>'
+          BDO.terms[i].desc = 'a real zero at s='+pt[0];
           nS1 = `${nS1}${BDO.terms[i].t1X}`;
           nS2 = `${nS2}${BDO.terms[i].t2X}`;
           cnS = `${cnS}${BDO.terms[i].tXw}${to_m(BDO.terms[i].mult)}`;
@@ -1147,6 +1148,7 @@ function dispTerms() {
           pt[4] = BDO.terms[i].tHz.toString();
           pt[5] = zeta(BDO.terms[i].value).toString();
           lSHtml += '<li>Complex poles, at s = '+pt[0]+'. <br /> This is the '+pt[1]+' term in the denominator, with '+pt[2]+'='+pt[3]+', '+pt[4]+'='+pt[5]+'.</li>';
+          BDO.terms[i].desc = 'complex poles at s='+pt[0];
           dS1 = `${dS1}${BDO.terms[i].t1X}`;
           dS2 = `${dS2}${BDO.terms[i].t2X}`;
           cdS = `${cdS}${BDO.terms[i].tXw}${to_m(2*BDO.terms[i].mult)}`;
@@ -1165,6 +1167,7 @@ function dispTerms() {
           pt[4] = BDO.terms[i].tHz.toString();
           pt[5] = zeta(BDO.terms[i].value).toString();
           lSHtml += '<li>Complex zeros, at s = '+pt[0]+'. <br /> This is the '+pt[1]+' term in the denominator, with '+pt[2]+'='+pt[3]+', '+pt[4]+'='+pt[5]+'.</li>';
+          BDO.terms[i].desc = 'complex zeros at s='+pt[0];
           nS1 = `${nS1}${BDO.terms[i].t1X}`;
           nS2 = `${nS2}${BDO.terms[i].t2X}`;
           cnS = `${cnS}(${BDO.terms[i].tXw}${to_m(2*BDO.terms[i].mult)}`;
