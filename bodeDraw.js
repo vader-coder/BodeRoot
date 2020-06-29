@@ -20,6 +20,7 @@ function BDO_Obj() {
     this.namesOfIds = [];
     this.magDescs = [];
     this.phaseDescs = [];
+    this.magYIntDesc = '';
     this.lastClickedTopBoxName;
     this.topMagSeries = [];
     this.topPhaseSeries = [];
@@ -306,7 +307,7 @@ function getData() {
   names = [], togetherPhaseDesc, togetherMagDesc, blackRGBA = 'rgba(0, 0, 0, 1)';
   var colors = ['rgba(0,114,189,'+bold+')','rgba(217,83,25,'+bold+')','rgba(237,177,32,'+bold+')','rgba(126,47,142,'+bold+')','rgba(119,172,148,'+bold+')','rgba(77,190,238,'+bold+')', 'rgba(162,20,47,'+bold+')'], colorIndex = 0;
   let magYIntFormula, phaseYIntFormula, magYIntDesc, phaseYIntDesc;
-  magYIntDesc = 'Since we have K = ';
+  magYIntDesc = 'Since we have: ' + BDO.magYIntDesc;
   for (let i=1; i<10001; i++) {
     w.push(roundDecimal(i*0.1, 1));//w.push(roundDecimal(1+ i*0.1, 1)); might want multiple versions of this.
     constMag.push([w[i-1], 20*Math.log10(constantK)]);
@@ -331,7 +332,6 @@ function getData() {
   terms[0].phaseData = constPhase;
   terms[0].magDataApprox = constMag;
   terms[0].phaseDataApprox = constPhase;
-  magYIntDesc += BDO.C;
   magYIntFormula = BDO.K;
   name = 'Constant ' + constantK.toString();//was just constantK
   names.push(name);
@@ -390,7 +390,6 @@ function getData() {
       desc += '<br><a href="https://lpsa.swarthmore.edu/Bode/BodeHow.html#A%20Zero%20at%20the%20Origin">Details</a>';
       phaseDescs.push(desc);
       magYIntFormula += ' - '+ '20*'+terms[i].mult.toString() + ' dB';
-      magYIntDesc += terms[i].desc;
     }
     else if (terms[i].termType == "OriginPole") {
       [terms[i].magData, terms[i].phaseData] = originData(w, -1, i);
@@ -423,7 +422,6 @@ function getData() {
       names.push(name);
       colorIndex++;
       magYIntFormula += ' + '+ '20*'+terms[i].mult.toString() + ' dB';
-      magYIntDesc += terms[i].desc;
     }
     else if (terms[i].termType == "RealZero") {
       [terms[i].magData, terms[i].phaseData, terms[i].magDataApprox, terms[i].phaseDataApprox] = realData(w, 1, i);
@@ -640,7 +638,10 @@ function getData() {
   togetherPhaseSeries.push(copyObject(phaseSeries[phaseSeries.length-2]));
   togetherPhaseSeries.push(copyObject(phaseSeries[phaseSeries.length-1]));
   togetherPhaseSeries[0] = updateAlpha(togetherPhaseSeries[0], faded);
-  let togetherHtml = magYIntDesc+magYIntFormula;
+  let togetherHtml = magYIntDesc+ 'then the magnitude y-intercept is ' + magYIntFormula;
+  //togetherHtml += 'with a slope of '+ BDO.startslope + 'dB per decade.';
+  //DO this tomorrow. slope will be 0 + -20dB/decade*mult + 20dB/decade*mult (I think)
+  //need to add starting slop eright after magYIntDesc.
   colorIndex++;
   graphCheck = document.getElementById('graphOptions');
   graphs = document.getElementById('graphs');
@@ -1096,6 +1097,7 @@ function dispTerms() {
   let lS = `<blockquote><p class="noindent">With:</p><ul style="margin-left:3em">
     <li>Constant: C=${BDO.C}</li>`;
   let lSHtml = '<blockquote><p class="noindent">With:</p><ul style="margin-left:3em"> <li>Constant: C='+BDO.C.toString()+'</li>';
+  let magYIntDesc = '<blockquote><ul style="margin-left:3em"> <li>Constant: C='+BDO.C.toString()+'</li>';
   let K = BDO.C; // We'll calculate K as we go.
   let pt = [0, 1, 2, 3, 4, 5];
   //tHw & tHz instead of tXw & tXz
@@ -1177,15 +1179,18 @@ function dispTerms() {
       if (BDO.terms[i].termType == 'OriginPole') {
           lS = `${lS}<li>A pole at the origin${BDO.terms[i].mH}.</li>`;
           lSHtml += '<li>A pole at the origin'+BDO.terms[i].mH.toString()+'.</li>';
+          magYIntDesc += '<li>A pole at the origin'+BDO.terms[i].mH.toString()+'.</li>';
           oS = BDO.terms[i].t1X;
       }
 
       if (BDO.terms[i].termType == 'OriginZero') {
           lS = `${lS}<li>A zero at the origin${BDO.terms[i].mH}.</li>`;
           lSHtml += '<li>A zero at the origin'+BDO.terms[i].mH.toString()+'.</li>';
+          magYIntDesc += '<li>A zero at the origin'+BDO.terms[i].mH.toString()+'.</li>';
           oS = BDO.terms[i].t1X;
       }
   }
+  BDO.magYIntDesc = magYIntDesc+'</blockquote>';
   BDO.K = K.toPrecision(BDO.prec);
   let KdB = 20 * Math.log10(K).toPrecision(BDO.prec);
 
