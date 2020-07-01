@@ -33,7 +33,10 @@ function BDO_Obj() {
     this.sinusoidInput;
     this.bold = '1.0';
     this.faded = '0.5';
-};
+    this.individualMagChart = '';
+    this.individualPhaseChart = '';
+    this.sinusoidChart;
+};//way to just reference chart from id?
 
 // Create the object that has information needed for each "term"
 // of the Bode plotting process.
@@ -769,8 +772,8 @@ function getData() {
   // highchartsPlot(series, id, title, xAxis, yAxis, logOrLinear, tickInt) {
   //highchartsPlot(magSeries, 'bode', 'Magnitude Plot', xAxis, yAxisMag);
   //highchartsPlot(phaseSeries, 'bodePhase', 'Phase Plot', xAxis, yAxisPhase, 'logarithmic', 90);
-  highchartsPlot(topMagSeries, 'mag', '<b>Magnitude Plot</b>', xAxis, yAxisMag);
-  highchartsPlot(topPhaseSeries, 'phase', '<b>Phase Plot</b>', xAxis, yAxisPhase, 'logarithmic', 90);
+  BDO.individualMagChart = highchartsPlot(topMagSeries, 'mag', '<b>Magnitude Plot</b>', xAxis, yAxisMag);
+  BDO.individualPhaseChart = highchartsPlot(topPhaseSeries, 'phase', '<b>Phase Plot</b>', xAxis, yAxisPhase, 'logarithmic', 90);
   highchartsPlot(togetherMagSeries, 'togetherMagPlot', '<b>Magnitude Plot</b>', xAxis, yAxisMag);
   highchartsPlot(togetherPhaseSeries, 'togetherPhasePlot', '<b>Phase Plot</b>', xAxis, yAxisPhase, 'logarithmic', 90);
 
@@ -808,7 +811,8 @@ function phaseInputHandler(e) {
   let phi = e.target.value;
   document.getElementById('sinusoidInput').textContent = 'cos('+omega+'t + '+phi+')';
 }
-function onOutputPress() {
+function graphSinusoid() {
+  let start = new Date().getTime();
   let wIndex, mag, phase, html, theta, phi = parseFloat(BDO.phi.value), omega = parseFloat(BDO.omega.value);
   let inputData = [], outputData = [], t = [], series, period, tMax, tInterval, tCount, tLen, ptNum;//wish I had malloc.
   //phi is input; theta is phase outputted from function, & phae is phi+theta
@@ -858,15 +862,23 @@ function onOutputPress() {
     color: 'rgba(0, 0, 0, 1)',
     data: outputData
   }];
-  highchartsPlot(series, 'sinusoidPlot', '<b>Sinusoids</b>', 'Time', 'Dependent Variable', 'linear');
+  let chart = BDO.sinusoidChart;
+  if (chart) {//already made
+    chart.update({series: series});
+  }
+  else {
+    BDO.sinusoidChart = highchartsPlot(series, 'sinusoidPlot', '<b>Sinusoids</b>', 'Time', 'Dependent Variable', 'linear');
+  }
+  console.log((new Date().getTime() - start.toString()) + 'ms');
 }
 //called when one of the checkboxes is checked.
 function onTopCheckOne(name) {
-  if (BDO.lastClickedTopBoxName == name) {//make sure you didn't accidentally double click.
-    document.getElementById(BDO.lastClickedTopBoxName).checked = 1;
+  let lName = BDO.lastClickedTopBoxName;
+  if (lName == name) {//make sure you didn't accidentally double click.
+    document.getElementById(lName).checked = 1;
   }
   else {
-    document.getElementById(BDO.lastClickedTopBoxName).checked = 0;
+    document.getElementById(lName).checked = 0;
     onGraphPress();
     BDO.lastClickedTopBoxName = name;
   }
@@ -879,41 +891,44 @@ function updateAlpha(item, alpha) {
   item.color = rgba;
   return item;
 }
-function onGraphPress() {//1st try w/ zero at origin, p at origin.
+function onGraphPress () {//1st try w/ zero at origin, p at origin.
   //order is consT, zOrigin, pOrigin, zReal, pReal, (might be > 1), zComp, pComp
   //might set array to track # left behind. use name to find stuff.
+  let start = new Date().getTime();//1553 ms.
   const names = BDO.namesOfIds;
   var series = BDO.topMagSeries, series2 = BDO.topPhaseSeries, magDescs = BDO.magDescs, phaseDescs = BDO.phaseDescs;
   var magDescShown, phaseDescShown, bold = BDO.bold, faded = BDO.faded, xAxis, iLen, jLen;
   iLen = names.length;
   jLen = series.length;
   for (let i=0; i<iLen; i++) {
-    if (document.getElementById(names[i])) {
-      if (document.getElementById(names[i]).checked) {
-        for (let j=0; j<jLen; j++) {
-          if (series[j].name == names[i]) {//find the dictionary of data with the right name
-            series[j] = updateAlpha(series[j], bold);
-            series2[j] = updateAlpha(series2[j], bold);
-            magDescShown = magDescs[j];//descriptions correspond to names.
-            phaseDescShown = phaseDescs[j];
-            updateBox(series[j].color, names[i]+" box");//series[j].name also works.
-          }
-          else if (series[j].name == BDO.lastClickedTopBoxName) {
-            series[j] = updateAlpha(series[j], faded);
-            series2[j] = updateAlpha(series2[j], faded);
-            updateBox(series[j].color, series[j].name+" box");
-          }
+    if (document.getElementById(names[i]).checked) {
+      for (let j=0; j<jLen; j++) {
+        if (series[j].name == names[i]) {//find the dictionary of data with the right name
+          series[j] = updateAlpha(series[j], bold);
+          series2[j] = updateAlpha(series2[j], bold);
+          magDescShown = magDescs[j];//descriptions correspond to names.
+          phaseDescShown = phaseDescs[j];
+          updateBox(series[j].color, names[i]+" box");//series[j].name also works.
         }
-        break;
+        else if (series[j].name == BDO.lastClickedTopBoxName) {
+          series[j] = updateAlpha(series[j], faded);
+          series2[j] = updateAlpha(series2[j], faded);
+          updateBox(series[j].color, series[j].name+" box");
+        }
       }
+      break;
     }
   }
   //plots the series with the ones not selected faded.
   // highchartsPlot(series, id, title, xAxis, yAxis, logOrLinear, tickInt) {
   xAxis = '&omega;, rad/S';
-  highchartsPlot(series, 'mag', '<b>Magnitude Plot</b>', xAxis, 'Magnitude dB');
-  highchartsPlot(series2, 'phase', '<b>Phase Plot</b>', xAxis, 'Phase in Degrees', 'logarithmic', 90);
+  
+  //highchartsPlot(series, 'mag', '<b>Magnitude Plot</b>', xAxis, 'Magnitude dB');
+  //highchartsPlot(series2, 'phase', '<b>Phase Plot</b>', xAxis, 'Phase in Degrees', 'logarithmic', 90);
+  BDO.individualMagChart.update({series: series});
+  BDO.individualPhaseChart.update({series: series2});
   document.getElementById('topDescription').innerHTML = magDescShown+'<br>'+phaseDescShown;
+  console.log((new Date().getTime() - start).toString() + ' ms');
 }
 //function rounds a number to a decimal # of decimal places.
 function roundDecimal (num, decimal) {
@@ -1396,7 +1411,7 @@ function highchartsPlot (series, id, title, xAxis, yAxis, logOrLinear, tickInt) 
   if (logOrLinear == undefined) {
     logOrLinear = 'logarithmic';
   }
-  Highcharts.chart(id, {
+  let chart = Highcharts.chart(id, {
     chart: {
         type: 'line',
         zoomType: 'xy'
@@ -1468,4 +1483,5 @@ function highchartsPlot (series, id, title, xAxis, yAxis, logOrLinear, tickInt) 
     },
     series: series
   });
+  return chart;
 }
