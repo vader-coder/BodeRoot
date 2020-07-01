@@ -305,7 +305,7 @@ function getTerms() {
 //updates BDO object to contain data for each term.
 function getData() {
   let terms = BDO.terms;
-  let w = BDO.w, constantK = parseInt(BDO.K);
+  let w = BDO.w, constantK = parseInt(BDO.K), w1, w2, yEnd;
   let constMag = [], constPhase = [], magSeries = [], phaseSeries = [],
   topMagSeries = [], topPhaseSeries = [], desc, magDescs = [], phaseDescs = [],
   togetherMagSeries = [], togetherPhaseSeries = [], w0Mag, zMag, print, print2, name,
@@ -315,6 +315,10 @@ function getData() {
   let magYIntFormula, phaseYIntFormula, magYIntDesc, phaseYIntDesc, initMagSlope = 0, magRestDesc = '', phaseRestDesc ='', termDesc;
   
   magYIntDesc = 'Since we have: ' + BDO.magYIntDesc;
+  /* magYIntDesc += 'Constant: C='+BDO.C.toString()
+  magYIntDesc += 'a zero at the origin'+BDO.terms[i].mH.toString();
+  magYIntDesc += 'a pole at the origin'+BDO.terms[i].mH.toString(); */
+  //change magYIntDesc to local.
   phaseYIntDesc = magYIntDesc;
   for (let i=1; i<10001; i++) {
     w.push(roundDecimal(i*0.1, 1));//w.push(roundDecimal(1+ i*0.1, 1)); might want multiple versions of this.
@@ -482,13 +486,18 @@ function getData() {
       colorIndex++;
       termDesc = terms[i].desc;
       if (terms[i].mult > 1) {
-        magRestDesc += 'Add 20*' +terms[i].mult.toString() + ' dB/decade to slope at &omega; = 1 due to '+termDesc+'<br>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
+        magRestDesc += '<li>Add 20*' +terms[i].mult.toString() + ' dB/decade to slope at &omega; = 1 due to '+termDesc+'</li>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
       }
       else {
-        magRestDesc += 'Add 20 dB/decade to slope at &omega; = 1 due to '+termDesc+'<br>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
+        magRestDesc += '<li>Add 20 dB/decade to slope at &omega; = 1 due to '+termDesc+'</li>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
       }
-      phaseRestDesc += 'Add '+terms[i].midPhaseSlope + ' dB/decade to slope at &omega; = '+terms[i].lowerBound;
-      phaseRestDesc += ' and add '+ terms[i].midPhaseSlope +' dB/decade to slope at &omega; = ' + terms[i].upperBound + ' due to '+termDesc+'<br>';    
+      /*phaseRestDesc += 'Add '+terms[i].midPhaseSlope + ' dB/decade to slope at &omega; = '+terms[i].lowerBound;
+      phaseRestDesc += ' and add '+ terms[i]finalPhaseSlope +' dB/decade to slope at &omega; = ' + terms[i].upperBound + ' due to '+termDesc+'.<br>';*/
+      w1 = terms[i].lowerBound, w2 = terms[i].upperBound;
+      yEnd = 90*terms[i].mult.toString();
+      phaseRestDesc += '<li>Add slope of line connecting ('+w1+',0) and ('+w2+', '+yEnd+')';
+      phaseRestDesc += ' to overall slope between &omega; = '+w1 + ' and &omega; = '+w2; 
+      phaseRestDesc += ' <br>and add '+ yEnd +' to the &omega; > ' + terms[i].upperBound + 'section due to '+termDesc+'.</li>';    
     }
     else if (terms[i].termType == "RealPole") {
       [terms[i].magData, terms[i].phaseData, terms[i].magDataApprox, terms[i].phaseDataApprox] = realData(w, -1, i);
@@ -535,13 +544,19 @@ function getData() {
       colorIndex++;
       termDesc = terms[i].desc;
       if (terms[i].mult > 1) {
-        magRestDesc += 'Add -20*' +terms[i].mult.toString() + ' dB/decade to slope at &omega; = 1 due to '+termDesc+'<br>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
+        magRestDesc += '<li>Add -20*' +terms[i].mult.toString() + ' dB/decade to slope at &omega; = 1 due to '+termDesc+'</li>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
       }
       else {
-        magRestDesc += 'Add -20 dB/decade to slope at &omega; = 1 due to '+termDesc+'<br>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
+        magRestDesc += '<li>Add -20 dB/decade to slope at &omega; = 1 due to '+termDesc+'</li>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
       }    
-      phaseRestDesc += 'Add '+terms[i].midPhaseSlope + ' dB/decade to slope at &omega; = '+terms[i].lowerBound;
-      phaseRestDesc += ' and add '+ terms[i].midPhaseSlope +' dB/decade to slope at &omega; = ' + terms[i].upperBound + ' due to '+termDesc+'<br>';    
+      /*phaseRestDesc += 'Add '+terms[i].midPhaseSlope + ' dB/decade to slope at &omega; = '+terms[i].lowerBound;
+      phaseRestDesc += ' and add '+ terms[i].midPhaseSlope +' dB/decade to slope at &omega; = ' + terms[i].upperBound + ' due to '+termDesc+'.<br>';    
+      */
+      w1 = terms[i].lowerBound, w2 = terms[i].upperBound;
+      yEnd = -90*terms[i].mult.toString();
+      phaseRestDesc += '<li>Add slope of line connecting ('+w1+',0) and ('+w2+', '+yEnd+')';
+      phaseRestDesc += ' to overall slope between &omega; = '+w1 + ' and &omega; = '+w2; 
+      phaseRestDesc += ' <br>and add '+ yEnd +' to the &omega; > ' + terms[i].upperBound + 'section due to '+termDesc+'.</li>';    
     }
     else if (terms[i].termType == "ComplexZero") {
       [terms[i].magData, terms[i].phaseData, terms[i].magDataApprox, terms[i].phaseDataApprox] = compConjugateData(w, 1, i);
@@ -592,13 +607,19 @@ function getData() {
       colorIndex++;
       termDesc = terms[i].desc;
       if (terms[i].mult > 1) {
-        magRestDesc += 'Add 40*' +terms[i].mult.toString() + ' dB/decade to slope at &omega; = 1 due to '+termDesc+'<br>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
+        magRestDesc += '<li>Add 40*' +terms[i].mult.toString() + ' dB/decade to slope at &omega; = 1 due to '+termDesc+'</li>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
       }
       else {
-        magRestDesc += 'Add 40 dB/decade to slope at &omega; = 1 due to '+termDesc+'<br>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
+        magRestDesc += '<li>Add 40 dB/decade to slope at &omega; = 1 due to '+termDesc+'</li>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
       }
-      phaseRestDesc += 'Add '+terms[i].midPhaseSlope + ' dB/decade to slope at &omega; = '+terms[i].lowerBound;
+      /*phaseRestDesc += 'Add '+terms[i].midPhaseSlope + ' dB/decade to slope at &omega; = '+terms[i].lowerBound;
       phaseRestDesc += ' and add '+ terms[i].midPhaseSlope +' dB/decade to slope at &omega; = ' + terms[i].upperBound + ' due to '+termDesc+'<br>';    
+      */
+     w1 = terms[i].lowerBound, w2 = terms[i].upperBound;
+     yEnd = 180*terms[i].mult.toString();
+     phaseRestDesc += '<li>Add slope of line connecting ('+w1+',0) and ('+w2+', '+yEnd+')';
+     phaseRestDesc += ' to overall slope between &omega; = '+w1 + ' and &omega; = '+w2; 
+     phaseRestDesc += ' <br>and add '+ yEnd +' to the &omega; > ' + terms[i].upperBound + 'section due to '+termDesc+'.</li>';
     }
     else if (terms[i].termType == "ComplexPole") {
       [terms[i].magData, terms[i].phaseData, terms[i].magDataApprox, terms[i].phaseDataApprox] = compConjugateData(w, -1, i);
@@ -649,13 +670,20 @@ function getData() {
       colorIndex++;
       termDesc = terms[i].desc;
       if (terms[i].mult > 1) {
-        magRestDesc += 'Add -40*' +terms[i].mult.toString() + ' dB/decade to slope at &omega; = 1 due to '+termDesc+'<br>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
+        magRestDesc += '<li>Add -40*' +terms[i].mult.toString() + ' dB/decade to slope at &omega; = 1 due to '+termDesc+'</li>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
       }
       else {
-        magRestDesc += 'Add -40 dB/decade to slope at &omega; = 1 due to '+termDesc+'<br>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
+        magRestDesc += '<li>Add -40 dB/decade to slope at &omega; = 1 due to '+termDesc+'</li>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
       }
-      phaseRestDesc += 'Add '+terms[i].midPhaseSlope + ' dB/decade to slope at &omega; = '+terms[i].lowerBound;
-      phaseRestDesc += ' and add '+ terms[i].midPhaseSlope +' dB/decade to slope at &omega; = ' + terms[i].upperBound + ' due to '+termDesc+'<br>';    }
+      /*phaseRestDesc += 'Add '+terms[i].midPhaseSlope + ' dB/decade to slope at &omega; = '+terms[i].lowerBound;
+      phaseRestDesc += ' and add '+ terms[i].midPhaseSlope +' dB/decade to slope at &omega; = ' + terms[i].upperBound + ' due to '+termDesc+'<br>';    
+    */
+    w1 = terms[i].lowerBound, w2 = terms[i].upperBound;
+    yEnd = -180*terms[i].mult.toString();
+    phaseRestDesc += '<li>Add slope of line connecting ('+w1+',0) and ('+w2+', '+yEnd+')';
+    phaseRestDesc += ' to overall slope between &omega; = '+w1 + ' and &omega; = '+w2; 
+    phaseRestDesc += ' <br>and add '+ yEnd +' to the &omega; > ' + terms[i].upperBound + 'section due to '+termDesc+'.</li>';
+    }
   }
   [BDO.allMag, BDO.allPhase, BDO.allMagApprox, BDO.allPhaseApprox] = allData(w, terms);
   magSeries.push({
@@ -690,8 +718,8 @@ function getData() {
   togetherPhaseSeries[0] = updateAlpha(togetherPhaseSeries[0], faded);
   let togetherMagHtml = magYIntDesc+ "then the magnitude y-intercept is " + magYIntFormula;
   togetherMagHtml += " and the initial slope is "+initMagSlope.toString() + "dB per decade.";
-  togetherMagHtml += "<br>"+magRestDesc;
-  let togetherPhaseHtml = phaseYIntDesc+"then the phase y-intercept is "+phaseYIntFormula+"<br>"+phaseRestDesc;
+  togetherMagHtml += "<ul>"+magRestDesc+"</ul>";
+  let togetherPhaseHtml = phaseYIntDesc+"then the phase y-intercept is "+phaseYIntFormula+"<ul>"+phaseRestDesc+"</ul>";
   //togetherHtml += 'with a slope of '+ BDO.startslope + 'dB per decade.';
   //DO this tomorrow. slope will be 0 + -20dB/decade*mult + 20dB/decade*mult (I think)
   //need to add starting slop eright after magYIntDesc.
