@@ -350,13 +350,14 @@ function getData () {
   phaseYIntFormula = constPhase[0][1].toString();
   name = 'Constant K=' + constantK.toString();//was just constantK
   names.push(name);
-  checkHtml = "<br>Elements Detected: <br>";
+  checkHtml = "<div id='checkboxes' style='float:left;'><br>Elements Detected: <br>";
   checkHtml += "<input type='radio' id='" + id + "0' onclick=\"onTopCheckOne(this.id)\" checked></input>";
   checkHtml += "<label for='" + id + "0'>"+ name +"</label>";
-  graphHtml = "<p id='topDescription'></p><br>";
-  graphHtml +=  "<div id='mag'></div><br>";
-  graphHtml += "<div id='phase'></div><br>";
-  magDescs.push('The constant term is K= ~'+roundDecimal(constantK, 4).toString()+' = '+terms[0].magData[0][1].toString()+'dB = 20log10(|K|).');
+  graphHtml +=  "<div id='mag' style='float:right;'></div>";
+  graphHtml += "<div id='phase' style='float:right;'></div><br>";
+  graphHtml += "<p id='topDescription' style='float:left;'></p><br>";
+
+  magDescs.push('The constant term is K= ~'+roundDecimal(constantK, 3).toString()+' = '+terms[0].magData[0][1].toPrecision(3)+' dB = 20log10(|K|).');
   //1 description, 1 graph
   BDO.lastClickedTopBoxNum = 0;//1st box to be checked is the constant.
   magSeries.push({name: 'Constant ' + constantK.toString(),
@@ -492,10 +493,8 @@ function getData () {
       else {
         magRestDesc += '<li>Add 20 dB/decade to slope at &omega; = '+w0Mag+' due to '+termDesc+'.</li>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
       }
-      /*phaseRestDesc += 'Add '+terms[i].midPhaseSlope + ' dB/decade to slope at &omega; = '+terms[i].lowerBound;
-      phaseRestDesc += ' and add '+ terms[i]finalPhaseSlope +' dB/decade to slope at &omega; = ' + terms[i].upperBound + ' due to '+termDesc+'.<br>';*/
-      w1 = terms[i].lowerBound, w2 = terms[i].upperBound;
-      yEnd = 90*terms[i].mult.toString();
+      w1 = terms[i].lowerBound.toPrecision(3), w2 = terms[i].upperBound.toPrecision(3);
+      yEnd = (90*terms[i].mult).toPrecision(3);
       if (colorIndex == 1) {
         desc = '<sup>&dagger;</sup>';
       }
@@ -504,7 +503,7 @@ function getData () {
       }
       phaseRestDesc += '<li>Add slope of line connecting ('+w1+', 0)'+desc+' and ('+w2+', '+yEnd+')';
       phaseRestDesc += ' to overall slope between &omega; = '+w1 + ' and &omega; = '+w2; 
-      phaseRestDesc += ' and add '+ yEnd +' to the &omega; > ' + terms[i].upperBound + ' section due to '+termDesc+'.</li>';    
+      phaseRestDesc += ' and add '+ yEnd +' to the &omega; > ' + w2 + ' section due to '+termDesc+'.</li>';    
       colorIndex++;
     }
     else if (terms[i].termType == "RealPole") {
@@ -562,11 +561,11 @@ function getData () {
       else {
         desc = '';
       }
-      w1 = terms[i].lowerBound, w2 = terms[i].upperBound;
-      yEnd = -90*terms[i].mult.toString();
+      w1 = terms[i].lowerBound.toPrecision(3), w2 = terms[i].upperBound.toPrecision(3);
+      yEnd = (-90*terms[i].mult).toPrecision(3);
       phaseRestDesc += '<li>Add slope of line connecting ('+w1+', 0)'+desc+' and ('+w2+', '+yEnd+')';
       phaseRestDesc += ' to overall slope between &omega; = '+w1 + ' and &omega; = '+w2; 
-      phaseRestDesc += ' and add '+ yEnd +' to the &omega; > ' + terms[i].upperBound + ' section due to '+termDesc+'.</li>';    
+      phaseRestDesc += ' and add '+ yEnd +' to the &omega; > ' + w2 + ' section due to '+termDesc+'.</li>';    
       colorIndex++;
     }
     else if (terms[i].termType == "ComplexZero") {
@@ -610,7 +609,7 @@ function getData () {
       }
       magDescs.push(desc);
 
-      desc = 'The phase plot is 0 up to '+w0Mag+'/10<sup>'+zMag+'</sup, ';
+      desc = 'The phase plot is 0 up to '+w0Mag+'/10<sup>'+zMag+'</sup>, ';
       desc += 'then climbs to 180 at '+w0Mag+'&middot;10<sup>'+zMag+'</sup> going through 90 at '+w0Mag+'.';
       desc += '<br><a href="https://lpsa.swarthmore.edu/Bode/BodeHow.html#A%20Complex%20Conjugate%20Pair%20of%20Zeros">Details</a>';
       phaseDescs.push(desc);
@@ -628,11 +627,11 @@ function getData () {
       else {
         desc = '';
       }
-      w1 = terms[i].lowerBound, w2 = terms[i].upperBound;
-      yEnd = 180*terms[i].mult.toString();
+      w1 = terms[i].lowerBound.toPrecision(3), w2 = terms[i].upperBound.toPrecision(3);
+      yEnd = (180*terms[i].mult).toPrecision(3);
       phaseRestDesc += '<li>Add slope of line connecting ('+w1+', 0) and ('+w2+', '+yEnd+')';
       phaseRestDesc += ' to overall slope between &omega; = '+w1 + ' and &omega; = '+w2; 
-      phaseRestDesc += ' and add '+ yEnd +' to the &omega; > ' + terms[i].upperBound + ' section due to '+termDesc+'.</li>';
+      phaseRestDesc += ' and add '+ yEnd +' to the &omega; > ' + w2 + ' section due to '+termDesc+'.</li>';
       colorIndex++;
     }
     else if (terms[i].termType == "ComplexPole") {
@@ -676,7 +675,7 @@ function getData () {
         desc += (-20*Math.log10(2*parseFloat(zMag,10))).toString()+'db at &omega; = '+w0Mag;
       }
       magDescs.push(desc);
-      desc = 'The phase plot is 0 up to '+w0Mag+'/10<sup>'+zMag+'</sup, ';
+      desc = 'The phase plot is 0 up to '+w0Mag+'/10<sup>'+zMag+'</sup>, ';
       desc += 'then climbs to 180 at '+w0Mag+'&middot;10<sup>'+zMag+'</sup> going through 90 at '+w0Mag+'.';
       desc += '<br><a href="https://lpsa.swarthmore.edu/Bode/BodeHow.html#A%20Complex%20Conjugate%20Pair%20of%20Zeros">Details</a>';
       phaseDescs.push(desc);
@@ -694,11 +693,11 @@ function getData () {
       else {
         desc = '';
       }
-      w1 = terms[i].lowerBound, w2 = terms[i].upperBound;
-      yEnd = -180*terms[i].mult.toString();
+      w1 = terms[i].lowerBound.toPrecision(3), w2 = terms[i].upperBound.toPrecision(3);
+      yEnd = (-180*terms[i].mult).toPrecision();
       phaseRestDesc += '<li>Add slope of line connecting ('+w1+', 0) and ('+w2+', '+yEnd+')';
       phaseRestDesc += ' to overall slope between &omega; = '+w1 + ' and &omega; = '+w2; 
-      phaseRestDesc += ' and add '+ yEnd +' to the &omega; > ' + terms[i].upperBound + ' section due to '+termDesc+'.</li>';
+      phaseRestDesc += ' and add '+ yEnd +' to the &omega; > ' + w2 + ' section due to '+termDesc+'.</li>';
       colorIndex++;
     }
   }
@@ -750,7 +749,7 @@ function getData () {
   colorIndex++;
   //graphCheck = document.getElementById('graphOptions');
   //graphs = document.getElementById('graphs');
-  document.getElementById('graphOptions').innerHTML = checkHtml;
+  document.getElementById('graphOptions').innerHTML = checkHtml+"</div";
   document.getElementById('graphs').innerHTML = graphHtml;
   document.getElementById('togetherMagDesc').innerHTML = togetherMagHtml;
   document.getElementById('togetherPhaseDesc').innerHTML = togetherPhaseHtml;
@@ -993,8 +992,8 @@ function realData (w, sign, termIndex) {
   middleDenominator = Math.log10(upperBound/lowerBound), theta, x;
   BDO.terms[termIndex].midPhaseSlope = '90*'+exp.toString()+'/'+middleDenominator.toString();//how to calculate? want a per-decade measurement.
   BDO.terms[termIndex].endPhaseSlope = '90*'+exp.toString();
-  BDO.terms[termIndex].upperBound = upperBound.toString();
-  BDO.terms[termIndex].lowerBound = lowerBound.toString();
+  BDO.terms[termIndex].upperBound = upperBound;
+  BDO.terms[termIndex].lowerBound = lowerBound;
   for (let j=0; j<wLen; j++) {
     //approximate fequency:
     x = w[j]/w0;
@@ -1104,8 +1103,8 @@ function compConjugateData (w, sign, termIndex) {
   middleDenominator = Math.log10(upperBound/lowerBound);
   BDO.terms[termIndex].midPhaseSlope = '180*'+exp.toString()+'/'+middleDenominator.toString();//how to calculate? want a per-decade measurement.
   BDO.terms[termIndex].endPhaseSlope = '180*'+exp.toString();
-  BDO.terms[termIndex].upperBound = upperBound.toString();
-  BDO.terms[termIndex].lowerBound = lowerBound.toString();
+  BDO.terms[termIndex].upperBound = upperBound;
+  BDO.terms[termIndex].lowerBound = lowerBound;
   //phase approximation
   for (let j=0; j<jMax; j++) {
     x = w[j];
@@ -1397,20 +1396,30 @@ function roundToPrec(r, n) { // n = digits of precision, r=nedamer object with r
     return (rArray);
 }
 function highchartsPlot (series, id, title, xAxis, yAxis, logOrLinear, tickInt) {
+  let legend = true, width = parseInt(screen.width)/3, data = series[0].data;
+  let xMax = data[data.length-1][0], xMin = data[0][0];
   if (xAxis == undefined) {
     xAxis = 'ω';
   }
   if (logOrLinear == undefined) {
     logOrLinear = 'logarithmic';
   }
+  if (id == 'mag' || id == 'phase') {
+    legend = false;//disable legend.
+  }
   let chart = Highcharts.chart(id, {
     chart: {
         type: 'line',
-        zoomType: 'xy'
+        zoomType: 'xy',
+        width: width,
+        spacing: [10, 0, 15, 0]//top, right, bottom, left
     },
     title: {
         text: title,
         useHTML: true
+    },
+    tooltip: {
+      enabled: false
     },
     xAxis: {
       type: logOrLinear,//'logarithmic'. can't plot sub-zero values on a logarithmic axis
@@ -1423,6 +1432,8 @@ function highchartsPlot (series, id, title, xAxis, yAxis, logOrLinear, tickInt) 
       endOnTick: true,
       showLastLabel: true,
       gridLineWidth: 1,
+      max: xMax,
+      min: xMin
     },
     //type: 'linear','logarithmic'
     yAxis: {
@@ -1447,7 +1458,9 @@ function highchartsPlot (series, id, title, xAxis, yAxis, logOrLinear, tickInt) 
             },
             floating: true,
             draggable: true,
-            zIndex: 20
+            zIndex: 20,
+            useHTML: true,
+            enabled: legend
         },
     plotOptions: {
         scatter: {
@@ -1467,10 +1480,6 @@ function highchartsPlot (series, id, title, xAxis, yAxis, logOrLinear, tickInt) 
                     }
                 }
             },
-            tooltip: {
-                headerFormat: '<b>{series.name}</b><br>',
-                pointFormat: '{point.x} &#x03C9;, {point.y} dB'
-            }
         }
     },
     series: series
