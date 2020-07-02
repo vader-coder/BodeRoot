@@ -365,7 +365,7 @@ function getData () {
   color: colors[colorIndex],data: constPhase});
   topMagSeries.push(copyObject(magSeries[magSeries.length-1]));
   topPhaseSeries.push(copyObject(phaseSeries[phaseSeries.length-1]));
-  checkHtml += getBox(topMagSeries[topMagSeries.length-1].color, name)+"<br>";
+  checkHtml += getBox(topMagSeries[topMagSeries.length-1].color, id+'0')+"<br>";
   colorIndex++;
   desc += '<br><a href="https://lpsa.swarthmore.edu/Bode/BodeHow.html#A%20Constant%20Term">Details</a>';
   phaseDescs.push(desc);
@@ -396,7 +396,7 @@ function getData () {
       names.push(name);
       checkHtml+= "<input type='radio' id='"+id+i.toString()+"' onclick=\"onTopCheckOne(this.id)\"></input>";
       checkHtml+="<label for='"+id+i.toString()+"'>Zero at Origin</label>"
-      checkHtml += getBox(topMagSeries[topMagSeries.length-1].color, name)+"<br>";
+      checkHtml += getBox(topMagSeries[topMagSeries.length-1].color, id+i.toString())+"<br>";
       magDescs.push('The magnitude plot rises 20dB/decade and goes through 0 dB at 1 rad sec.<br>');
       colorIndex++;
       desc = 'The phase plot of a zero at the origin is a horizontal line at +90&deg;.';
@@ -431,7 +431,7 @@ function getData () {
       topPhaseSeries[topPhaseSeries.length-1] = updateAlpha(topPhaseSeries[topPhaseSeries.length-1], faded);
       checkHtml+="<input type='radio' id='"+id+i.toString()+"' onclick=\"onTopCheckOne(this.id)\"></input>";
       checkHtml+="<label for='"+id+i.toString()+"'>Pole at Origin</label>";
-      checkHtml += getBox(topMagSeries[topMagSeries.length-1].color, name)+"<br>";
+      checkHtml += getBox(topMagSeries[topMagSeries.length-1].color, id+i.toString())+"<br>";
       desc = 'The magnitude plot drops 20dB/decade and goes through 0 dB at 1 rad sec.<br>';
       magDescs.push(desc);
       desc = 'The phase plot of a pole at the origin is a horizontal line at -90&deg;.';
@@ -476,7 +476,7 @@ function getData () {
       w0Mag = BDO.terms[i].w0.toPrecision(3);
       checkHtml+="<input type='radio' id='"+id+i.toString()+"' onclick=\"onTopCheckOne(this.id)\"></input>";
       checkHtml+="<label for='"+id+i.toString()+"'>"+name+"</label>";
-      checkHtml += getBox(topMagSeries[topMagSeries.length-1].color, name)+"<br>";
+      checkHtml += getBox(topMagSeries[topMagSeries.length-1].color, id+i.toString())+"<br>";
       desc = 'The real zero is at &omega; = &omega;<sub>0</sub> = '+w0Mag+' rad/sec.';
       desc+= ' For the magnitude plot we draw a straight line ';
       desc += 'at 0 dB from up to '+w0Mag+', thereafter the line rises at 20dB/decade.';
@@ -539,7 +539,7 @@ function getData () {
       names.push(name);
       checkHtml+="<input type='radio' id='"+id+i.toString()+"' onclick=\"onTopCheckOne(this.id)\"></input>";
       checkHtml+="<label for='"+id+i.toString()+"'>"+name+"</label>";
-      checkHtml += getBox(topMagSeries[topMagSeries.length-1].color, name)+"<br>";
+      checkHtml += getBox(topMagSeries[topMagSeries.length-1].color, id+i.toString())+"<br>";
       desc = 'The real pole is at &omega; = &omega;<sub>0</sub> = '+w0Mag+' rad/sec.';
       desc+= ' For the magnitude plot we draw a straight line ';
       desc += 'at 0 dB from up to '+w0Mag+', thereafter the line drops at 20dB/decade.';
@@ -602,7 +602,7 @@ function getData () {
       topPhaseSeries[topPhaseSeries.length-1] = updateAlpha(topPhaseSeries[topPhaseSeries.length-1], faded);
       checkHtml+="<input type='radio' id='"+id+i.toString()+"' onclick=\"onTopCheckOne(this.id)\"></input>";
       checkHtml+="<label for='"+id+i.toString()+"'>"+name+"</label>";
-      checkHtml += getBox(topMagSeries[topMagSeries.length-1].color, name)+"<br>";
+      checkHtml += getBox(topMagSeries[topMagSeries.length-1].color, id+i.toString())+"<br>";
       desc = 'For the magnitude plot we draw a straight line at 0 dB from up to '+w0Mag+', thereafter the line rises at 40dB/decade.';
       if (parseFloat(zMag) < 0.5) {
         desc += '<br>Since '+zMag+'<0.5, we draw a peak of 20log<sub>10</sub>(2&zeta;) = ';
@@ -668,7 +668,7 @@ function getData () {
       topPhaseSeries[topPhaseSeries.length-1] = updateAlpha(topPhaseSeries[topPhaseSeries.length-1], faded);
       checkHtml+="<input type='radio' id='"+id+i.toString()+"' onclick=\"onTopCheckOne(this.id)\"></input>";
       checkHtml+="<label for='"+id+i.toString()+"'>"+name+"</label>";
-      checkHtml += getBox(topMagSeries[topMagSeries.length-1].color, name)+"<br>";
+      checkHtml += getBox(topMagSeries[topMagSeries.length-1].color, id+i.toString())+"<br>";
       desc = 'For the magnitude plot we draw a straight line at 0 dB from up to '
       desc += w0Mag+', thereafter the line drops at 40dB/decade.';
       if (zMag < 0.5) {
@@ -886,16 +886,17 @@ function topButtonHandler (termNum, last) {//1st try w/ zero at origin, p at ori
   var series = BDO.topMagSeries, series2 = BDO.topPhaseSeries, magDescs = BDO.magDescs, phaseDescs = BDO.phaseDescs;
   var magDescShown, phaseDescShown, bold = BDO.bold, faded = BDO.faded, xAxis, 
   magChart = BDO.individualMagChart, phaseChart = BDO.individualPhaseChart;
-  
+  let boxId = "topTerm:"+termNum.toString()+" box";
+  let lastBoxId = "topTerm:"+last.toString()+" box";
   series[termNum] = updateAlpha(series[termNum], bold);
   series2[termNum] = updateAlpha(series2[termNum], bold);
   magDescShown = magDescs[termNum];//descriptions correspond to names.
   phaseDescShown = phaseDescs[termNum];
-  updateBox(series[termNum].color, names[termNum]+" box");
+  updateBox(series[termNum].color, boxId);
 
   series[last] = updateAlpha(series[last], faded);
   series2[last] = updateAlpha(series2[last], faded);
-  updateBox(series[last].color, series[last].name+" box");
+  updateBox(series[last].color, lastBoxId);
   //plots the series with the ones not selected faded.
   // highchartsPlot(series, id, title, xAxis, yAxis, logOrLinear, tickInt) {
   xAxis = '&omega;, rad/S';
