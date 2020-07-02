@@ -21,7 +21,7 @@ function BDO_Obj() {
     this.magDescs = [];
     this.phaseDescs = [];
     this.magYIntDesc = '';
-    this.lastClickedTopBoxName;
+    this.lastClickedTopBoxNum;
     this.topMagSeries = [];
     this.topPhaseSeries = [];
     this.magSeries = [];
@@ -256,9 +256,11 @@ function getTerms() {
           terms[i].tXz = `\\zeta_{p${idx}}`;
           terms[i].tHz = `&zeta;<sub>p${idx}</sub>`;
           terms[i].t1X = `(s^2 + 2${terms[i].tXz}${terms[i].tXw}s + ${terms[i].tXw}^2)${to_m(m)}`;
-          terms[i].t2X = `(1 + 2${terms[i].tXz}(s/${terms[i].tXw}) +  (s/${terms[i].tXw}^2))${to_m(m)}`
-          terms[i].t1H = `(s + ${terms[i].tHw})${to_m(m, 1)}`;
-          terms[i].t2H = `(1 + s/${terms[i].tHw})${to_m(m, 1)}`;
+          terms[i].t2X = `(1 + 2${terms[i].tXz}(s/${terms[i].tXw}) +  (s/${terms[i].tXw}^2))${to_m(m)}`;
+          terms[i].t1H = `(s^2 + 2${terms[i].tHz}${terms[i].tHw}s + ${terms[i].tHw}^2)${to_m(m)}`;
+          terms[i].t2H = `(1 + 2${terms[i].tHz}(s/${terms[i].tHw}) +  (s/${terms[i].tHw}^2))${to_m(m)}`;
+          //terms[i].t1H = `(s + ${terms[i].tHw})${to_m(m, 1)}`;
+          //terms[i].t2H = `(1 + s/${terms[i].tHw})${to_m(m, 1)}`;
           terms[i].mH = m == 1 ? '' : `, of muliplicity ${m}`; // multiplicity phrase
           BDO.terms[j++] = terms[i];
       }
@@ -274,8 +276,10 @@ function getTerms() {
           terms[i].tHz = `&zeta;<sub>z${idx}</sub>`;
           terms[i].t1X = `(s^2 + 2${terms[i].tXz}${terms[i].tXw}s + ${terms[i].tXw}^2)${to_m(m)}`;
           terms[i].t2X = `(1 + 2${terms[i].tXz}(s/${terms[i].tXw}) +  (s/${terms[i].tXw}^2))${to_m(m)}`;
-          terms[i].t1H = `(s + ${terms[i].tHw})${to_m(m, 1)}`;
-          terms[i].t2H = `(1 + s/${terms[i].tHw})${to_m(m, 1)}`;
+          terms[i].t1H = `(s^2 + 2${terms[i].tHz}${terms[i].tHw}s + ${terms[i].tHw}^2)${to_m(m)}`;
+          terms[i].t2H = `(1 + 2${terms[i].tHz}(s/${terms[i].tHw}) +  (s/${terms[i].tHw}^2))${to_m(m)}`;
+          //terms[i].t1H = `(s + ${terms[i].tHw})${to_m(m, 1)}`;
+          //terms[i].t2H = `(1 + s/${terms[i].tHw})${to_m(m, 1)}`;
           terms[i].mH = m == 1 ? '' : `, of muliplicity ${m}`; // multiplicity phrase
           BDO.terms[j++] = terms[i];
       }
@@ -306,9 +310,9 @@ function getTerms() {
 }
 
 //updates BDO object to contain data for each term.
-function getData() {
+function getData () {
   let terms = BDO.terms;
-  let w = BDO.w, constantK = parseInt(BDO.K), w1, w2, yEnd;
+  let w = BDO.w, constantK = parseInt(BDO.K), w1, w2, yEnd, w0, zeta_;
   let constMag = [], constPhase = [], magSeries = [], phaseSeries = [],
   topMagSeries = [], topPhaseSeries = [], desc, magDescs = [], phaseDescs = [],
   togetherMagSeries = [], togetherPhaseSeries = [], w0Mag, zMag, print, print2, name,
@@ -316,11 +320,8 @@ function getData() {
   names = [], togetherPhaseDesc, togetherMagDesc, blackRGBA = 'rgba(0, 0, 0, 1)';
   var colors = ['rgba(0,114,189,'+bold+')','rgba(217,83,25,'+bold+')','rgba(237,177,32,'+bold+')','rgba(126,47,142,'+bold+')','rgba(119,172,148,'+bold+')','rgba(77,190,238,'+bold+')', 'rgba(162,20,47,'+bold+')'], colorIndex = 0;
   let magYIntFormula, phaseYIntFormula, magYIntDesc, initMagSlope = 0, magRestDesc = '', phaseRestDesc ='', termDesc;
-  
+  let id = 'topTerm:';
   magYIntDesc = 'Since we have a constant C='+BDO.C.toString();
-  /*magYIntDesc += 'a zero at the origin'+BDO.terms[i].mH.toString();
-  magYIntDesc += 'a pole at the origin'+BDO.terms[i].mH.toString();*/ 
-  //change magYIntDesc to local.
   for (let i=1; i<10001; i++) {
     w.push(roundDecimal(i*0.1, 1));//w.push(roundDecimal(1+ i*0.1, 1)); might want multiple versions of this.
     constMag.push([w[i-1], 20*Math.log10(constantK)]);
@@ -347,17 +348,17 @@ function getData() {
   terms[0].phaseDataApprox = constPhase;
   magYIntFormula = BDO.K;
   phaseYIntFormula = constPhase[0][1].toString();
-  name = 'Constant ' + constantK.toString();//was just constantK
+  name = 'Constant K=' + constantK.toString();//was just constantK
   names.push(name);
   checkHtml = "<br>Elements Detected: <br>";
-  checkHtml += "<input type='radio' id='" + name + "' onclick=\"onTopCheckOne(\'"+name+"\')\" checked></input>";
-  checkHtml += "<label for='" + name + "'>"+ name +"</label>";
+  checkHtml += "<input type='radio' id='" + id + "0' onclick=\"onTopCheckOne(this.id)\" checked></input>";
+  checkHtml += "<label for='" + id + "0'>"+ name +"</label>";
   graphHtml = "<p id='topDescription'></p><br>";
   graphHtml +=  "<div id='mag'></div><br>";
   graphHtml += "<div id='phase'></div><br>";
   magDescs.push('The constant term is K= ~'+roundDecimal(constantK, 4).toString()+' = '+terms[0].magData[0][1].toString()+'dB = 20log10(|K|).');
   //1 description, 1 graph
-  BDO.lastClickedTopBoxName = name;//1st box to be checked is the constant.
+  BDO.lastClickedTopBoxNum = 0;//1st box to be checked is the constant.
   magSeries.push({name: 'Constant ' + constantK.toString(),
   color: colors[colorIndex],data: constMag});
   phaseSeries.push({name: 'Constant ' + constantK.toString(),
@@ -368,9 +369,6 @@ function getData() {
   colorIndex++;
   desc += '<br><a href="https://lpsa.swarthmore.edu/Bode/BodeHow.html#A%20Constant%20Term">Details</a>';
   phaseDescs.push(desc);
-  /*phaseDescription = document.getElementById('phaseDescription');
-  phaseDescription.innerHTML = phaseDescs[0];//default is constantK
-  document.getElementById('topDescription').insertAdjacentHTML('beforeend', '<br>'+phaseDescs[0]);*/
   BDO.termsLen = terms.length;
   iLen = BDO.termsLen;
   for (let i=1; i<iLen; i++) {
@@ -396,8 +394,8 @@ function getData() {
       topPhaseSeries.push(copyObject(phaseSeries[phaseSeries.length-1]));
       topPhaseSeries[topPhaseSeries.length-1] = updateAlpha(topPhaseSeries[topPhaseSeries.length-1], faded);
       names.push(name);
-      checkHtml+= "<input type='radio' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
-      checkHtml+="<label for='"+name+"'>Zero at Origin</label>"
+      checkHtml+= "<input type='radio' id='"+id+i.toString()+"' onclick=\"onTopCheckOne(this.id)\"></input>";
+      checkHtml+="<label for='"+id+i.toString()+"'>Zero at Origin</label>"
       checkHtml += getBox(topMagSeries[topMagSeries.length-1].color, name)+"<br>";
       magDescs.push('The magnitude plot rises 20dB/decade and goes through 0 dB at 1 rad sec.<br>');
       colorIndex++;
@@ -405,8 +403,8 @@ function getData() {
       desc += '<br><a href="https://lpsa.swarthmore.edu/Bode/BodeHow.html#A%20Zero%20at%20the%20Origin">Details</a>';
       phaseDescs.push(desc);
       let exp = terms[i].mult.toString();
-      magYIntFormula += ' - 20*'+ exp + ' dB';
-      phaseYIntFormula += ' + 90*' + exp + ' dB';
+      magYIntFormula += ' - 20&middot;'+ exp + ' dB';
+      phaseYIntFormula += ' + 90&middot;' + exp + ' dB';
       magYIntDesc += ' and a zero at the origin'+BDO.terms[i].mH.toString();
       //we can't have both a pole at origin & a zero at origin because 1 will cancel out the other
     }
@@ -431,8 +429,8 @@ function getData() {
       topMagSeries[topMagSeries.length-1] = updateAlpha(topMagSeries[topMagSeries.length-1], faded);
       topPhaseSeries.push(copyObject(phaseSeries[phaseSeries.length-1]));
       topPhaseSeries[topPhaseSeries.length-1] = updateAlpha(topPhaseSeries[topPhaseSeries.length-1], faded);
-      checkHtml+="<input type='radio' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
-      checkHtml+="<label for='"+name+"'>Pole at Origin</label>";
+      checkHtml+="<input type='radio' id='"+id+i.toString()+"' onclick=\"onTopCheckOne(this.id)\"></input>";
+      checkHtml+="<label for='"+id+i.toString()+"'>Pole at Origin</label>";
       checkHtml += getBox(topMagSeries[topMagSeries.length-1].color, name)+"<br>";
       desc = 'The magnitude plot drops 20dB/decade and goes through 0 dB at 1 rad sec.<br>';
       magDescs.push(desc);
@@ -442,14 +440,14 @@ function getData() {
       names.push(name);
       colorIndex++;
       let exp = terms[i].mult.toString()
-      magYIntFormula += ' + 20*'+ exp + ' dB';
-      phaseYIntFormula += ' - 90*' + exp + ' dB';
+      magYIntFormula += ' + 20&middot;'+ exp + ' dB';
+      phaseYIntFormula += ' - 90&middot;' + exp + ' dB';
       magYIntDesc += ' and a pole at the origin'+BDO.terms[i].mH.toString();     
     }
     else if (terms[i].termType == "RealZero") {
       [terms[i].magData, terms[i].phaseData, terms[i].magDataApprox, terms[i].phaseDataApprox] = realData(w, 1, i);
       terms[i].sign = 1;
-      name = 'Real Zero ' + terms[i].value + ' Approximation';
+      name = 'Real Zero, ' + terms[i].tHw + '= '+terms[i].value;
       magSeries.push({
         name: 'Real Zero ' + terms[i].value,
         color: colors[colorIndex],
@@ -475,24 +473,24 @@ function getData() {
       topPhaseSeries.push(copyObject(phaseSeries[phaseSeries.length-1]));
       topPhaseSeries[topPhaseSeries.length-1] = updateAlpha(topPhaseSeries[topPhaseSeries.length-1], faded);
       names.push(name);
-      w0Mag = BDO.terms[i].w0.toString();
-      checkHtml+="<input type='radio' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
-      checkHtml+="<label for='"+name+"'>"+name+"</label>";
+      w0Mag = BDO.terms[i].w0.toPrecision(3);
+      checkHtml+="<input type='radio' id='"+id+i.toString()+"' onclick=\"onTopCheckOne(this.id)\"></input>";
+      checkHtml+="<label for='"+id+i.toString()+"'>"+name+"</label>";
       checkHtml += getBox(topMagSeries[topMagSeries.length-1].color, name)+"<br>";
       desc = 'The real zero is at &omega; = &omega;<sub>0</sub> = '+w0Mag+' rad/sec.';
       desc+= ' For the magnitude plot we draw a straight line ';
       desc += 'at 0 dB from up to '+w0Mag+', thereafter the line rises at 20dB/decade.';
       magDescs.push(desc);
       desc = 'The phase plot is 0 up to &omega; = &omega;<sub>0</sub> = '+w0Mag+'/10,';
-      desc += ' then drops to +90 at '+w0Mag+'*10 going through +45 at '+w0Mag + '.';
+      desc += ' then drops to +90 at '+w0Mag+'&middot;10 going through +45 at '+w0Mag + '.';
       desc+='<br><a href = "https://lpsa.swarthmore.edu/Bode/BodeHow.html#A%20Real%20Zero">Details</a>';
       phaseDescs.push(desc);
       termDesc = terms[i].desc;
       if (terms[i].mult > 1) {
-        magRestDesc += '<li>Add 20*' +terms[i].mult.toString() + ' dB/decade to slope at &omega; = 1 due to '+termDesc+'.</li>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
+        magRestDesc += '<li>Add 20&middot;' +terms[i].mult.toString() + ' dB/decade to slope at &omega; = '+w0Mag+' due to '+termDesc+'.</li>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
       }
       else {
-        magRestDesc += '<li>Add 20 dB/decade to slope at &omega; = 1 due to '+termDesc+'.</li>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
+        magRestDesc += '<li>Add 20 dB/decade to slope at &omega; = '+w0Mag+' due to '+termDesc+'.</li>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
       }
       /*phaseRestDesc += 'Add '+terms[i].midPhaseSlope + ' dB/decade to slope at &omega; = '+terms[i].lowerBound;
       phaseRestDesc += ' and add '+ terms[i]finalPhaseSlope +' dB/decade to slope at &omega; = ' + terms[i].upperBound + ' due to '+termDesc+'.<br>';*/
@@ -512,8 +510,8 @@ function getData() {
     else if (terms[i].termType == "RealPole") {
       [terms[i].magData, terms[i].phaseData, terms[i].magDataApprox, terms[i].phaseDataApprox] = realData(w, -1, i);
       terms[i].sign = -1;
-      w0Mag = BDO.terms[i].w0.toString();
-      name = 'Real Pole ' + terms[i].value + ' Approximation';
+      w0Mag = BDO.terms[i].w0.toPrecision(3);
+      name = 'Real Pole, ' + terms[i].tHw + '= '+terms[i].value;
       magSeries.push({
         name: 'Real Pole ' + terms[i].value,
         color: colors[colorIndex],
@@ -525,7 +523,7 @@ function getData() {
         data: terms[i].magDataApprox
       });
       phaseSeries.push({
-        name: 'Real Pole ' + terms[i].value,
+        name: 'Real Pole, ' + terms[i].value,
         color: colors[colorIndex],
         data: terms[i].phaseData
       });
@@ -539,8 +537,8 @@ function getData() {
       topPhaseSeries.push(copyObject(phaseSeries[phaseSeries.length-1]));
       topPhaseSeries[topPhaseSeries.length-1] = updateAlpha(topPhaseSeries[topPhaseSeries.length-1], faded);
       names.push(name);
-      checkHtml+="<input type='radio' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
-      checkHtml+="<label for='"+name+"'>"+name+"</label>";
+      checkHtml+="<input type='radio' id='"+id+i.toString()+"' onclick=\"onTopCheckOne(this.id)\"></input>";
+      checkHtml+="<label for='"+id+i.toString()+"'>"+name+"</label>";
       checkHtml += getBox(topMagSeries[topMagSeries.length-1].color, name)+"<br>";
       desc = 'The real pole is at &omega; = &omega;<sub>0</sub> = '+w0Mag+' rad/sec.';
       desc+= ' For the magnitude plot we draw a straight line ';
@@ -548,19 +546,16 @@ function getData() {
       magDescs.push(desc);
 
       desc = 'The phase plot is 0 up to &omega; = &omega;<sub>0</sub> = '+w0Mag+'/10,';
-      desc += ' then drops to -90 at '+w0Mag+'*10 going through -45 at '+w0Mag+'.';
+      desc += ' then drops to -90 at '+w0Mag+'&middot;10 going through -45 at '+w0Mag+'.';
       desc += '<br><a href = "https://lpsa.swarthmore.edu/Bode/BodeHow.html#A%20Real%20Pole">Details</a>';
       phaseDescs.push(desc);
       termDesc = terms[i].desc;
       if (terms[i].mult > 1) {
-        magRestDesc += '<li>Add -20*' +terms[i].mult.toString() + ' dB/decade to slope at &omega; = 1 due to '+termDesc+'.</li>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
+        magRestDesc += '<li>Add -20&middot;' +terms[i].mult.toString() + ' dB/decade to slope at &omega; = '+w0Mag+' due to '+termDesc+'.</li>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
       }
       else {
-        magRestDesc += '<li>Add -20 dB/decade to slope at &omega; = 1 due to '+termDesc+'.</li>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
+        magRestDesc += '<li>Add -20 dB/decade to slope at &omega; = '+w0Mag+' due to '+termDesc+'.</li>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
       }    
-      /*phaseRestDesc += 'Add '+terms[i].midPhaseSlope + ' dB/decade to slope at &omega; = '+terms[i].lowerBound;
-      phaseRestDesc += ' and add '+ terms[i].midPhaseSlope +' dB/decade to slope at &omega; = ' + terms[i].upperBound + ' due to '+termDesc+'.<br>';    
-      */
       if (colorIndex == 1) {
         desc = '<sup>&dagger;</sup>';
       }
@@ -578,7 +573,9 @@ function getData() {
       [terms[i].magData, terms[i].phaseData, terms[i].magDataApprox, terms[i].phaseDataApprox] = compConjugateData(w, 1, i);
       terms[i].sign = 1;
       [print, print2] = compToStr(terms[i].value);
-      name = 'Complex Zero ' + print2 + ' Approximation';
+      w0Mag = BDO.terms[i].w0.toPrecision(3);
+      zMag = BDO.terms[i].zeta.toPrecision(3);
+      name = 'Complex Zero, ' + terms[i].tHw + '= '+w0Mag + ', ' + terms[i].tHz + ' = ' +zMag;
       magSeries.push({
         name: 'Complex Zero ' + print,
         color: colors[colorIndex],
@@ -603,10 +600,8 @@ function getData() {
       topMagSeries[topMagSeries.length-1] = updateAlpha(topMagSeries[topMagSeries.length-1], faded);
       topPhaseSeries.push(copyObject(phaseSeries[phaseSeries.length-1]));
       topPhaseSeries[topPhaseSeries.length-1] = updateAlpha(topPhaseSeries[topPhaseSeries.length-1], faded);
-      w0Mag = BDO.terms[i].w0.toString();
-      zMag = zBDO.terms[i].zeta.toString();
-      checkHtml+="<input type='radio' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
-      checkHtml+="<label for='"+name+"'>"+name+"</label>";
+      checkHtml+="<input type='radio' id='"+id+i.toString()+"' onclick=\"onTopCheckOne(this.id)\"></input>";
+      checkHtml+="<label for='"+id+i.toString()+"'>"+name+"</label>";
       checkHtml += getBox(topMagSeries[topMagSeries.length-1].color, name)+"<br>";
       desc = 'For the magnitude plot we draw a straight line at 0 dB from up to '+w0Mag+', thereafter the line rises at 40dB/decade.';
       if (parseFloat(zMag) < 0.5) {
@@ -616,20 +611,17 @@ function getData() {
       magDescs.push(desc);
 
       desc = 'The phase plot is 0 up to '+w0Mag+'/10<sup>'+zMag+'</sup, ';
-      desc += 'then climbs to 180 at '+w0Mag+'*10<sup>'+zMag+'</sup> going through 90 at '+w0Mag+'.';
+      desc += 'then climbs to 180 at '+w0Mag+'&middot;10<sup>'+zMag+'</sup> going through 90 at '+w0Mag+'.';
       desc += '<br><a href="https://lpsa.swarthmore.edu/Bode/BodeHow.html#A%20Complex%20Conjugate%20Pair%20of%20Zeros">Details</a>';
       phaseDescs.push(desc);
       names.push(name);
       termDesc = terms[i].desc;
       if (terms[i].mult > 1) {
-        magRestDesc += '<li>Add 40*' +terms[i].mult.toString() + ' dB/decade to slope at &omega; = 1 due to '+termDesc+'</li>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
+        magRestDesc += '<li>Add 40&middot;' +terms[i].mult.toString() + ' dB/decade to slope at &omega; = 1 due to '+termDesc+'</li>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
       }
       else {
         magRestDesc += '<li>Add 40 dB/decade to slope at &omega; = 1 due to '+termDesc+'</li>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
       }
-      /*phaseRestDesc += 'Add '+terms[i].midPhaseSlope + ' dB/decade to slope at &omega; = '+terms[i].lowerBound;
-      phaseRestDesc += ' and add '+ terms[i].midPhaseSlope +' dB/decade to slope at &omega; = ' + terms[i].upperBound + ' due to '+termDesc+'<br>';    
-      */
       if (colorIndex == 1) {
         desc = '<sup>&dagger;</sup>';
       }
@@ -647,7 +639,9 @@ function getData() {
       [terms[i].magData, terms[i].phaseData, terms[i].magDataApprox, terms[i].phaseDataApprox] = compConjugateData(w, -1, i);
       terms[i].sign = -1;
       [print, print2] = compToStr(terms[i].value);
-      name = 'Complex Pole ' + print2 + ' Approximation';
+      w0Mag = BDO.terms[i].w0.toPrecision(3);
+      zMag = BDO.terms[i].zeta.toPrecision(3);
+      name = 'Complex Pole, ' + terms[i].tHw + '= '+w0Mag + ', ' + terms[i].tHz + ' = ' +zMag;
       magSeries.push({
         name: 'Complex Pole ' + print,
         color: colors[colorIndex],
@@ -672,10 +666,8 @@ function getData() {
       topMagSeries[topMagSeries.length-1] = updateAlpha(topMagSeries[topMagSeries.length-1], faded);
       topPhaseSeries.push(copyObject(phaseSeries[phaseSeries.length-1]));
       topPhaseSeries[topPhaseSeries.length-1] = updateAlpha(topPhaseSeries[topPhaseSeries.length-1], faded);
-      w0Mag = BDO.terms[i].w0.toString();
-      zMag = BDO.terms[i].zeta.toString();
-      checkHtml+="<input type='radio' id='"+name+"' onclick=\"onTopCheckOne(\'"+name+"\')\"></input>";
-      checkHtml+="<label for='"+name+"'>"+name+"</label>";
+      checkHtml+="<input type='radio' id='"+id+i.toString()+"' onclick=\"onTopCheckOne(this.id)\"></input>";
+      checkHtml+="<label for='"+id+i.toString()+"'>"+name+"</label>";
       checkHtml += getBox(topMagSeries[topMagSeries.length-1].color, name)+"<br>";
       desc = 'For the magnitude plot we draw a straight line at 0 dB from up to '
       desc += w0Mag+', thereafter the line drops at 40dB/decade.';
@@ -685,20 +677,17 @@ function getData() {
       }
       magDescs.push(desc);
       desc = 'The phase plot is 0 up to '+w0Mag+'/10<sup>'+zMag+'</sup, ';
-      desc += 'then climbs to 180 at '+w0Mag+'*10<sup>'+zMag+'</sup> going through 90 at '+w0Mag+'.';
+      desc += 'then climbs to 180 at '+w0Mag+'&middot;10<sup>'+zMag+'</sup> going through 90 at '+w0Mag+'.';
       desc += '<br><a href="https://lpsa.swarthmore.edu/Bode/BodeHow.html#A%20Complex%20Conjugate%20Pair%20of%20Zeros">Details</a>';
       phaseDescs.push(desc);
       names.push(name);
       termDesc = terms[i].desc;
       if (terms[i].mult > 1) {
-        magRestDesc += '<li>Add -40*' +terms[i].mult.toString() + ' dB/decade to slope at &omega; = 1 due to '+termDesc+'.</li>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
+        magRestDesc += '<li>Add -40&middot;' +terms[i].mult.toString() + ' dB/decade to slope at &omega; = 1 due to '+termDesc+'.</li>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
       }
       else {
         magRestDesc += '<li>Add -40 dB/decade to slope at &omega; = 1 due to '+termDesc+'.</li>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
       }
-      /*phaseRestDesc += 'Add '+terms[i].midPhaseSlope + ' dB/decade to slope at &omega; = '+terms[i].lowerBound;
-      phaseRestDesc += ' and add '+ terms[i].midPhaseSlope +' dB/decade to slope at &omega; = ' + terms[i].upperBound + ' due to '+termDesc+'<br>';    
-    */
       if (colorIndex == 1) {
         desc = '<sup>&dagger;</sup>';
       }
@@ -872,63 +861,65 @@ function graphSinusoid() {
   console.log((new Date().getTime() - start.toString()) + 'ms');
 }
 //called when one of the checkboxes is checked.
-function onTopCheckOne(name) {
-  let lName = BDO.lastClickedTopBoxName;
-  if (lName == name) {//make sure you didn't accidentally double click.
-    document.getElementById(lName).checked = 1;
-  }
-  else {
-    document.getElementById(lName).checked = 0;
-    onGraphPress();
-    BDO.lastClickedTopBoxName = name;
+function onTopCheckOne (id) {
+  let termNum = parseInt(id.slice(id.indexOf(':')+1));//slice includes char at index
+  let lastNum = BDO.lastClickedTopBoxNum;
+  if (lastNum != termNum) {//make sure you didn't accidentally double click.
+    document.getElementById('topTerm:'+lastNum.toString()).checked = 0;
+    topButtonHandler(termNum, lastNum);
+    BDO.lastClickedTopBoxNum = termNum;
   }
 }
 //input series item, returns series item w/ updated alpha in color: 'rgba(0, 0, 0, 1)'
-function updateAlpha(item, alpha) {
+function updateAlpha (item, alpha) {
   let rgba = item.color;
   let alphaStart = rgba.lastIndexOf(',');
   rgba = rgba.slice(0, alphaStart+1) + alpha + ')';
   item.color = rgba;
   return item;
 }
-function onGraphPress () {//1st try w/ zero at origin, p at origin.
+function topButtonHandler (termNum, last) {//1st try w/ zero at origin, p at origin.
   //order is consT, zOrigin, pOrigin, zReal, pReal, (might be > 1), zComp, pComp
   //might set array to track # left behind. use name to find stuff.
   let start = new Date().getTime();//1553 ms.
   const names = BDO.namesOfIds;
   var series = BDO.topMagSeries, series2 = BDO.topPhaseSeries, magDescs = BDO.magDescs, phaseDescs = BDO.phaseDescs;
-  var magDescShown, phaseDescShown, bold = BDO.bold, faded = BDO.faded, xAxis, iLen, jLen;
-  iLen = names.length;
-  jLen = series.length;
-  for (let i=0; i<iLen; i++) {
-    if (document.getElementById(names[i]).checked) {
-      for (let j=0; j<jLen; j++) {
-        if (series[j].name == names[i]) {//find the dictionary of data with the right name
-          series[j] = updateAlpha(series[j], bold);
-          series2[j] = updateAlpha(series2[j], bold);
-          magDescShown = magDescs[j];//descriptions correspond to names.
-          phaseDescShown = phaseDescs[j];
-          updateBox(series[j].color, names[i]+" box");//series[j].name also works.
-        }
-        else if (series[j].name == BDO.lastClickedTopBoxName) {
-          series[j] = updateAlpha(series[j], faded);
-          series2[j] = updateAlpha(series2[j], faded);
-          updateBox(series[j].color, series[j].name+" box");
-        }
-      }
-      break;
-    }
-  }
+  var magDescShown, phaseDescShown, bold = BDO.bold, faded = BDO.faded, xAxis, 
+  magChart = BDO.individualMagChart, phaseChart = BDO.individualPhaseChart;
+  
+  series[termNum] = updateAlpha(series[termNum], bold);
+  series2[termNum] = updateAlpha(series2[termNum], bold);
+  magDescShown = magDescs[termNum];//descriptions correspond to names.
+  phaseDescShown = phaseDescs[termNum];
+  updateBox(series[termNum].color, names[termNum]+" box");
+
+  series[last] = updateAlpha(series[last], faded);
+  series2[last] = updateAlpha(series2[last], faded);
+  updateBox(series[last].color, series[last].name+" box");
   //plots the series with the ones not selected faded.
   // highchartsPlot(series, id, title, xAxis, yAxis, logOrLinear, tickInt) {
   xAxis = '&omega;, rad/S';
   
   //highchartsPlot(series, 'mag', '<b>Magnitude Plot</b>', xAxis, 'Magnitude dB');
   //highchartsPlot(series2, 'phase', '<b>Phase Plot</b>', xAxis, 'Phase in Degrees', 'logarithmic', 90);
-  BDO.individualMagChart.update({series: series});
-  BDO.individualPhaseChart.update({series: series2});
+  magChart.update({series: series});
+  phaseChart.update({series: series2}); //~ 960 ms
+  
+  /*magChart.series[termNum].options.color = series[termNum].color;
+  magChart.series[termNum].update(series[termNum].color);
+  phaseChart.series[termNum].options.color = series[termNum].color;
+  phaseChart.series[termNum].update(series[termNum].color);
+  
+  magChart.series[last].options.color = series2[last].color;
+  magChart.series[last].update(series[last].color);
+  phaseChart.series[last].options.color = series2[last].color;
+  phaseChart.series[last].update(series[last].color);*/
+
+  //magChart.series[last].options.color.update(series[last].options.color);
+  //phaseChart.series[last].options.color.update(series[last].options.color);
   document.getElementById('topDescription').innerHTML = magDescShown+'<br>'+phaseDescShown;
-  console.log((new Date().getTime() - start).toString() + ' ms');
+  let time = new Date().getTime() - start;
+  console.log(time.toString() + ' ms');
 }
 //function rounds a number to a decimal # of decimal places.
 function roundDecimal (num, decimal) {
@@ -1053,7 +1044,7 @@ function realData (w, sign, termIndex) {
   //might do together description here instead. might be faster. 
   return [magExactData, phaseExactData, magApproxData, phaseApproxData];
 }
-function compConjugateData(w, sign, termIndex) {
+function compConjugateData (w, sign, termIndex) {
   let realPart = parseFloat(BDO.terms[termIndex].value.re);
   let imagPart = parseFloat(BDO.terms[termIndex].value.im);
   let w0 = Math.sqrt(realPart*realPart + imagPart*imagPart);
@@ -1063,7 +1054,7 @@ function compConjugateData(w, sign, termIndex) {
   let exp = BDO.terms[termIndex].mult, zetaTemp = zeta(BDO.terms[termIndex].value),
   jMax = BDO.wLen, x, base, peak, lowerBound, upperBound,
   middleDenominator, a, b, theta, breakW = 1;
-  BDO.terms[termIndex].zeta = zetaTemp;
+  BDO.terms[termIndex].zeta = parseFloat(zetaTemp);
   BDO.terms[termIndex].magBreakpt = 1;
   BDO.terms[termIndex].magSlope = sign*20*exp;
   if (zetaTemp < 0) {
