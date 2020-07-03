@@ -353,7 +353,7 @@ function getData () {
   checkHtml = "<div id='checkboxes' style='float:left;'><br>Elements Detected: <br>";
   checkHtml += "<input type='radio' id='" + id + "0' onclick=\"onTopCheckOne(this.id)\" checked></input>";
   checkHtml += "<label for='" + id + "0'>"+ name +"</label>";
-  graphHtml +=  "<div id='mag' style='float:right;'></div>";
+  graphHtml =  "<div id='mag' style='float:right;'></div>";
   graphHtml += "<div id='phase' style='float:right;'></div><br>";
   graphHtml += "<p id='topDescription' style='float:left;'></p><br>";
 
@@ -574,7 +574,7 @@ function getData () {
       [print, print2] = compToStr(terms[i].value);
       w0Mag = BDO.terms[i].w0.toPrecision(3);
       zMag = BDO.terms[i].zeta.toPrecision(3);
-      name = 'Complex Zero, ' + terms[i].tHw + '= '+w0Mag + ', ' + terms[i].tHz + ' = ' +zMag;
+      name = 'Complex Zero, ' + terms[i].tHw + '= '+w0Mag + ', <br>' + terms[i].tHz + ' = ' +zMag;
       magSeries.push({
         name: 'Complex Zero ' + print,
         color: colors[colorIndex],
@@ -640,7 +640,7 @@ function getData () {
       [print, print2] = compToStr(terms[i].value);
       w0Mag = BDO.terms[i].w0.toPrecision(3);
       zMag = BDO.terms[i].zeta.toPrecision(3);
-      name = 'Complex Pole, ' + terms[i].tHw + '= '+w0Mag + ', ' + terms[i].tHz + ' = ' +zMag;
+      name = 'Complex Pole, ' + terms[i].tHw + '= '+w0Mag + ', <br>' + terms[i].tHz + ' = ' +zMag;
       magSeries.push({
         name: 'Complex Pole ' + print,
         color: colors[colorIndex],

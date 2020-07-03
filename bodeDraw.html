@@ -307,29 +307,29 @@
       <p>Now the transfer function is in the form we need to apply our rules to draw the Bode plot.</p>
     </div>
   </div>
-
-  <div id="graphOptions"></div>
-  <div id="graphs"></div><br><br><br>
-  <h2 style="clear:both;">Putting It All Together</h2>
-  <h5>Magnitude</h5>
-  <div id="togetherMagDesc" style="clear:both;"></div>
-  <!--<div id="togetherPhaseDesc"></div>-->
-  <!-- I think it is easier to understand each description if they are above their respetive plots,
-  instead of having to scroll between the phase plot and its description.-->
-  <br><div id='togetherMagPlot'></div>
-  <h5>Phase</h5>
-  <div id="togetherPhaseDesc"></div>
-  <br><div id='togetherPhasePlot'></div>
-  <br>Input sinusoid of form cos(&omega;t + &phi;)
-  <br><label for='freqInput'>Input a Frequency &omega;</label><input type='text' id='freqInput' value='1.0'></input>
-  <br><label for='phaseInput'>Input a phase &phi;</label><input type='text' id='phaseInput' value='1.0'></input>
-  <br><label for='sinusoidInput'>Input sinusoid: </label><div id='sinusoidInput'>cos(1.0t + 1.0)</div>
-  <br><input type='button' onclick='graphSinusoid()' value='Find Output Function'></input>
-  <br><label for='sinusoidOutput'>Output sinusoid: </label><div id='sinusoidOutput'>cos(&omega;t + &phi; + &theta;)</div>
-  <br><div id='sinusoidPlot'></div>
-  <div id="bode"></div>
-  <div id="bodePhase"></div>
-
+  <div class="wrapper">
+    <div id="graphOptions"></div>
+    <div id="graphs"></div><br><br><br>
+    <h2 style="clear:both;">Putting It All Together</h2>
+    <h5>Magnitude</h5>
+    <div id="togetherMagDesc" style="clear:both;"></div>
+    <!--<div id="togetherPhaseDesc"></div>-->
+    <!-- I think it is easier to understand each description if they are above their respetive plots,
+    instead of having to scroll between the phase plot and its description.-->
+    <br><div id='togetherMagPlot'></div>
+    <h5>Phase</h5>
+    <div id="togetherPhaseDesc"></div>
+    <br><div id='togetherPhasePlot'></div>
+    <br>Input sinusoid of form cos(&omega;t + &phi;)
+    <br><label for='freqInput'>Input a Frequency &omega;</label><input type='text' id='freqInput' value='1.0'></input>
+    <br><label for='phaseInput'>Input a phase &phi;</label><input type='text' id='phaseInput' value='1.0'></input>
+    <br><label for='sinusoidInput'>Input sinusoid: </label><div id='sinusoidInput'>cos(1.0t + 1.0)</div>
+    <br><input type='button' onclick='graphSinusoid()' value='Find Output Function'></input>
+    <br><label for='sinusoidOutput'>Output sinusoid: </label><div id='sinusoidOutput'>cos(&omega;t + &phi; + &theta;)</div>
+    <br><div id='sinusoidPlot'></div>
+    <div id="bode"></div>
+    <div id="bodePhase"></div>
+  </div>
   <!-- InstanceEndEditable -->
 <hr class="fullWidth">
 <p style="text-align: right; font-size: smaller"><a href="../References.html">References</a></p>
