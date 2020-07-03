@@ -353,9 +353,9 @@ function getData () {
   checkHtml = "<div id='checkboxes' style='float:left;'><br>Elements Detected: <br>";
   checkHtml += "<input type='radio' id='" + id + "0' onclick=\"onTopCheckOne(this.id)\" checked></input>";
   checkHtml += "<label for='" + id + "0'>"+ name +"</label>";
-  graphHtml =  "<div id='mag' style='float:right;'></div>";
+  /*graphHtml =  "<div id='mag' style='float:right;'></div>";
   graphHtml += "<div id='phase' style='float:right;'></div><br>";
-  graphHtml += "<p id='topDescription' style='float:left;'></p><br>";
+  graphHtml += "<p id='topDescription' style='float:left;'></p><br>";*/
 
   magDescs.push('The constant term is K= ~'+roundDecimal(constantK, 3).toString()+' = '+terms[0].magData[0][1].toPrecision(3)+' dB = 20log10(|K|).');
   //1 description, 1 graph
@@ -749,8 +749,8 @@ function getData () {
   colorIndex++;
   //graphCheck = document.getElementById('graphOptions');
   //graphs = document.getElementById('graphs');
-  document.getElementById('graphOptions').innerHTML = checkHtml+"</div";
-  document.getElementById('graphs').innerHTML = graphHtml;
+  document.getElementById('individualGraphOptions').innerHTML = checkHtml+"</div";
+  //document.getElementById('graphs').innerHTML = graphHtml;
   document.getElementById('togetherMagDesc').innerHTML = togetherMagHtml;
   document.getElementById('togetherPhaseDesc').innerHTML = togetherPhaseHtml;
   document.getElementById('topDescription').innerHTML = magDescs[0]+'<br>'+phaseDescs[0];
@@ -760,8 +760,8 @@ function getData () {
   // highchartsPlot(series, id, title, xAxis, yAxis, logOrLinear, tickInt) {
   //highchartsPlot(magSeries, 'bode', 'Magnitude Plot', xAxis, yAxisMag);
   //highchartsPlot(phaseSeries, 'bodePhase', 'Phase Plot', xAxis, yAxisPhase, 'logarithmic', 90);
-  BDO.individualMagChart = highchartsPlot(topMagSeries, 'mag', '<b>Magnitude Plot</b>', xAxis, yAxisMag);
-  BDO.individualPhaseChart = highchartsPlot(topPhaseSeries, 'phase', '<b>Phase Plot</b>', xAxis, yAxisPhase, 'logarithmic', 90);
+  BDO.individualMagChart = highchartsPlot(topMagSeries, 'individualMag', '<b>Magnitude Plot</b>', xAxis, yAxisMag);
+  BDO.individualPhaseChart = highchartsPlot(topPhaseSeries, 'individualPhase', '<b>Phase Plot</b>', xAxis, yAxisPhase, 'logarithmic', 90);
   highchartsPlot(togetherMagSeries, 'togetherMagPlot', '<b>Magnitude Plot</b>', xAxis, yAxisMag);
   highchartsPlot(togetherPhaseSeries, 'togetherPhasePlot', '<b>Phase Plot</b>', xAxis, yAxisPhase, 'logarithmic', 90);
 
@@ -904,7 +904,6 @@ function topButtonHandler (termNum, last) {//1st try w/ zero at origin, p at ori
   //highchartsPlot(series2, 'phase', '<b>Phase Plot</b>', xAxis, 'Phase in Degrees', 'logarithmic', 90);
   magChart.update({series: series});
   phaseChart.update({series: series2}); //~ 960 ms
-  
   /*magChart.series[termNum].options.color = series[termNum].color;
   magChart.series[termNum].update(series[termNum].color);
   phaseChart.series[termNum].options.color = series[termNum].color;
@@ -1404,19 +1403,22 @@ function highchartsPlot (series, id, title, xAxis, yAxis, logOrLinear, tickInt) 
   if (logOrLinear == undefined) {
     logOrLinear = 'logarithmic';
   }
-  if (id == 'mag' || id == 'phase') {
+  if (id == 'individualMag' || id == 'individualPhase') {
     legend = false;//disable legend.
   }
   let chart = Highcharts.chart(id, {
     chart: {
         type: 'line',
-        zoomType: 'xy',
-        width: width,
+        zoomType: 'xy',//width: width
         spacing: [10, 0, 15, 0]//top, right, bottom, left
     },
     title: {
         text: title,
-        useHTML: true
+        useHTML: true,
+        style: {
+          color: '#333333',
+          fontSize: '0.5em'
+        }
     },
     tooltip: {
       enabled: false

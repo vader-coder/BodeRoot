@@ -70,6 +70,43 @@
 #MathJax_MSIE_Frame {position: absolute; top: 0; left: 0; width: 0px; z-index: 101; border: 0px; margin: 0px; padding: 0px}
 .MathJax_Error {color: #CC0000; font-style: italic}
 </style>
+<style>
+  .wrapper {
+    display:grid;
+    grid-template-columns: 1fr 3fr;
+    min-height: 70vh;/*500/720 = .69. 70% of screen height.*/
+    max-height: 83vh;
+  }
+  .wrapper2 {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    /*min-height: 70vh;
+    max-height: 83vh;*/
+  }
+  /*.wrapper > div{
+    background: #eee;
+    padding: 1em;
+  }*/
+  .stacked {/*Two elements stacked on top of one another*/
+    display:grid;
+    grid-template-rows: 2fr 1fr;
+  }
+  .stackedEven {
+    display:grid;
+    grid-template-rows: 1fr 1fr;
+  }
+  .topDesc {
+    background: #F3E5AB;
+  }
+  .bottomDesc {
+    background: #FFC0CB;
+  }
+  #togetherDescs {
+    max-width: 400px;
+    font-size: 10px;
+  }
+  
+</style>
   <script src="https://lpsa.swarthmore.edu/complex/complex.js"></script>
 
   <script src="https://lpsa.swarthmore.edu/nerdamer/nerdamer.core.js"></script>
@@ -308,18 +345,53 @@
     </div>
   </div>
   <div class="wrapper">
-    <div id="graphOptions"></div>
-    <div id="graphs"></div><br><br><br>
-    <h2 style="clear:both;">Putting It All Together</h2>
-    <h5>Magnitude</h5>
-    <div id="togetherMagDesc" style="clear:both;"></div>
-    <!--<div id="togetherPhaseDesc"></div>-->
-    <!-- I think it is easier to understand each description if they are above their respetive plots,
-    instead of having to scroll between the phase plot and its description.-->
-    <br><div id='togetherMagPlot'></div>
-    <h5>Phase</h5>
-    <div id="togetherPhaseDesc"></div>
-    <br><div id='togetherPhasePlot'></div>
+    <div class="stackedEven">
+      <div id="individualGraphOptions" class="topDesc"></div>
+      <div id='topDescription' class="bottomDesc"></div>
+    </div>
+    <div class="stackedEven">
+      <div id="individualMag"></div>
+      <div id="individualPhase"></div>
+    </div>
+  </div>
+  <h2 style="text-align:center">Putting It All Together</h2><br>
+  <div class="wrapper2">
+    <div>
+      <div id="bigMagDesc" class="topDesc">
+        <h5>Magnitude</h5>
+        <div id="togetherMagDesc">
+        </div>  
+      </div>
+      <div id="bigPhaseDesc" class="bottomDesc">
+        <h5>Phase</h5>
+        <div id="togetherPhaseDesc">
+        </div>  
+      </div>
+    </div>
+    <div class="stackedEven">
+      <div id='togetherMagPlot'>
+      </div>
+      <div id='togetherPhasePlot'>
+      </div> 
+    </div>
+  </div>
+  <!--<h2>Putting It All Together</h2>
+  <div class="wapper">
+    <div class="stackedEven" id="togetherDescs">
+      <div id="bigMagDesc">
+        <h5>Magnitude</h5>
+        <div id="togetherMagDesc"></div>  
+      </div>
+      <div id="bigPhaseDesc">
+        <h5>Phase</h5>
+        <div id="togetherPhaseDesc"></div>  
+      </div>  
+    </div>
+    <div class="stackedEven">
+      <div id='togetherMagPlot'></div>
+      <div id='togetherPhasePlot'></div> 
+    </div>
+  </div>-->
     <br>Input sinusoid of form cos(&omega;t + &phi;)
     <br><label for='freqInput'>Input a Frequency &omega;</label><input type='text' id='freqInput' value='1.0'></input>
     <br><label for='phaseInput'>Input a phase &phi;</label><input type='text' id='phaseInput' value='1.0'></input>
@@ -329,7 +401,7 @@
     <br><div id='sinusoidPlot'></div>
     <div id="bode"></div>
     <div id="bodePhase"></div>
-  </div>
+  
   <!-- InstanceEndEditable -->
 <hr class="fullWidth">
 <p style="text-align: right; font-size: smaller"><a href="../References.html">References</a></p>
