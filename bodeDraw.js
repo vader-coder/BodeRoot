@@ -83,6 +83,7 @@ function BDOupdate() {
     dispTerms();
     cheevStop = new Date().getTime();
     getData();
+    graphSinusoid();
     setEventListeners();
     patStop = new Date().getTime();
     patStart = cheevStop;
@@ -320,7 +321,7 @@ function getData () {
   names = [], togetherPhaseDesc, togetherMagDesc, blackRGBA = 'rgba(0, 0, 0, 1)';
   var colors = ['rgba(0,114,189,'+bold+')','rgba(217,83,25,'+bold+')','rgba(237,177,32,'+bold+')','rgba(126,47,142,'+bold+')','rgba(119,172,148,'+bold+')','rgba(77,190,238,'+bold+')', 'rgba(162,20,47,'+bold+')'], colorIndex = 0;
   let magYIntFormula, phaseYIntFormula, magYIntDesc, initMagSlope = 0, magRestDesc = '', phaseRestDesc ='', termDesc;
-  let id = 'topTerm:';
+  let id = 'topTerm:', bothTotalMagSeries = [0, 0], bothTotalPhaseSeries = [0, 0];
   magYIntDesc = 'Since we have a constant C='+BDO.C.toString();
   for (let i=1; i<10001; i++) {
     w.push(roundDecimal(i*0.1, 1));//w.push(roundDecimal(1+ i*0.1, 1)); might want multiple versions of this.
@@ -366,6 +367,8 @@ function getData () {
   color: colors[colorIndex],data: constPhase});
   topMagSeries.push(copyObject(magSeries[magSeries.length-1]));
   topPhaseSeries.push(copyObject(phaseSeries[phaseSeries.length-1]));
+  topMagSeries[0].lineWidth = 4;
+  topPhaseSeries[0].lineWidth = 4;
   checkHtml += getBox(topMagSeries[topMagSeries.length-1].color, id+'0')+"<br>";
   colorIndex++;
   desc += '<br><a href="https://lpsa.swarthmore.edu/Bode/BodeHow.html#A%20Constant%20Term">Details</a>';
@@ -726,23 +729,29 @@ function getData () {
     data: BDO.allPhaseApprox,
     dashStyle: 'shortdot'
   });
+  let magLen = magSeries.length, phaseLen = phaseSeries.length;
   togetherMagSeries = copyObject(topMagSeries);
-  togetherMagSeries.push(copyObject(magSeries[magSeries.length-2]));
-  togetherMagSeries.push(copyObject(magSeries[magSeries.length-1]));
+  togetherMagSeries.push(copyObject(magSeries[magLen-2]));
+  togetherMagSeries.push(copyObject(magSeries[magLen-1]));
   togetherMagSeries[0] = updateAlpha(togetherMagSeries[0], faded);
   togetherPhaseSeries = copyObject(topPhaseSeries);
-  togetherPhaseSeries.push(copyObject(phaseSeries[phaseSeries.length-2]));
-  togetherPhaseSeries.push(copyObject(phaseSeries[phaseSeries.length-1]));
+  togetherPhaseSeries.push(copyObject(phaseSeries[phaseLen-2]));
+  togetherPhaseSeries.push(copyObject(phaseSeries[phaseLen-1]));
   togetherPhaseSeries[0] = updateAlpha(togetherPhaseSeries[0], faded);
+  bothTotalMagSeries[0] = magSeries[magLen-2];
+  bothTotalMagSeries[1] = magSeries[magLen-1];
+  bothTotalPhaseSeries[0] = phaseSeries[magLen-2];
+  bothTotalPhaseSeries[1] = phaseSeries[magLen-1];
+  
   let lastMag = togetherMagSeries.length-1, lastPhase = togetherPhaseSeries.length-1;
   togetherPhaseSeries[lastPhase].dashStyle = 'Solid';
   togetherPhaseSeries.splice(lastPhase-1, 1);//remove total exact.
   togetherMagSeries[lastMag].dashStyle = 'Solid';
   togetherMagSeries.splice(lastMag-1, 1);//remove total exact.
-  let togetherMagHtml = magYIntDesc+ " then the magnitude y-intercept is " + magYIntFormula;
+  let togetherMagHtml = magYIntDesc+ " then the starting magnitude on the left side is " + magYIntFormula;
   togetherMagHtml += " and the initial slope is "+initMagSlope.toString() + "dB per decade.";
   togetherMagHtml += "<ul>"+magRestDesc+"</ul>";
-  let togetherPhaseHtml = magYIntDesc+" then the phase y-intercept is "+phaseYIntFormula+".<ul>"+phaseRestDesc+".</ul><br><small><sup>&dagger;</sup>(&omega; , &theta;)</small>";
+  let togetherPhaseHtml = magYIntDesc+" then the starting phase on the left side is "+phaseYIntFormula+".<ul>"+phaseRestDesc+".</ul><br><small><sup>&dagger;</sup>(&omega; , &theta;)</small>";
   //togetherHtml += 'with a slope of '+ BDO.startslope + 'dB per decade.';
   //DO this tomorrow. slope will be 0 + -20dB/decade*mult + 20dB/decade*mult (I think)
   //need to add starting slop eright after magYIntDesc.
@@ -764,6 +773,9 @@ function getData () {
   BDO.individualPhaseChart = highchartsPlot(topPhaseSeries, 'individualPhase', '<b>Phase Plot</b>', xAxis, yAxisPhase, 'logarithmic', 90);
   highchartsPlot(togetherMagSeries, 'togetherMagPlot', '<b>Magnitude Plot</b>', xAxis, yAxisMag);
   highchartsPlot(togetherPhaseSeries, 'togetherPhasePlot', '<b>Phase Plot</b>', xAxis, yAxisPhase, 'logarithmic', 90);
+  highchartsPlot(bothTotalMagSeries, 'bothTotalMag', '<b>Total Magnitude Plot</b>', xAxis, yAxisMag);
+  highchartsPlot(bothTotalPhaseSeries, 'bothTotalPhase', '<b>Total Phase Plot</b>', xAxis, yAxisPhase, 'logarithmic', 90);
+
 
   BDO.magSeries = magSeries;
   BDO.phaseSeries = phaseSeries;
@@ -785,19 +797,26 @@ function setEventListeners() {
   const phaseSource = document.getElementById('phaseInput');
   freqSource.addEventListener('input', freqInputHandler);
   freqSource.addEventListener('propertychange', freqInputHandler);
+  freqSource.addEventListener('keyup', sinusoidEnterHandler);
   phaseSource.addEventListener('input', phaseInputHandler);
   phaseSource.addEventListener('propertychange', phaseInputHandler);
+  phaseSource.addEventListener('keyup', sinusoidEnterHandler);
 }
 //call when input Magnitude or phase changes.
 function freqInputHandler(e) {
   let omega = e.target.value;
   let phi = document.getElementById('phaseInput').value;
-  document.getElementById('sinusoidInput').textContent = 'cos('+omega+'t + '+phi+')';
+  document.getElementById('sinusoidInput').innerHTML = 'cos('+omega+' rad &middot; t + '+phi+'&deg;)';  
 }
 function phaseInputHandler(e) {
   let omega = document.getElementById('freqInput').value;
   let phi = e.target.value;
-  document.getElementById('sinusoidInput').textContent = 'cos('+omega+'t + '+phi+')';
+  document.getElementById('sinusoidInput').innerHTML = 'cos('+omega+' rad &middot; t + '+phi+'&deg;)';
+}
+function sinusoidEnterHandler(e) {
+  if (e.keyCode == 13) {//enter key
+    graphSinusoid();
+  }
 }
 function graphSinusoid() {
   let start = new Date().getTime();
@@ -811,23 +830,30 @@ function graphSinusoid() {
   }
   if (omega <= BDO.w[BDO.wLen-1] && (omega*10) == Math.round(omega*10)) {
     wIndex = BDO.w.indexOf(roundDecimal(omega, 1));
-    mag = BDO.allMag[wIndex][1].toString();
+    mag = BDO.allMag[wIndex][1].toPrecision(3);
     theta = BDO.allPhase[wIndex][1];
-    phase = theta + phi;
+    phase = normalize(theta + phi);
     if (phase > 0) {
-      html = mag+'cos('+BDO.omega.value+'t + '+phase.toString()+')';
+      phase = phase.toPrecision(3);
+      html = mag+' dB &middot; cos('+BDO.omega.value+' rad &middot; t + '+phase+'&deg;)';
     }
     else {
-      html = mag+'cos('+BDO.omega.value+'t - '+Math.abs(phase).toString()+')';
+      phase = phase.toPrecision(3);
+      html = mag+' dB &middot; cos('+BDO.omega.value+' rad &middot; t - '+Math.abs(phase)+'&deg;)';
     }
   }
   else {
     [html, mag, phase] = getSinusoid(omega, phi);
   }
+  let outputStr = mag+'cos('+omega+'*t '+phase+')';
+  let inputStr = mag+'cos('+omega+'*t '+phi+')';
+  //maxDiff(mag, omega, phi, phase)
+  maxDiff(mag, omega, phi, phase);
+  html+= '<br><br>Magnitude: ' + mag + ' dB<br>' + 'Phase: '+phase+' &deg;';
   document.getElementById('sinusoidOutput').innerHTML = html;
-  period = 2*Math.PI/omega;//period is reciprocal of frequency.
+  period = 2*Math.PI/omega;//period is reciprocal of frequency
   //desmos api would look better for this.
-  tMax = Math.ceil(period*3);
+  tMax = parseFloat((20/(Math.pow(10, (Math.round(Math.log10(omega)))))).toPrecision(3));//Math.ceil(period*3);
   ptNum = 1000;
   tInterval = truncDecimal(tMax/ptNum, 10);
   tCount = 0;
@@ -851,14 +877,51 @@ function graphSinusoid() {
     data: outputData
   }];
   let chart = BDO.sinusoidChart;
-  if (chart) {//already made
-    chart.update({series: series});
+  if (chart) {//already made 
+    //  let xMax = data[data.length-1][0], xMin = data[0][0];
+    let tMin = inputData[0][0], tMax = inputData[inputData.length-1][0];
+    chart.update({series: series, xAxis: {min: tMin, max: tMax}});
   }
   else {
     BDO.sinusoidChart = highchartsPlot(series, 'sinusoidPlot', '<b>Sinusoids</b>', 'Time', 'Dependent Variable', 'linear');
   }
+  document.getElementById('tMax').innerHTML = 'tMax: '+tMax.toString();
   console.log((new Date().getTime() - start.toString()) + 'ms');
 }
+/*Function is no good if I can't get it to work!
+function maxDiff(mag, omega, phi, phase ) {//inputStr, outputStr) {
+  let outputConst = (-1*parseFloat(mag)*parseFloat(omega)).toPrecision(3);
+  let inputConst = -1*omega;
+  let outputDiff = outputConst+'*sin('+omega+'*t + '+phase+')';//nerdamer.diff(outputStr, 't');
+  let inputDiff = inputConst.toString()+'*sin('+omega+'*t + '+phi+')';//nerdamer.diff(inputStr, 't');
+  let solution = nerdamer("nerdamer('solve(3x=1, x)')");
+  let outputMax = nerdamer("nerdamer('solve("+outputDiff+"=0, t)')").toString();
+  let inputMax = nerdamer.solve(inputDiff+'=0', 't').toString();
+}*/
+function maxSinusoid(inputData, outputData) {
+  let inputY = [], outputY = [], len = inputData.length;
+  for (let i=0; i<len; i++) {
+    inputY.push(inputData[i][1]);
+    outputY.push(outputData[i][1]);
+  }
+  let max1 = Math.max(...inputY);
+  let max2 = Math.max(...outputY);
+  return Math.max(max1, max2);
+}
+function maxSinusoid2(inputData, outputData) {
+  let len = inputData.length;
+  let max1 = inputData[0][1], max2 = outputData[0][1];
+  for (let i=0; i<len; i++) {
+    if (max1 < inputData[i][1]) {
+      max1 = inputData[i][1];
+    }
+    if (max2 < ouputData[i][1]) {
+      max2 = outputData[i][1];
+    }
+  }
+  return Math.max(max1, max2);
+}//which is faster?
+
 //called when one of the checkboxes is checked.
 function onTopCheckOne (id) {
   let termNum = parseInt(id.slice(id.indexOf(':')+1));//slice includes char at index
@@ -888,13 +951,17 @@ function topButtonHandler (termNum, last) {//1st try w/ zero at origin, p at ori
   let boxId = "topTerm:"+termNum.toString()+" box";
   let lastBoxId = "topTerm:"+last.toString()+" box";
   series[termNum] = updateAlpha(series[termNum], bold);
+  series[termNum].lineWidth = 4;
   series2[termNum] = updateAlpha(series2[termNum], bold);
+  series2[termNum].lineWidth = 4;
   magDescShown = magDescs[termNum];//descriptions correspond to names.
   phaseDescShown = phaseDescs[termNum];
   updateBox(series[termNum].color, boxId);
 
   series[last] = updateAlpha(series[last], faded);
+  series[last].lineWidth = 2;
   series2[last] = updateAlpha(series2[last], faded);
+  series[last].lineWidth = 2;
   updateBox(series[last].color, lastBoxId);
   //plots the series with the ones not selected faded.
   // highchartsPlot(series, id, title, xAxis, yAxis, logOrLinear, tickInt) {
@@ -944,6 +1011,15 @@ function rad2Degrees(rad) {//converts radians to degrees.
 function getZeta (img, real) {
   var temp = Math.atan2(img, real);//y, x -> y/x, opposite/ajdacent
   return Math.cos(temp);
+}
+function normalize(angle) {
+    while (angle <= -180) {
+      angle += 360;
+    }
+    while (angle > 180) {
+      angle -= 360;
+    } 
+    return angle;
 }
 //turns an object of {re: 'a', im: 'b'} into 'a+bi'
 //this one assumes we are only making one graph for a pair of complex conjugates
@@ -1216,8 +1292,11 @@ function getSinusoid(omega, phi) {
       theta += sign*exp*Math.abs(rad2Degrees(Math.atan2(2*zetaTemp*a, b)));
     }
   }
-  phase = phi+theta;
-  return [mag.toString()+'cos('+omega.toString()+' '+phase.toString()+')', mag, phase];
+  phase = normalize(phi+theta);
+  mag = mag.toPrecision(3);
+  omega = omega.toPrecision(3);
+  phase.toPrecision(3);
+  return [mag+' &middot; dB cos('+omega+' rad &middot; t '+phase+'&deg;)', parseFloat(mag), parseFloat(phase)];
 }
 
 /* This function creates all the TeX and html for displaying the equations.
@@ -1398,13 +1477,16 @@ function highchartsPlot (series, id, title, xAxis, yAxis, logOrLinear, tickInt) 
   let legend = true, width = parseInt(screen.width)/3, data = series[0].data;
   let xMax = data[data.length-1][0], xMin = data[0][0];
   if (xAxis == undefined) {
-    xAxis = 'ω';
+    xAxis = '&omega;, rad';
   }
   if (logOrLinear == undefined) {
     logOrLinear = 'logarithmic';
   }
-  if (id == 'individualMag' || id == 'individualPhase') {
+  if (id == 'individualMag' || id == 'individualPhase', id == 'bothTotalMag' || id=='bothTotalPhase') {
     legend = false;//disable legend.
+  }
+  if (title.indexOf('Magnitude') > -1) {
+    tickInt = 20;
   }
   let chart = Highcharts.chart(id, {
     chart: {
