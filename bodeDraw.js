@@ -36,6 +36,10 @@ function BDO_Obj() {
     this.individualMagChart = '';
     this.individualPhaseChart = '';
     this.sinusoidChart;
+    this.bothMagChart;
+    this.bothPhaseChart;
+    this.bothTotalMagSeries;
+    this.bothTotalPhaseSeries;
 };//way to just reference chart from id?
 
 // Create the object that has information needed for each "term"
@@ -82,6 +86,10 @@ function BDOupdate() {
     getTerms();
     dispTerms();
     cheevStop = new Date().getTime();
+    if (BDO.terms.length > 14) {
+      alert("This page is not equipped to handle a transfer function with more than 14 terms.");
+      location.reload();//reload document.
+    }
     getData();
     graphSinusoid();
     setEventListeners();
@@ -313,19 +321,36 @@ function getTerms() {
 //updates BDO object to contain data for each term.
 function getData () {
   let terms = BDO.terms;
-  let w = BDO.w, constantK = parseInt(BDO.K), w1, w2, yEnd, w0, zeta_;
+  let constantK = parseFloat(BDO.K), w1, w2, yEnd, w0, zeta_;
   let constMag = [], constPhase = [], magSeries = [], phaseSeries = [],
   topMagSeries = [], topPhaseSeries = [], desc, magDescs = [], phaseDescs = [],
   togetherMagSeries = [], togetherPhaseSeries = [], w0Mag, zMag, print, print2, name,
   descIndex, bold = BDO.bold, faded = BDO.faded, checkHtml, graphHtml, graphs, graphCheck, iLen,
   names = [], togetherPhaseDesc, togetherMagDesc, blackRGBA = 'rgba(0, 0, 0, 1)';
-  var colors = ['rgba(0,114,189,'+bold+')','rgba(217,83,25,'+bold+')','rgba(237,177,32,'+bold+')','rgba(126,47,142,'+bold+')','rgba(119,172,148,'+bold+')','rgba(77,190,238,'+bold+')', 'rgba(162,20,47,'+bold+')'], colorIndex = 0;
+  var colors = ['rgba(0,114,189,'+bold+')',
+  'rgba(217,83,25,'+bold+')',
+  'rgba(237,177,32,'+bold+')',
+  'rgba(126,47,142,'+bold+')',
+  'rgba(119,172,148,'+bold+')',
+  'rgba(77,190,238,'+bold+')', 
+  'rgba(162,20,47,'+bold+')',
+  'rgba(0,114,189,'+bold+')',
+  'rgba(217,83,25,'+bold+')',
+  'rgba(237,177,32,'+bold+')',
+  'rgba(126,47,142,'+bold+')',
+  'rgba(119,172,148,'+bold+')',
+  'rgba(77,190,238,'+bold+')', 
+  'rgba(162,20,47,'+bold+')'], colorIndex = 0;
+  let lastSolidIndex = colors.length/2-1;//14/2 = 7, 7-1 = 6.0-6, 7-13
   let magYIntFormula, phaseYIntFormula, magYIntDesc, initMagSlope = 0, magRestDesc = '', phaseRestDesc ='', termDesc;
-  let id = 'topTerm:', bothTotalMagSeries = [0, 0], bothTotalPhaseSeries = [0, 0];
+  let id = 'topTerm:', bothTotalMagSeries = [0, 0], bothTotalPhaseSeries = [0, 0], dashStyle = 'Solid';
   magYIntDesc = 'Since we have a constant C='+BDO.C.toString();
-  for (let i=1; i<10001; i++) {
-    w.push(roundDecimal(i*0.1, 1));//w.push(roundDecimal(1+ i*0.1, 1)); might want multiple versions of this.
-    constMag.push([w[i-1], 20*Math.log10(constantK)]);
+  let w = BDO.w;
+  if (!w.length) {//if w is an empty array.
+    for (let i=1; i<10001; i++) {
+      w.push(roundDecimal(i*0.1, 1));//w.push(roundDecimal(1+ i*0.1, 1)); might want multiple versions of this.
+      constMag.push([w[i-1], 20*Math.log10(constantK)]);
+    }
   }
   BDO.wLen = w.length;
   BDO.magFormula += 'Magnitude: <br>20log<sub>10</sub>('+constantK.toString()+') ';
@@ -386,12 +411,14 @@ function getData () {
       magSeries.push({
         name: name,
         color: colors[colorIndex],
-        data: terms[i].magData
+        data: terms[i].magData,
+        dashStyle: 'Solid' 
       });
       phaseSeries.push({
         name: name,
         color: colors[colorIndex],
-        data: terms[i].phaseData
+        data: terms[i].phaseData,
+        dashStyle: 'Solid' 
       });
       topMagSeries.push(copyObject(magSeries[magSeries.length-1]));
       topMagSeries[topMagSeries.length-1] = updateAlpha(topMagSeries[topMagSeries.length-1], faded);
@@ -422,12 +449,14 @@ function getData () {
       magSeries.push({
         name: name,
         color: colors[colorIndex],
-        data: terms[i].magData
+        data: terms[i].magData,
+        dashStyle: 'Solid' 
       });
       phaseSeries.push({
         name: name,
         color: colors[colorIndex],
-        data: terms[i].phaseData
+        data: terms[i].phaseData, 
+        dashStyle: 'Solid' 
       });
       topMagSeries.push(copyObject(magSeries[magSeries.length-1]));
       topMagSeries[topMagSeries.length-1] = updateAlpha(topMagSeries[topMagSeries.length-1], faded);
@@ -452,25 +481,20 @@ function getData () {
       [terms[i].magData, terms[i].phaseData, terms[i].magDataApprox, terms[i].phaseDataApprox] = realData(w, 1, i);
       terms[i].sign = 1;
       name = 'Real Zero, ' + terms[i].tHw + '= '+terms[i].value;
-      magSeries.push({
-        name: 'Real Zero ' + terms[i].value,
-        color: colors[colorIndex],
-        data: terms[i].magData
-      });
+      if (colorIndex > lastSolidIndex) {
+        dashStyle = 'shortdot';
+      }
       magSeries.push({
         name: name,
         color: colors[colorIndex],
-        data: terms[i].magDataApprox
-      });
-      phaseSeries.push({
-        name: 'Real Zero ' + terms[i].value,
-        color: colors[colorIndex],
-        data: terms[i].phaseData
+        data: terms[i].magDataApprox, 
+        dashStyle: dashStyle
       });
       phaseSeries.push({
         name: name,
         color: colors[colorIndex],
-        data: terms[i].phaseDataApprox
+        data: terms[i].phaseDataApprox,
+        dashStyle: dashStyle
       });
       topMagSeries.push(copyObject(magSeries[magSeries.length-1]));
       topMagSeries[topMagSeries.length-1] = updateAlpha(topMagSeries[topMagSeries.length-1], faded);
@@ -514,25 +538,20 @@ function getData () {
       terms[i].sign = -1;
       w0Mag = BDO.terms[i].w0.toPrecision(3);
       name = 'Real Pole, ' + terms[i].tHw + '= '+terms[i].value;
-      magSeries.push({
-        name: 'Real Pole ' + terms[i].value,
-        color: colors[colorIndex],
-        data: terms[i].magData
-      });
+      if (colorIndex > lastSolidIndex) {
+        dashStyle = 'shortdot';
+      }
       magSeries.push({
         name: name,
         color: colors[colorIndex],
-        data: terms[i].magDataApprox
-      });
-      phaseSeries.push({
-        name: 'Real Pole, ' + terms[i].value,
-        color: colors[colorIndex],
-        data: terms[i].phaseData
+        data: terms[i].magDataApprox,
+        dashStyle: dashStyle
       });
       phaseSeries.push({
         name: name,
         color: colors[colorIndex],
-        data: terms[i].phaseDataApprox
+        data: terms[i].phaseDataApprox,
+        dashStyle: dashStyle
       });
       topMagSeries.push(copyObject(magSeries[magSeries.length-1]));
       topMagSeries[topMagSeries.length-1] = updateAlpha(topMagSeries[topMagSeries.length-1], faded);
@@ -578,25 +597,20 @@ function getData () {
       w0Mag = BDO.terms[i].w0.toPrecision(3);
       zMag = BDO.terms[i].zeta.toPrecision(3);
       name = 'Complex Zero, ' + terms[i].tHw + '= '+w0Mag + ', <br>' + terms[i].tHz + ' = ' +zMag;
-      magSeries.push({
-        name: 'Complex Zero ' + print,
-        color: colors[colorIndex],
-        data: terms[i].magData
-      });
+      if (colorIndex > lastSolidIndex) {
+        dashStyle = 'shortdot';
+      }
       magSeries.push({
         name: name,
         color: colors[colorIndex],
-        data: terms[i].magDataApprox
-      });
-      phaseSeries.push({
-        name: 'Complex Zero ' + print,
-        color: colors[colorIndex],
-        data: terms[i].phaseData
+        data: terms[i].magDataApprox,
+        dashStyle: dashStyle
       });
       phaseSeries.push({
         name: name,
         color: colors[colorIndex],
-        data: terms[i].phaseDataApprox
+        data: terms[i].phaseDataApprox,
+        dashStyle: dashStyle
       });
       topMagSeries.push(copyObject(magSeries[magSeries.length-1]));
       topMagSeries[topMagSeries.length-1] = updateAlpha(topMagSeries[topMagSeries.length-1], faded);
@@ -644,25 +658,20 @@ function getData () {
       w0Mag = BDO.terms[i].w0.toPrecision(3);
       zMag = BDO.terms[i].zeta.toPrecision(3);
       name = 'Complex Pole, ' + terms[i].tHw + '= '+w0Mag + ', <br>' + terms[i].tHz + ' = ' +zMag;
-      magSeries.push({
-        name: 'Complex Pole ' + print,
-        color: colors[colorIndex],
-        data: terms[i].magData
-      });
+      if (colorIndex > lastSolidIndex) {
+        dashStyle = 'shortdot';
+      }
       magSeries.push({
         name: name,
         color: colors[colorIndex],
-        data: terms[i].magDataApprox
-      });
-      phaseSeries.push({
-        name: 'Complex Pole ' + print,
-        color: colors[colorIndex],
-        data: terms[i].phaseData
+        data: terms[i].magDataApprox,
+        dashStyle: dashStyle
       });
       phaseSeries.push({
         name: name,
         color: colors[colorIndex],
-        data: terms[i].phaseDataApprox
+        data: terms[i].phaseDataApprox,
+        dashStyle: dashStyle
       });
       topMagSeries.push(copyObject(magSeries[magSeries.length-1]));
       topMagSeries[topMagSeries.length-1] = updateAlpha(topMagSeries[topMagSeries.length-1], faded);
@@ -769,18 +778,19 @@ function getData () {
   // highchartsPlot(series, id, title, xAxis, yAxis, logOrLinear, tickInt) {
   //highchartsPlot(magSeries, 'bode', 'Magnitude Plot', xAxis, yAxisMag);
   //highchartsPlot(phaseSeries, 'bodePhase', 'Phase Plot', xAxis, yAxisPhase, 'logarithmic', 90);
+  let plotStart = new Date().getTime();
   BDO.individualMagChart = highchartsPlot(topMagSeries, 'individualMag', '<b>Magnitude Plot</b>', xAxis, yAxisMag);
   BDO.individualPhaseChart = highchartsPlot(topPhaseSeries, 'individualPhase', '<b>Phase Plot</b>', xAxis, yAxisPhase, 'logarithmic', 90);
   highchartsPlot(togetherMagSeries, 'togetherMagPlot', '<b>Magnitude Plot</b>', xAxis, yAxisMag);
   highchartsPlot(togetherPhaseSeries, 'togetherPhasePlot', '<b>Phase Plot</b>', xAxis, yAxisPhase, 'logarithmic', 90);
-  highchartsPlot(bothTotalMagSeries, 'bothTotalMag', '<b>Total Magnitude Plot</b>', xAxis, yAxisMag);
-  highchartsPlot(bothTotalPhaseSeries, 'bothTotalPhase', '<b>Total Phase Plot</b>', xAxis, yAxisPhase, 'logarithmic', 90);
-
+  console.log((new Date().getTime() - plotStart).toString()+ " ms for plot")
 
   BDO.magSeries = magSeries;
   BDO.phaseSeries = phaseSeries;
   BDO.topMagSeries = topMagSeries;
   BDO.topPhaseSeries = topPhaseSeries;
+  BDO.bothTotalMagSeries = bothTotalMagSeries;
+  BDO.bothTotalPhaseSeries = bothTotalPhaseSeries;
   BDO.magDescs = magDescs;
   BDO.phaseDescs = phaseDescs;
   BDO.namesOfIds = names;
@@ -818,7 +828,7 @@ function sinusoidEnterHandler(e) {
     graphSinusoid();
   }
 }
-function graphSinusoid() {
+function graphSinusoid () {
   let start = new Date().getTime();
   let wIndex, mag, phase, html, theta, phi = parseFloat(BDO.phi.value), omega = parseFloat(BDO.omega.value);
   let inputData = [], outputData = [], t = [], series, period, tMax, tInterval, tCount, tLen, ptNum;//wish I had malloc.
@@ -845,13 +855,14 @@ function graphSinusoid() {
   else {
     [html, mag, phase] = getSinusoid(omega, phi);
   }
-  let outputStr = mag+'cos('+omega+'*t '+phase+')';
+  let phiRad = deg2Radians(phi);
+  let phaseRad = deg2Radians(phi);
+  /*let outputStr = mag+'cos('+omega+'*t '+phase+')';
   let inputStr = mag+'cos('+omega+'*t '+phi+')';
-  //maxDiff(mag, omega, phi, phase)
-  maxDiff(mag, omega, phi, phase);
+  maxDiff(mag, omega, phi, phase)*/
   html+= '<br><br>Magnitude: ' + mag + ' dB<br>' + 'Phase: '+phase+' &deg;';
   document.getElementById('sinusoidOutput').innerHTML = html;
-  period = 2*Math.PI/omega;//period is reciprocal of frequency
+  //period = 2*Math.PI/omega;//period is reciprocal of frequency
   //desmos api would look better for this.
   tMax = parseFloat((20/(Math.pow(10, (Math.round(Math.log10(omega)))))).toPrecision(3));//Math.ceil(period*3);
   ptNum = 1000;
@@ -864,8 +875,8 @@ function graphSinusoid() {
   }
   tLen = t.length;
   for (let i=0; i<tLen; i++) {
-    inputData.push([t[i], Math.cos(omega*t[i] + phi)]);
-    outputData.push([t[i], mag*Math.cos(omega*t[i] + phase)]);
+    inputData.push([t[i], Math.cos(omega*t[i] + phiRad)]);
+    outputData.push([t[i], mag*Math.cos(omega*t[i] + phaseRad)]);
   }//function highchartsPlot(series, id, title, xAxis, yAxis, logOrLinear, tickInt) 
   series = [{
     name: 'Input',
@@ -877,14 +888,55 @@ function graphSinusoid() {
     data: outputData
   }];
   let chart = BDO.sinusoidChart;
+  let bothTotalMagSeries = BDO.bothTotalMagSeries;
+  let bothTotalPhaseSeries = BDO.bothTotalPhaseSeries;
+  omega = roundDecimal(omega, 1);//rounded to 1 decimal place.
+
+  mag = bothTotalMagSeries[0].data;
+  let magApprox = bothTotalMagSeries[1].data;
+  phase = bothTotalPhaseSeries[0].data;
+  let phaseApprox = bothTotalPhaseSeries[1].data;
+  wIndex = getWIndex(omega);
   if (chart) {//already made 
     //  let xMax = data[data.length-1][0], xMin = data[0][0];
     let tMin = inputData[0][0], tMax = inputData[inputData.length-1][0];
-    chart.update({series: series, xAxis: {min: tMin, max: tMax}});
+    let yMax = Math.round(maxSinusoid2(inputData, outputData));
+    let yMin = -1*yMax;//shouldn't it be automatically doing this for us?
+    bothTotalMagSeries[2].data = [omega, mag[wIndex][1]];
+    bothTotalMagSeries[3].data = [omega, magApprox[wIndex][1]];
+    bothTotalPhaseSeries[2].data = [omega, phase[wIndex][1]];
+    bothTotalPhaseSeries[3].data = [omega, phaseApprox[wIndex][1]];
+    chart.update({series: series, xAxis: {min: tMin, max: tMax}, yAxis: {min: yMin, max: yMax}});
+    BDO.bothMagChart.update({series: bothTotalMagSeries});
+    BDO.bothPhaseChart.update({series: bothTotalPhaseSeries});
   }
   else {
+    bothTotalMagSeries.push({
+      name: "point",
+      data: [[omega, mag[wIndex][1]]], 
+      color: 'rgba(255,99,71, 1)'
+    });
+    bothTotalMagSeries.push({
+      name: "point Approx",
+      data: [[omega, magApprox[wIndex][1]]], 
+      color: 'rgba(255,99,71, 1)'
+    });
+    bothTotalPhaseSeries.push({
+      name: "point",
+      data: [[omega, phase[wIndex][1]]], 
+      color: 'rgba(255,99,71, 1)'
+    });
+    bothTotalPhaseSeries.push({
+      name: "point Approx",
+      data: [[omega, phaseApprox[wIndex][1]]], 
+      color: 'rgba(255,99,71, 1)'
+    });
     BDO.sinusoidChart = highchartsPlot(series, 'sinusoidPlot', '<b>Sinusoids</b>', 'Time', 'Dependent Variable', 'linear');
+    BDO.bothMagChart = highchartsPlot(bothTotalMagSeries, 'bothTotalMag', '<b>Total Magnitude Plot</b>', '&omega;, rad', '|H(j&omega;)|, dB');
+    BDO.bothPhaseChart = highchartsPlot(bothTotalPhaseSeries, 'bothTotalPhase', '<b>Total Phase Plot</b>', '&omega;, rad', '&ang;H(j&omega;), &deg;', 'logarithmic', 90);
   }
+  BDO.bothTotalMagSeries = bothTotalMagSeries;
+  BDO.bothTotalPhaseSeries = bothTotalPhaseSeries;
   document.getElementById('tMax').innerHTML = 'tMax: '+tMax.toString();
   console.log((new Date().getTime() - start.toString()) + 'ms');
 }
@@ -898,13 +950,13 @@ function maxDiff(mag, omega, phi, phase ) {//inputStr, outputStr) {
   let outputMax = nerdamer("nerdamer('solve("+outputDiff+"=0, t)')").toString();
   let inputMax = nerdamer.solve(inputDiff+'=0', 't').toString();
 }*/
-function maxSinusoid(inputData, outputData) {
+function maxSinusoid (inputData, outputData) {
   let inputY = [], outputY = [], len = inputData.length;
   for (let i=0; i<len; i++) {
     inputY.push(inputData[i][1]);
     outputY.push(outputData[i][1]);
-  }
-  let max1 = Math.max(...inputY);
+  }//this part is O(n)
+  let max1 = Math.max(...inputY);//
   let max2 = Math.max(...outputY);
   return Math.max(max1, max2);
 }
@@ -915,7 +967,7 @@ function maxSinusoid2(inputData, outputData) {
     if (max1 < inputData[i][1]) {
       max1 = inputData[i][1];
     }
-    if (max2 < ouputData[i][1]) {
+    if (max2 < outputData[i][1]) {
       max2 = outputData[i][1];
     }
   }
@@ -1008,9 +1060,18 @@ function decimalNum (num) {
 function rad2Degrees(rad) {//converts radians to degrees.
   return (rad/Math.PI)*180;
 }
+function deg2Radians(deg) {//converts degrees to radians.
+  return (deg/180)*Math.PI;
+}
 function getZeta (img, real) {
   var temp = Math.atan2(img, real);//y, x -> y/x, opposite/ajdacent
   return Math.cos(temp);
+}
+//w values from 0.1 to 1000
+//indecies from 0 to 9,999.
+//i from 1 to 10001
+function getWIndex (w) {//w values from 0.1 to 1001. 
+  return w*10-1;
 }
 function normalize(angle) {
     while (angle <= -180) {
@@ -1030,8 +1091,8 @@ function compToStr(comp) {
     print = comp.re + ' &plusmn; i ';
     print2 = comp.re + ' +/- i ';
   }
-  else if (imagPart == parseInt(comp.im)){
-    imagPart = Math.abs(parseInt(comp.im)).toString();
+  else if (imagPart == parseFloat(comp.im)){
+    imagPart = Math.abs(parseFloat(comp.im)).toString();
     print = comp.re + ' &plusmn; ' + imagPart + 'i';
     print2 = comp.re + ' +/- ' + imagPart + 'i';
   }
@@ -1236,12 +1297,30 @@ function allData(w, terms) {
   phaseApproxData = copyObject(terms[0].phaseDataApprox),
   magExactData = copyObject(terms[0].magData),
   phaseExactData = copyObject(terms[0].phaseData), wLen = BDO.wLen, iLen = BDO.termsLen;
-  for (let i=1; i<iLen; i++) {
-    for (let j=0; j<wLen; j++) {
-      magExactData[j] = [w[j], magExactData[j][1]+terms[i].magData[j][1]];
-      magApproxData[j] = [w[j], magApproxData[j][1]+terms[i].magDataApprox[j][1]];
-      phaseExactData[j] = [w[j], phaseExactData[j][1]+terms[i].phaseData[j][1]];
-      phaseApproxData[j] = [w[j], phaseApproxData[j][1]+terms[i].phaseDataApprox[j][1]];
+  if (magExactData.length == phaseExactData.length) {
+    for (let i=1; i<iLen; i++) {
+      for (let j=0; j<wLen; j++) {
+        magExactData[j] = [w[j], magExactData[j][1]+terms[i].magData[j][1]];
+        magApproxData[j] = [w[j], magApproxData[j][1]+terms[i].magDataApprox[j][1]];
+        phaseExactData[j] = [w[j], phaseExactData[j][1]+terms[i].phaseData[j][1]];
+        phaseApproxData[j] = [w[j], phaseApproxData[j][1]+terms[i].phaseDataApprox[j][1]];
+      }
+    }
+  }
+  else {
+    let jLen = magExactData.length;
+    for (let i=1; i<iLen; i++) {
+      for (let j=0; j<jLen; j++) {
+        magExactData[j] = [w[j], magExactData[j][1]+terms[i].magData[j][1]];
+        magApproxData[j] = [w[j], magApproxData[j][1]+terms[i].magDataApprox[j][1]];
+      }
+    }
+    jLen = phaseExactData.length;
+    for (let i=1; i<iLen; i++) {
+      for (let j=0; j<wLen; j++) {
+        phaseExactData[j] = [w[j], phaseExactData[j][1]+terms[i].phaseData[j][1]];
+        phaseApproxData[j] = [w[j], phaseApproxData[j][1]+terms[i].phaseDataApprox[j][1]];
+      }
     }
   }
   return [magExactData, phaseExactData, magApproxData, phaseApproxData];
@@ -1423,7 +1502,7 @@ function dispTerms() {
   $('#H3').html(H3S);
 
   //let H4S = `K = C\\frac{${cnS}}{${cdS}} = ${BDO.K} = ${KdB}dB`;
-  let H4S = "\\[K = C\\frac{"+cnS.toString()+"}{"+cdS.toString()+"} = "+BDO.K.toString()+" = "+KdB.toString()+"dB\\]";
+  let H4S = "\\[K = C\\frac{"+cnS.toString()+"}{"+cdS.toString()+"} = "+BDO.K.toString()+" = "+KdB.toPrecision(3)+"dB\\]";
   $('#H4').html(H4S);
 
   //let H5S = `H(s) = K${oS}\\frac{${nS2}}{${dS2}}`;
@@ -1474,16 +1553,19 @@ function roundToPrec(r, n) { // n = digits of precision, r=nedamer object with r
     return (rArray);
 }
 function highchartsPlot (series, id, title, xAxis, yAxis, logOrLinear, tickInt) {
-  let legend = true, width = parseInt(screen.width)/3, data = series[0].data;
-  let xMax = data[data.length-1][0], xMin = data[0][0];
+  let legend = true, width = parseFloat(screen.width)/3, data = series[0].data;
+  let xMax = data[data.length-1][0], xMin = data[0][0], height = null;
   if (xAxis == undefined) {
     xAxis = '&omega;, rad';
   }
   if (logOrLinear == undefined) {
     logOrLinear = 'logarithmic';
   }
-  if (id == 'individualMag' || id == 'individualPhase', id == 'bothTotalMag' || id=='bothTotalPhase') {
+  if (id == 'individualMag' || id == 'individualPhase' || id == 'bothTotalMag' || id=='bothTotalPhase') {
     legend = false;//disable legend.
+  }
+  if (id.indexOf('individual') > -1 || id.indexOf('together') > -1) {
+    height = Math.trunc(0.83*window.innerHeight/2);//83vh/2
   }
   if (title.indexOf('Magnitude') > -1) {
     tickInt = 20;
@@ -1492,7 +1574,8 @@ function highchartsPlot (series, id, title, xAxis, yAxis, logOrLinear, tickInt) 
     chart: {
         type: 'line',
         zoomType: 'xy',//width: width
-        spacing: [10, 0, 15, 0]//top, right, bottom, left
+        spacing: [10, 0, 15, 0],//top, right, bottom, left,
+        height: height
     },
     title: {
         text: title,
