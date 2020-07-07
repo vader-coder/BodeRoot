@@ -40,6 +40,7 @@ function BDO_Obj() {
     this.bothPhaseChart;
     this.bothTotalMagSeries;
     this.bothTotalPhaseSeries;
+    this.lowerBounds = [];
 };//way to just reference chart from id?
 
 // Create the object that has information needed for each "term"
@@ -61,7 +62,7 @@ function termObj() {
     this.phaseData = [];//array for containing data for phase plot
     this.magDataApprox = [];//approximation of Magnitude data.
     this.phaseDataApprox = [];//approximation of Magnitude data.
-    this.zeta = 0;//for real & imaginary, zeta is not relevant.
+    this.zeta = 0;//find out what this means for other than real & imaginary.
     this.sign = 0;//-1 if it's a pole, 1 if it's a zero.
     this.magSlope = 0;
     this.magBreakpt = '';//gives w point where slope starts being not zero
@@ -69,6 +70,8 @@ function termObj() {
     this.upperBound = '';
     this.midPhaseSlope = '';
     this.endPhaseSlope = '';
+    this.realPart;
+    this.imagPart;
 }
 
 // Reset function
@@ -258,9 +261,12 @@ function getTerms() {
           terms[i].t2X = `(1 + s/${terms[i].tXw})${to_m(m)}`;
           terms[i].t1H = `(s + ${terms[i].tHw})${to_m(m, 1)}`;
           terms[i].t2H = `(1 + s/${terms[i].tHw})${to_m(m, 1)}`;
-          // we'll use this phrase whenever the situation arieses that includes a multiple pole or zero.
+          // we'll use this phrase whenever the situation arises that includes a multiple pole or zero.
           terms[i].mH = m == 1 ? '' : `, of muliplicity ${m}`;
           BDO.terms[j++] = terms[i];
+          terms[i].w0 = Math.abs(parseFloat(terms[i].value));
+          terms[i].lowerBound = 0.1*terms[i].w0;
+          BDO.lowerBounds.push(terms[i].lowerBound);
       }
   }
   // Now add the zeros.
@@ -277,9 +283,13 @@ function getTerms() {
           terms[i].t2H = `(1 + s/${terms[i].tHw})${to_m(m, 1)}`;
           terms[i].mH = m == 1 ? '' : `, of muliplicity ${m}`; // multiplicity phrase
           BDO.terms[j++] = terms[i];
+          terms[i].w0 = Math.abs(parseFloat(terms[i].value));
+          terms[i].lowerBound = 0.1*terms[i].w0;
+          BDO.lowerBounds.push(terms[i].lowerBound);
       }
   }
   idx = 0;
+  let realPart, imagPart, w0, zetaTemp, lowerBound;
   for (let i = 1; i < BDO.numTerms; i++) {
       if (terms[i].termType == 'ComplexPole') {
           idx++;
@@ -296,6 +306,17 @@ function getTerms() {
           //terms[i].t2H = `(1 + s/${terms[i].tHw})${to_m(m, 1)}`;
           terms[i].mH = m == 1 ? '' : `, of muliplicity ${m}`; // multiplicity phrase
           BDO.terms[j++] = terms[i];
+          realPart = parseFloat(terms[i].value.re);
+          imagPart = parseFloat(terms[i].value.im);
+          w0 = Math.sqrt(realPart*realPart + imagPart*imagPart);
+          zetaTemp = zeta(terms[i].value);
+          lowerBound = w0/(Math.pow(10, Math.abs(zetaTemp)));
+          terms[i].w0 = w0;
+          terms[i].zeta = zetaTemp;
+          terms[i].realPart = realPart;
+          terms[i].imagPart = imagPart;
+          terms[i].lowerBound = lowerBound;
+          BDO.lowerBounds.push(lowerBound);
       }
   }
   idx = 0;
@@ -315,7 +336,15 @@ function getTerms() {
           //terms[i].t2H = `(1 + s/${terms[i].tHw})${to_m(m, 1)}`;
           terms[i].mH = m == 1 ? '' : `, of muliplicity ${m}`; // multiplicity phrase
           BDO.terms[j++] = terms[i];
-      }
+          realPart = parseFloat(terms[i].value.re);
+          imagPart = parseFloat(terms[i].value.im);
+          w0 = Math.sqrt(realPart*realPart + imagPart*imagPart);
+          zetaTemp = zeta(terms[i].value);
+          lowerBound = w0/(Math.pow(10, Math.abs(zetaTemp)));
+          terms[i].w0 = w0;
+          terms[i].zeta = zetaTemp;
+          terms[i].lowerBound = lowerBound;
+          BDO.lowerBounds.push(lowerBound);        }
   }
   for (let i = 1; i < BDO.numTerms; i++) {
       if (terms[i].termType == 'OriginPole') {
@@ -341,7 +370,6 @@ function getTerms() {
   }
   console.log(BDO);
 }
-
 //updates BDO object to contain data for each term.
 function getData () {
   let terms = BDO.terms;
@@ -370,7 +398,12 @@ function getData () {
   let id = 'topTerm:', bothTotalMagSeries = [0, 0], bothTotalPhaseSeries = [0, 0], dashStyle = 'Solid';
   magYIntDesc = 'Since we have a constant C='+BDO.C.toString();
   let w = BDO.w;
+  let min = Math.min(BDO.lowerBounds), wMin = 0.01;
+  while (wMin > min) {
+    wMin *= 0.1;
+  }
   if (!w.length) {//if w is an empty array.
+    w.push(wMin);//so looks like extends to almost 0
     for (let i=1; i<10001; i++) {
       w.push(roundDecimal(i*0.1, 1));//w.push(roundDecimal(1+ i*0.1, 1)); might want multiple versions of this.
     }
@@ -1179,16 +1212,22 @@ function originData(w, sign, termIndex) {
   BDO.phaseFormula += ('<br>'+sign +' '+exp+'*90 ');
   return [magData, phaseData];
 }
+/*
+let w0 = Math.abs(parseFloat(BDO.terms[termIndex].value));
+lowerBound = 0.1*w0;
+*/
 function realData (w, sign, termIndex) {
-  let w0 = Math.abs(parseFloat(BDO.terms[termIndex].value));//w0, abs of a zero.
-  BDO.terms[termIndex].w0 = w0;
+  let w0 = BDO.terms[termIndex].w0;
   let magApproxData = [], phaseApproxData = [], magExactData = [], phaseExactData = [], wLen = BDO.wLen;
   let exp = BDO.terms[termIndex].mult, lowerBound = 0.1*w0, upperBound = 10*w0,
   middleDenominator = Math.log10(upperBound/lowerBound), theta, x;
   BDO.terms[termIndex].midPhaseSlope = '90*'+exp.toString()+'/'+middleDenominator.toString();//how to calculate? want a per-decade measurement.
   BDO.terms[termIndex].endPhaseSlope = '90*'+exp.toString();
   BDO.terms[termIndex].upperBound = upperBound;
-  BDO.terms[termIndex].lowerBound = lowerBound;
+  lowerBound = BDO.terms[termIndex].lowerBound;
+  /*if (lowerBound <= 0.1) {
+    phaseApproxData.push([0.00001, 0]);
+  }*/
   for (let j=0; j<wLen; j++) {
     //approximate fequency:
     x = w[j]/w0;
@@ -1198,7 +1237,7 @@ function realData (w, sign, termIndex) {
     else if (w[j]>w0) {
       magApproxData.push([w[j], sign*20*exp*Math.log10(x)]);
     }
-    BDO.terms[termIndex].magBreakpt = w0;
+    BDO.terms[termIndex].magBreakpt = w0;//can we do this outside the loop?
     BDO.terms[termIndex].magSlope = sign*20*exp;
     //exact Magnitude
     magExactData.push([w[j], sign*20*exp*Math.log10(Math.pow((1 + x*x), 0.5))]);
@@ -1239,14 +1278,20 @@ function realData (w, sign, termIndex) {
   //might do together description here instead. might be faster. 
   return [magExactData, phaseExactData, magApproxData, phaseApproxData];
 }
-function compConjugateData (w, sign, termIndex) {
+/*
   let realPart = parseFloat(BDO.terms[termIndex].value.re);
   let imagPart = parseFloat(BDO.terms[termIndex].value.im);
   let w0 = Math.sqrt(realPart*realPart + imagPart*imagPart);
-  BDO.terms[termIndex].w0 = w0;
+  zetaTemp = zeta(BDO.terms[termIndex].value)
+  lowerBound = w0/(Math.pow(10, Math.abs(zetaTemp)));
+*/
+function compConjugateData (w, sign, termIndex) {
+  let realPart = BDO.terms[termIndex].realPart;
+  let imagPart = BDO.terms[termIndex].imagPart;
+  let w0 = BDO.terms[termIndex].w0;
   let w0Rounded = roundDecimal(w0, 1);//round to 1 decimal place.
   let magApproxData = [], phaseApproxData = [], magExactData = [], phaseExactData = [];
-  let exp = BDO.terms[termIndex].mult, zetaTemp = zeta(BDO.terms[termIndex].value),
+  let exp = BDO.terms[termIndex].mult, zetaTemp = BDO.terms[termIndex].zeta,
   jMax = BDO.wLen, x, base, peak, lowerBound, upperBound,
   middleDenominator, a, b, theta, breakW = 1;
   BDO.terms[termIndex].zeta = parseFloat(zetaTemp);
@@ -1293,7 +1338,7 @@ function compConjugateData (w, sign, termIndex) {
     magExactData.push([w[j], sign*20*exp*Math.log10(x)]);
     //approx & exact are closer when both 20 or 40.
   }
-  lowerBound = w0/(Math.pow(10, Math.abs(zetaTemp)));////(x,y) = (lowerBound, 0)
+  lowerBound = BDO.terms[termIndex].lowerBound;//(x,y) = (lowerBound, 0)
   upperBound = w0*Math.pow(10, Math.abs(zetaTemp));//(x,y) = (upperBound, sign*180)
   middleDenominator = Math.log10(upperBound/lowerBound);
   BDO.terms[termIndex].midPhaseSlope = '180*'+exp.toString()+'/'+middleDenominator.toString();//how to calculate? want a per-decade measurement.
@@ -1301,6 +1346,9 @@ function compConjugateData (w, sign, termIndex) {
   BDO.terms[termIndex].upperBound = upperBound;
   BDO.terms[termIndex].lowerBound = lowerBound;
   //phase approximation
+  /*if (lowerBound <= 0.1) {
+    phaseApproxData.push([0.00001, 0]);
+  }*/
   for (let j=0; j<jMax; j++) {
     x = w[j];
     //lower & upper boundarises of line in x coordinates
