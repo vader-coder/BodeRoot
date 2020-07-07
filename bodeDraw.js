@@ -78,11 +78,13 @@ $(function () {
 });
 
 // function called when polynomial is changed.
-function BDOupdate() {
+function BDOupdate(moreThanOnce) {
     /*getTerms();
     dispTerms();*/
     let cheevStart, cheevStop, patStart, patStop, cheevTime, patTime;
-    getURLParams();
+    if (!moreThanOnce) {
+      getURLParams();//if this is the first time BDOupdate() has been called.
+    }
     cheevStart = new Date().getTime();
     getTerms();
     dispTerms();
@@ -105,7 +107,18 @@ function BDOupdate() {
 function getURLParams() {
   console.log("Query parameters: ");
   let params = new URLSearchParams(window.location.search);
-  console.log(params.get('q'));
+  let denom = params.get('den');
+  let num = params.get('num');
+  let C = params.get('c');
+  if (denom) {
+    $('#D_of_s').val(denom);
+  }
+  if (num) {
+    $('#N_of_s').val(num);
+  }
+  if (C) {
+    $('#multConst').val(C);
+  }
 }
 
 /* This function
@@ -125,6 +138,11 @@ function getTerms() {
   BDO.num = NStr;
   BDO.den = DStr;
   BDO.C = parseFloat(CStr);
+  
+  //every time updated, replace old query string with new one.
+  let nParam = NStr.replace(/\+/g, '%2B');
+  let dParam = DStr.replace(/\+/g, '%2B');
+  window.history.replaceState(null, null, '/?c='+CStr+'&num='+nParam+'&den='+dParam);
 
   // Get poles and zeros
   let zeros = nerdamer.roots(BDO.num);
@@ -904,19 +922,11 @@ function graphSinusoid () {
   phase = bothTotalPhaseSeries[0].data;
   let phaseApprox = bothTotalPhaseSeries[1].data;
   wIndex = getWIndex(omega);
-  if (chart) {//already made 
-    //  let xMax = data[data.length-1][0], xMin = data[0][0];
-    tMin = inputData[0][0];//should this still work? 
-    tMax = inputData[inputData.length-1][0];
-    let yMax = Math.round(maxSinusoid2(inputData, outputData));
-    let yMin = -1*yMax;//shouldn't it be automatically doing this for us?
+  if (bothTotalMagSeries[2]) {
     bothTotalMagSeries[2].data = [[omega, mag[wIndex][1]]];
     bothTotalMagSeries[3].data = [[omega, magApprox[wIndex][1]]];
     bothTotalPhaseSeries[2].data = [[omega, phase[wIndex][1]]];
     bothTotalPhaseSeries[3].data = [[omega, phaseApprox[wIndex][1]]];
-    chart.update({series: series, xAxis: {min: tMin, max: tMax}, yAxis: {min: yMin, max: yMax}});
-    BDO.bothMagChart.update({series: bothTotalMagSeries});
-    BDO.bothPhaseChart.update({series: bothTotalPhaseSeries});
   }
   else {
     bothTotalMagSeries.push({
@@ -939,6 +949,42 @@ function graphSinusoid () {
       data: [[omega, phaseApprox[wIndex][1]]], 
       color: 'rgba(255,99,71, 1)'
     });
+  }
+  if (chart) {//already made 
+    //  let xMax = data[data.length-1][0], xMin = data[0][0];
+    tMin = inputData[0][0];//should this still work? 
+    tMax = inputData[inputData.length-1][0];
+    let yMax = Math.round(maxSinusoid2(inputData, outputData));
+    let yMin = -1*yMax;//shouldn't it be automatically doing this for us?
+    /*bothTotalMagSeries[2].data = [[omega, mag[wIndex][1]]];
+    bothTotalMagSeries[3].data = [[omega, magApprox[wIndex][1]]];
+    bothTotalPhaseSeries[2].data = [[omega, phase[wIndex][1]]];
+    bothTotalPhaseSeries[3].data = [[omega, phaseApprox[wIndex][1]]];*/
+    chart.update({series: series, xAxis: {min: tMin, max: tMax}, yAxis: {min: yMin, max: yMax}});
+    BDO.bothMagChart.update({series: bothTotalMagSeries});
+    BDO.bothPhaseChart.update({series: bothTotalPhaseSeries});
+  }
+  else {
+    /*bothTotalMagSeries.push({
+      name: "point",
+      data: [[omega, mag[wIndex][1]]], 
+      color: 'rgba(255,99,71, 1)'
+    });
+    bothTotalMagSeries.push({
+      name: "point Approx",
+      data: [[omega, magApprox[wIndex][1]]], 
+      color: 'rgba(255,99,71, 1)'
+    });
+    bothTotalPhaseSeries.push({
+      name: "point",
+      data: [[omega, phase[wIndex][1]]], 
+      color: 'rgba(255,99,71, 1)'
+    });
+    bothTotalPhaseSeries.push({
+      name: "point Approx",
+      data: [[omega, phaseApprox[wIndex][1]]], 
+      color: 'rgba(255,99,71, 1)'
+    });*/
     BDO.sinusoidChart = highchartsPlot(series, 'sinusoidPlot', '<b>Sinusoids</b>', 'Time', 'Dependent Variable', 'linear');
     BDO.bothMagChart = highchartsPlot(bothTotalMagSeries, 'bothTotalMag', '<b>Total Magnitude Plot</b>', '&omega;, rad', '|H(j&omega;)|, dB');
     BDO.bothPhaseChart = highchartsPlot(bothTotalPhaseSeries, 'bothTotalPhase', '<b>Total Phase Plot</b>', '&omega;, rad', '&ang;H(j&omega;), &deg;', 'logarithmic', 90);
