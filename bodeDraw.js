@@ -1048,7 +1048,7 @@ function updateAlpha (item, alpha) {
 function topButtonHandler (termNum, last) {//1st try w/ zero at origin, p at origin.
   //order is consT, zOrigin, pOrigin, zReal, pReal, (might be > 1), zComp, pComp
   //might set array to track # left behind. use name to find stuff.
-  let start = new Date().getTime();//1553 ms.
+  //let start = new Date().getTime();//1553 ms.
   const names = BDO.namesOfIds;
   var series = BDO.topMagSeries, series2 = BDO.topPhaseSeries, magDescs = BDO.magDescs, phaseDescs = BDO.phaseDescs;
   var magDescShown, phaseDescShown, bold = BDO.bold, faded = BDO.faded, xAxis, 
@@ -1056,17 +1056,18 @@ function topButtonHandler (termNum, last) {//1st try w/ zero at origin, p at ori
   let boxId = "topTerm:"+termNum.toString()+" box";
   let lastBoxId = "topTerm:"+last.toString()+" box";
   series[termNum] = updateAlpha(series[termNum], bold);
-  series[termNum].lineWidth = 4;
+  
+  //series[termNum].lineWidth = 4;
   series2[termNum] = updateAlpha(series2[termNum], bold);
-  series2[termNum].lineWidth = 4;
+  //series2[termNum].lineWidth = 4;
   magDescShown = magDescs[termNum];//descriptions correspond to names.
   phaseDescShown = phaseDescs[termNum];
   updateBox(series[termNum].color, boxId);
 
   series[last] = updateAlpha(series[last], faded);
-  series[last].lineWidth = 2;
+  //series[last].lineWidth = 2;
   series2[last] = updateAlpha(series2[last], faded);
-  series[last].lineWidth = 2;
+  //series[last].lineWidth = 2;
   updateBox(series[last].color, lastBoxId);
   //plots the series with the ones not selected faded.
   // highchartsPlot(series, id, title, xAxis, yAxis, logOrLinear, tickInt) {
@@ -1074,8 +1075,14 @@ function topButtonHandler (termNum, last) {//1st try w/ zero at origin, p at ori
   
   //highchartsPlot(series, 'mag', '<b>Magnitude Plot</b>', xAxis, 'Magnitude dB');
   //highchartsPlot(series2, 'phase', '<b>Phase Plot</b>', xAxis, 'Phase in Degrees', 'logarithmic', 90);
-  magChart.update({series: series});
-  phaseChart.update({series: series2}); //~ 960 ms
+  let start = new Date().getTime();//1553 ms.
+  magChart.series[termNum].update({color: series[termNum].color, lineWidth: 4});
+  phaseChart.series[termNum].update({color: series2[termNum].color, lineWidth: 4});
+  magChart.series[last].update({color: series[last].color, lineWidth: 2});
+  phaseChart.series[last].update({color: series2[last].color, lineWidth: 2});
+  let time = new Date().getTime() - start;
+  console.log(time.toString() + ' ms');
+  //~ 960 ms
   /*magChart.series[termNum].options.color = series[termNum].color;
   magChart.series[termNum].update(series[termNum].color);
   phaseChart.series[termNum].options.color = series[termNum].color;
@@ -1089,8 +1096,7 @@ function topButtonHandler (termNum, last) {//1st try w/ zero at origin, p at ori
   //magChart.series[last].options.color.update(series[last].options.color);
   //phaseChart.series[last].options.color.update(series[last].options.color);
   document.getElementById('topDescription').innerHTML = magDescShown+'<br>'+phaseDescShown;
-  let time = new Date().getTime() - start;
-  console.log(time.toString() + ' ms');
+
 }
 //function rounds a number to a decimal # of decimal places.
 function roundDecimal (num, decimal) {
