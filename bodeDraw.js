@@ -104,7 +104,8 @@ function BDOupdate() {
 }
 function getURLParams() {
   console.log("Query parameters: ");
-  console.log(window.location.search);
+  let params = new URLSearchParams(window.location.search);
+  console.log(params.get('q'));
 }
 
 /* This function
