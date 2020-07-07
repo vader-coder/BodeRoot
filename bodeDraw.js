@@ -82,6 +82,7 @@ function BDOupdate() {
     /*getTerms();
     dispTerms();*/
     let cheevStart, cheevStop, patStart, patStop, cheevTime, patTime;
+    getURLParams();
     cheevStart = new Date().getTime();
     getTerms();
     dispTerms();
@@ -100,6 +101,10 @@ function BDOupdate() {
     console.log("Prof. Cheever's code took "+cheevTime.toString() + "ms to run.");
     console.log("Patrick's code took "+patTime.toString() + "ms to run.");
     //cheever's time couold have been spent on that resource.
+}
+function getURLParams() {
+  console.log("Query parameters: ");
+  console.log(window.location.search);
 }
 
 /* This function
@@ -349,7 +354,6 @@ function getData () {
   if (!w.length) {//if w is an empty array.
     for (let i=1; i<10001; i++) {
       w.push(roundDecimal(i*0.1, 1));//w.push(roundDecimal(1+ i*0.1, 1)); might want multiple versions of this.
-      constMag.push([w[i-1], 20*Math.log10(constantK)]);
     }
   }
   BDO.wLen = w.length;
@@ -357,6 +361,7 @@ function getData () {
   if (constantK > 0) {
     for (let i=0; i<w.length; i++) {
       constPhase.push([w[i], 0]);
+      constMag.push([w[i], 20*Math.log10(constantK)]);
     }
     desc = 'Since the constant is positive, its phase is 0&deg;.';
     BDO.phaseFormula += 'Phase: <br>0&deg; ';
@@ -364,6 +369,7 @@ function getData () {
   else if (constantK < 0) {
     for (let i=0; i<w.length; i++) {
       constPhase.push([w[i], 180]);
+      constMag.push([w[i], 20*Math.log10(constantK)]);
     }
     desc =  'Since the constant is positive, its phase is &plusmn; 180&deg;.<br>We have chosen to represent it as +180#&deg;.';
     BDO.phaseFormula += '180&deg; ';
@@ -831,7 +837,7 @@ function sinusoidEnterHandler(e) {
 function graphSinusoid () {
   let start = new Date().getTime();
   let wIndex, mag, phase, html, theta, phi = parseFloat(BDO.phi.value), omega = parseFloat(BDO.omega.value);
-  let inputData = [], outputData = [], t = [], series, period, tMax, tInterval, tCount, tLen, ptNum;//wish I had malloc.
+  let inputData = [], outputData = [], t = [], series, period, tMin, tMax, tInterval, tCount, tLen, ptNum;//wish I had malloc.
   //phi is input; theta is phase outputted from function, & phae is phi+theta
   //if within confines of input & not more than 1 decimal place, then just use the data we made.
   if (isNaN(omega) || isNaN(phi) || omega <= 0) {
@@ -899,13 +905,14 @@ function graphSinusoid () {
   wIndex = getWIndex(omega);
   if (chart) {//already made 
     //  let xMax = data[data.length-1][0], xMin = data[0][0];
-    let tMin = inputData[0][0], tMax = inputData[inputData.length-1][0];
+    tMin = inputData[0][0];//should this still work? 
+    tMax = inputData[inputData.length-1][0];
     let yMax = Math.round(maxSinusoid2(inputData, outputData));
     let yMin = -1*yMax;//shouldn't it be automatically doing this for us?
-    bothTotalMagSeries[2].data = [omega, mag[wIndex][1]];
-    bothTotalMagSeries[3].data = [omega, magApprox[wIndex][1]];
-    bothTotalPhaseSeries[2].data = [omega, phase[wIndex][1]];
-    bothTotalPhaseSeries[3].data = [omega, phaseApprox[wIndex][1]];
+    bothTotalMagSeries[2].data = [[omega, mag[wIndex][1]]];
+    bothTotalMagSeries[3].data = [[omega, magApprox[wIndex][1]]];
+    bothTotalPhaseSeries[2].data = [[omega, phase[wIndex][1]]];
+    bothTotalPhaseSeries[3].data = [[omega, phaseApprox[wIndex][1]]];
     chart.update({series: series, xAxis: {min: tMin, max: tMax}, yAxis: {min: yMin, max: yMax}});
     BDO.bothMagChart.update({series: bothTotalMagSeries});
     BDO.bothPhaseChart.update({series: bothTotalPhaseSeries});
@@ -937,7 +944,6 @@ function graphSinusoid () {
   }
   BDO.bothTotalMagSeries = bothTotalMagSeries;
   BDO.bothTotalPhaseSeries = bothTotalPhaseSeries;
-  document.getElementById('tMax').innerHTML = 'tMax: '+tMax.toString();
   console.log((new Date().getTime() - start.toString()) + 'ms');
 }
 /*Function is no good if I can't get it to work!
@@ -1565,7 +1571,7 @@ function highchartsPlot (series, id, title, xAxis, yAxis, logOrLinear, tickInt) 
     legend = false;//disable legend.
   }
   if (id.indexOf('individual') > -1 || id.indexOf('together') > -1) {
-    height = Math.trunc(0.83*window.innerHeight/2);//83vh/2
+    height = Math.trunc(0.82*window.innerHeight/2);//83vh/2
   }
   if (title.indexOf('Magnitude') > -1) {
     tickInt = 20;
