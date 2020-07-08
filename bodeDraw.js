@@ -410,7 +410,14 @@ function getData () {
   if (!w.length) {//if w is an empty array.
     w.push(wMin);//so looks like extends to almost 0
     for (let i=1; i<1001; i++) {//was 10001
-      w.push(roundDecimal(i*0.1, 1));//w.push(roundDecimal(1+ i*0.1, 1)); might want multiple versions of this.
+      if (i*0.1 == 1) {
+        w.push(1-0.0001);
+        w.push(roundDecimal(i*0.1, 1));//w.push(roundDecimal(1+ i*0.1, 1)); might want multiple versions of this.
+        w.push(1.0001);
+      }
+      else {
+        w.push(roundDecimal(i*0.1, 1));//w.push(roundDecimal(1+ i*0.1, 1)); might want multiple versions of this.
+      }
     }
   }
   BDO.wLen = w.length;
@@ -1375,9 +1382,9 @@ function compConjugateData (w, sign, termIndex) {
         base = sign*40*exp*Math.log10(x);
         peak = 20*sign*-1*Math.abs(Math.log10(2*Math.abs(zetaTemp)));
         //the peak will be opposite in sign to the base.
-        magApproxData.push([w[j]-0.0001, base]);
+        //magApproxData.push([w[j]-0.0001, base]);
         magApproxData.push([w[j], base+peak]);
-        magApproxData.push([w[j]+0.0001, base]);
+        //magApproxData.push([w[j]+0.0001, base]);
       }
     }
   }
