@@ -373,7 +373,7 @@ function getTerms() {
 //updates BDO object to contain data for each term.
 function getData () {
   let terms = BDO.terms;
-  let constantK = parseFloat(BDO.K), w1, w2, yEnd, w0, zeta_;
+  let constantK = parseFloat(BDO.K), w1, w2, yEnd, w0, zeta_, exp;
   let constMag = [], constPhase = [], magSeries = [], phaseSeries = [],
   topMagSeries = [], topPhaseSeries = [], desc, magDescs = [], phaseDescs = [],
   togetherMagSeries = [], togetherPhaseSeries = [], w0Mag, zMag, print, print2, name,
@@ -397,7 +397,7 @@ function getData () {
   let magYIntFormula, phaseYIntFormula, magYIntDesc, initMagSlope = 0, magRestDesc = '', phaseRestDesc ='', termDesc;
   let id = 'topTerm:', bothTotalMagSeries = [0, 0], bothTotalPhaseSeries = [0, 0], dashStyle = 'Solid';
   magYIntDesc = 'Since we have a constant C='+BDO.C.toString();
-  let w = BDO.w;
+  let w = BDO.w, slopedB, phaseLine;
   let min = Math.min(BDO.lowerBounds), wMin = 0.01;
   while (wMin > min) {
     wMin *= 0.1;
@@ -478,6 +478,16 @@ function getData () {
         data: terms[i].phaseData,
         dashStyle: 'Solid' 
       });
+      exp = terms[i].mult;
+      if (exp > 1) {
+        exp=exp.toString();
+        slopedB = '20&middot;'+exp;
+        phaseLine = '90&middot;'+exp;
+      }
+      else {
+        slopedB = '20';
+        phaseLine = '90';
+      }
       topMagSeries.push(copyObject(magSeries[magSeries.length-1]));
       topMagSeries[topMagSeries.length-1] = updateAlpha(topMagSeries[topMagSeries.length-1], faded);
       topPhaseSeries.push(copyObject(phaseSeries[phaseSeries.length-1]));
@@ -486,14 +496,13 @@ function getData () {
       checkHtml+= "<input type='radio' id='"+id+i.toString()+"' onclick=\"onTopCheckOne(this.id)\"></input>";
       checkHtml+="<label for='"+id+i.toString()+"'>Zero at Origin</label>"
       checkHtml += getBox(topMagSeries[topMagSeries.length-1].color, id+i.toString())+"<br>";
-      magDescs.push('The magnitude plot rises 20dB/decade and goes through 0 dB at 1 rad sec.<br>');
+      magDescs.push('The magnitude plot rises '+slopedB+'dB/decade and goes through 0 dB at 1 rad sec.<br>');
       colorIndex++;
-      desc = 'The phase plot of a zero at the origin is a horizontal line at +90&deg;.';
+      desc = 'The phase plot of a zero at the origin is a horizontal line at +'+phaseLine+'&deg;.';
       desc += '<br><a href="https://lpsa.swarthmore.edu/Bode/BodeHow.html#A%20Zero%20at%20the%20Origin">Details</a>';
       phaseDescs.push(desc);
-      let exp = terms[i].mult.toString();
-      magYIntFormula += ' - 20&middot;'+ exp + ' dB';
-      phaseYIntFormula += ' + 90&middot;' + exp + ' dB';
+      magYIntFormula += ' - '+ slopedB + ' dB';
+      phaseYIntFormula += ' + ' + phaseLine+ ' &deg;';
       magYIntDesc += ' and a zero at the origin'+BDO.terms[i].mH.toString();
       //we can't have both a pole at origin & a zero at origin because 1 will cancel out the other
     }
@@ -516,6 +525,16 @@ function getData () {
         data: terms[i].phaseData, 
         dashStyle: 'Solid' 
       });
+      exp = terms[i].mult;
+      if (exp > 1) {
+        exp=exp.toString();
+        slopedB = '20&middot;'+exp;
+        phaseLine = '90&middot;'+exp;
+      }
+      else {
+        slopedB = '20';
+        phaseLine = '90';
+      }
       topMagSeries.push(copyObject(magSeries[magSeries.length-1]));
       topMagSeries[topMagSeries.length-1] = updateAlpha(topMagSeries[topMagSeries.length-1], faded);
       topPhaseSeries.push(copyObject(phaseSeries[phaseSeries.length-1]));
@@ -523,16 +542,16 @@ function getData () {
       checkHtml+="<input type='radio' id='"+id+i.toString()+"' onclick=\"onTopCheckOne(this.id)\"></input>";
       checkHtml+="<label for='"+id+i.toString()+"'>Pole at Origin</label>";
       checkHtml += getBox(topMagSeries[topMagSeries.length-1].color, id+i.toString())+"<br>";
-      desc = 'The magnitude plot drops 20dB/decade and goes through 0 dB at 1 rad sec.<br>';
+      desc = 'The magnitude plot drops '+slopedB+'dB/decade and goes through 0 dB at 1 rad sec.<br>';
       magDescs.push(desc);
-      desc = 'The phase plot of a pole at the origin is a horizontal line at -90&deg;.';
+      desc = 'The phase plot of a pole at the origin is a horizontal line at -'+phaseLine+'&deg;.';
       desc += '<br><a href="https://lpsa.swarthmore.edu/Bode/BodeHow.html#A%20Pole%20at%20the%20Origin">Details</a>';
       phaseDescs.push(desc);
       names.push(name);
       colorIndex++;
-      let exp = terms[i].mult.toString()
-      magYIntFormula += ' + 20&middot;'+ exp + ' dB';
-      phaseYIntFormula += ' - 90&middot;' + exp + ' dB';
+      exp = terms[i].mult.toString()
+      magYIntFormula += ' - '+ slopedB + ' dB';
+      phaseYIntFormula += ' + ' + phaseLine+ ' &deg;';
       magYIntDesc += ' and a pole at the origin'+BDO.terms[i].mH.toString();     
     }
     else if (terms[i].termType == "RealZero") {
@@ -554,6 +573,16 @@ function getData () {
         data: terms[i].phaseDataApprox,
         dashStyle: dashStyle
       });
+      exp = terms[i].mult;
+      if (exp > 1) {
+        exp=exp.toString();
+        slopedB = '20&middot;'+exp;
+        phaseLine = '90&middot;'+exp;
+      }
+      else {
+        slopedB = '20';
+        phaseLine = '90';//should it be +45 * exp? 
+      }
       topMagSeries.push(copyObject(magSeries[magSeries.length-1]));
       topMagSeries[topMagSeries.length-1] = updateAlpha(topMagSeries[topMagSeries.length-1], faded);
       topPhaseSeries.push(copyObject(phaseSeries[phaseSeries.length-1]));
@@ -565,19 +594,14 @@ function getData () {
       checkHtml += getBox(topMagSeries[topMagSeries.length-1].color, id+i.toString())+"<br>";
       desc = 'The real zero is at &omega; = &omega;<sub>0</sub> = '+w0Mag+' rad/sec.';
       desc+= ' For the magnitude plot we draw a straight line ';
-      desc += 'at 0 dB from up to '+w0Mag+', thereafter the line rises at 20dB/decade.';
+      desc += 'at 0 dB from up to '+w0Mag+', thereafter the line rises at '+slopedB+'dB/decade.';
       magDescs.push(desc);
-      desc = 'The phase plot is 0 up to &omega; = &omega;<sub>0</sub> = '+w0Mag+'/10,';
-      desc += ' then drops to +90 at '+w0Mag+'&middot;10 going through +45 at '+w0Mag + '.';
+      desc = 'The phase plot is 0&deg; up to &omega; = &omega;<sub>0</sub> = '+w0Mag+'/10,';
+      desc += ' then climbs to +'+phaseLine+'&deg; at '+w0Mag+'&middot;10 going through +45&deg; at '+w0Mag + '.';
       desc+='<br><a href = "https://lpsa.swarthmore.edu/Bode/BodeHow.html#A%20Real%20Zero">Details</a>';
       phaseDescs.push(desc);
       termDesc = terms[i].desc;
-      if (terms[i].mult > 1) {
-        magRestDesc += '<li>Add 20&middot;' +terms[i].mult.toString() + ' dB/decade to slope at &omega; = '+w0Mag+' due to '+termDesc+'.</li>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
-      }
-      else {
-        magRestDesc += '<li>Add 20 dB/decade to slope at &omega; = '+w0Mag+' due to '+termDesc+'.</li>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
-      }
+      magRestDesc += '<li>Add '+slopedB+' dB/decade to slope at &omega; = '+w0Mag+' due to '+termDesc+'.</li>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
       w1 = terms[i].lowerBound.toPrecision(3), w2 = terms[i].upperBound.toPrecision(3);
       yEnd = (90*terms[i].mult).toPrecision(3);
       if (colorIndex == 1) {
@@ -611,6 +635,15 @@ function getData () {
         data: terms[i].phaseDataApprox,
         dashStyle: dashStyle
       });
+      if (exp > 1) {
+        exp=exp.toString();
+        slopedB = '20&middot;'+exp;
+        phaseLine = '90&middot;'+exp;
+      }
+      else {
+        slopedB = '20';
+        phaseLine = '90';//should it be +45 * exp? 
+      }
       topMagSeries.push(copyObject(magSeries[magSeries.length-1]));
       topMagSeries[topMagSeries.length-1] = updateAlpha(topMagSeries[topMagSeries.length-1], faded);
       topPhaseSeries.push(copyObject(phaseSeries[phaseSeries.length-1]));
@@ -621,20 +654,15 @@ function getData () {
       checkHtml += getBox(topMagSeries[topMagSeries.length-1].color, id+i.toString())+"<br>";
       desc = 'The real pole is at &omega; = &omega;<sub>0</sub> = '+w0Mag+' rad/sec.';
       desc+= ' For the magnitude plot we draw a straight line ';
-      desc += 'at 0 dB from up to '+w0Mag+', thereafter the line drops at 20dB/decade.';
+      desc += 'at 0 dB from up to '+w0Mag+', thereafter the line drops at '+slopedB+' dB/decade.';
       magDescs.push(desc);
 
-      desc = 'The phase plot is 0 up to &omega; = &omega;<sub>0</sub> = '+w0Mag+'/10,';
-      desc += ' then drops to -90 at '+w0Mag+'&middot;10 going through -45 at '+w0Mag+'.';
+      desc = 'The phase plot is 0&deg; up to &omega; = &omega;<sub>0</sub> = '+w0Mag+'/10,';
+      desc += ' then drops to -'+phaseLine+'&deg; at '+w0Mag+'&middot;10 going through -45&deg; at '+w0Mag+'.';
       desc += '<br><a href = "https://lpsa.swarthmore.edu/Bode/BodeHow.html#A%20Real%20Pole">Details</a>';
       phaseDescs.push(desc);
       termDesc = terms[i].desc;
-      if (terms[i].mult > 1) {
-        magRestDesc += '<li>Add -20&middot;' +terms[i].mult.toString() + ' dB/decade to slope at &omega; = '+w0Mag+' due to '+termDesc+'.</li>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
-      }
-      else {
-        magRestDesc += '<li>Add -20 dB/decade to slope at &omega; = '+w0Mag+' due to '+termDesc+'.</li>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
-      }    
+      magRestDesc += '<li>Add -' + slopedB + ' dB/decade to slope at &omega; = '+w0Mag+' due to '+termDesc+'.</li>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
       if (colorIndex == 1) {
         desc = '<sup>&dagger;</sup>';
       }
@@ -670,6 +698,15 @@ function getData () {
         data: terms[i].phaseDataApprox,
         dashStyle: dashStyle
       });
+      if (exp > 1) {
+        exp=exp.toString();
+        slopedB = '40&middot;'+exp;
+        phaseLine = '180&middot;'+exp;
+      }
+      else {
+        slopedB = '40';
+        phaseLine = '180';//should it be +45 * exp? 
+      }
       topMagSeries.push(copyObject(magSeries[magSeries.length-1]));
       topMagSeries[topMagSeries.length-1] = updateAlpha(topMagSeries[topMagSeries.length-1], faded);
       topPhaseSeries.push(copyObject(phaseSeries[phaseSeries.length-1]));
@@ -677,25 +714,20 @@ function getData () {
       checkHtml+="<input type='radio' id='"+id+i.toString()+"' onclick=\"onTopCheckOne(this.id)\"></input>";
       checkHtml+="<label for='"+id+i.toString()+"'>"+name+"</label>";
       checkHtml += getBox(topMagSeries[topMagSeries.length-1].color, id+i.toString())+"<br>";
-      desc = 'For the magnitude plot we draw a straight line at 0 dB from up to '+w0Mag+', thereafter the line rises at 40dB/decade.';
+      desc = 'For the magnitude plot we draw a straight line at 0 dB from up to '+w0Mag+', thereafter the line rises at '+slopedB+'dB/decade.';
       if (parseFloat(zMag) < 0.5) {
-        desc += '<br>Since '+zMag+'<0.5, we draw a peak of 20log<sub>10</sub>(2&zeta;) = ';
-        desc += (20*Math.log10(2*parseFloat(zMag,10))).toString()+'db at &omega; = '+w0Mag+'.';
+        desc += '<br>Since '+zMag+'<0.5, we draw a peak of 20log<sub>10</sub>(2&zeta;) = ';//is this affected by mult?
+        desc += (20*Math.log10(2*parseFloat(zMag,10))).toString()+'dB at &omega; = '+w0Mag+'.';
       }
       magDescs.push(desc);
 
-      desc = 'The phase plot is 0 up to '+w0Mag+'/10<sup>'+zMag+'</sup>, ';
-      desc += 'then climbs to 180 at '+w0Mag+'&middot;10<sup>'+zMag+'</sup> going through 90 at '+w0Mag+'.';
+      desc = 'The phase plot is 0&deg; up to '+w0Mag+'/10<sup>'+zMag+'</sup>, ';
+      desc += 'then climbs to '+phaseLine+'&deg; at '+w0Mag+'&middot;10<sup>'+zMag+'</sup> going through 90&deg; at '+w0Mag+'.';
       desc += '<br><a href="https://lpsa.swarthmore.edu/Bode/BodeHow.html#A%20Complex%20Conjugate%20Pair%20of%20Zeros">Details</a>';
       phaseDescs.push(desc);
       names.push(name);
       termDesc = terms[i].desc;
-      if (terms[i].mult > 1) {
-        magRestDesc += '<li>Add 40&middot;' +terms[i].mult.toString() + ' dB/decade to slope at &omega; = 1 due to '+termDesc+'</li>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
-      }
-      else {
-        magRestDesc += '<li>Add 40 dB/decade to slope at &omega; = 1 due to '+termDesc+'</li>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
-      }
+      magRestDesc += '<li>Add ' +slopedB+ ' dB/decade to slope at &omega; = 1 due to '+termDesc+'</li>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
       if (colorIndex == 1) {
         desc = '<sup>&dagger;</sup>';
       }
@@ -731,6 +763,15 @@ function getData () {
         data: terms[i].phaseDataApprox,
         dashStyle: dashStyle
       });
+      if (exp > 1) {
+        exp=exp.toString();
+        slopedB = '40&middot;'+exp;
+        phaseLine = '180&middot;'+exp;
+      }
+      else {
+        slopedB = '40';
+        phaseLine = '180';//should it be +45 * exp? 
+      }
       topMagSeries.push(copyObject(magSeries[magSeries.length-1]));
       topMagSeries[topMagSeries.length-1] = updateAlpha(topMagSeries[topMagSeries.length-1], faded);
       topPhaseSeries.push(copyObject(phaseSeries[phaseSeries.length-1]));
@@ -739,24 +780,19 @@ function getData () {
       checkHtml+="<label for='"+id+i.toString()+"'>"+name+"</label>";
       checkHtml += getBox(topMagSeries[topMagSeries.length-1].color, id+i.toString())+"<br>";
       desc = 'For the magnitude plot we draw a straight line at 0 dB from up to '
-      desc += w0Mag+', thereafter the line drops at 40dB/decade.';
+      desc += w0Mag+', thereafter the line drops at '+slopedB+' dB/decade.';
       if (zMag < 0.5) {
         desc+= '<br>Since '+zMag+'<0.5, we draw a peak of -20log<sub>10</sub>(2&zeta;) = ';
         desc += (-20*Math.log10(2*parseFloat(zMag,10))).toString()+'db at &omega; = '+w0Mag;
       }
       magDescs.push(desc);
-      desc = 'The phase plot is 0 up to '+w0Mag+'/10<sup>'+zMag+'</sup>, ';
-      desc += 'then climbs to 180 at '+w0Mag+'&middot;10<sup>'+zMag+'</sup> going through 90 at '+w0Mag+'.';
+      desc = 'The phase plot is 0&deg; up to '+w0Mag+'/10<sup>'+zMag+'</sup>, ';
+      desc += 'then climbs to '+phaseLine+'&deg; at '+w0Mag+'&middot;10<sup>'+zMag+'</sup> going through 90&deg; at '+w0Mag+'.';
       desc += '<br><a href="https://lpsa.swarthmore.edu/Bode/BodeHow.html#A%20Complex%20Conjugate%20Pair%20of%20Zeros">Details</a>';
       phaseDescs.push(desc);
       names.push(name);
       termDesc = terms[i].desc;
-      if (terms[i].mult > 1) {
-        magRestDesc += '<li>Add -40&middot;' +terms[i].mult.toString() + ' dB/decade to slope at &omega; = 1 due to '+termDesc+'.</li>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
-      }
-      else {
-        magRestDesc += '<li>Add -40 dB/decade to slope at &omega; = 1 due to '+termDesc+'.</li>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
-      }
+      magRestDesc += '<li>Add -' + slopedB + ' dB/decade to slope at &omega; = 1 due to '+termDesc+'.</li>';//+BDO.terms[i].magBreakpt.toString() + '<br>'; 
       if (colorIndex == 1) {
         desc = '<sup>&dagger;</sup>';
       }
