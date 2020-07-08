@@ -148,8 +148,13 @@ function getTerms() {
   window.history.replaceState(null, null, '/?c='+CStr+'&num='+nParam+'&den='+dParam);
 
   // Get poles and zeros
-  let zeros = nerdamer.roots(BDO.num);
-  let poles = nerdamer.roots(BDO.den);
+  let zeros, poles;
+  if (BDO.num.indexOf("s") > -1) {
+    zeros = nerdamer.roots(BDO.num);
+  }
+  if (BDO.den.indexOf("s") > -1) {
+    poles = nerdamer.roots(BDO.den);
+  }
 
   let numOrd = nerdamer.deg(BDO.num).valueOf();
   let denOrd = nerdamer.deg(BDO.den).valueOf();
@@ -444,14 +449,20 @@ function getData () {
   magDescs.push('The constant term is K= ~'+roundDecimal(constantK, 3).toString()+' = '+terms[0].magData[0][1].toPrecision(3)+' dB = 20log10(|K|).');
   //1 description, 1 graph
   BDO.lastClickedTopBoxNum = 0;//1st box to be checked is the constant.
-  magSeries.push({name: 'Constant ' + constantK.toString(),
-  color: colors[colorIndex],data: constMag});
-  phaseSeries.push({name: 'Constant ' + constantK.toString(),
-  color: colors[colorIndex],data: constPhase});
+  magSeries.push({
+    name: 'Constant ' + constantK.toString(),
+    color: colors[colorIndex],
+    data: constMag,
+    lineWidth: 4
+  });
+  phaseSeries.push({
+    name: 'Constant ' + constantK.toString(),
+    color: colors[colorIndex],
+    data: constPhase,
+    lineWidth: 4
+  });
   topMagSeries.push(copyObject(magSeries[magSeries.length-1]));
   topPhaseSeries.push(copyObject(phaseSeries[phaseSeries.length-1]));
-  topMagSeries[0].lineWidth = 4;
-  topPhaseSeries[0].lineWidth = 4;
   checkHtml += getBox(topMagSeries[topMagSeries.length-1].color, id+'0')+"<br>";
   colorIndex++;
   desc += '<br><a href="https://lpsa.swarthmore.edu/Bode/BodeHow.html#A%20Constant%20Term">Details</a>';
@@ -470,13 +481,15 @@ function getData () {
         name: name,
         color: colors[colorIndex],
         data: terms[i].magData,
-        dashStyle: 'Solid' 
+        dashStyle: 'Solid',
+        lineWidth: 2
       });
       phaseSeries.push({
         name: name,
         color: colors[colorIndex],
         data: terms[i].phaseData,
-        dashStyle: 'Solid' 
+        dashStyle: 'Solid',
+        lineWidth: 2
       });
       exp = terms[i].mult;
       if (exp > 1) {
@@ -517,13 +530,15 @@ function getData () {
         name: name,
         color: colors[colorIndex],
         data: terms[i].magData,
-        dashStyle: 'Solid' 
+        dashStyle: 'Solid',
+        lineWidth: 2
       });
       phaseSeries.push({
         name: name,
         color: colors[colorIndex],
         data: terms[i].phaseData, 
-        dashStyle: 'Solid' 
+        dashStyle: 'Solid', 
+        lineWidth: 2
       });
       exp = terms[i].mult;
       if (exp > 1) {
@@ -565,13 +580,15 @@ function getData () {
         name: name,
         color: colors[colorIndex],
         data: terms[i].magDataApprox, 
-        dashStyle: dashStyle
+        dashStyle: dashStyle,
+        lineWidth: 2
       });
       phaseSeries.push({
         name: name,
         color: colors[colorIndex],
         data: terms[i].phaseDataApprox,
-        dashStyle: dashStyle
+        dashStyle: dashStyle,
+        lineWidth: 2
       });
       exp = terms[i].mult;
       if (exp > 1) {
@@ -627,13 +644,15 @@ function getData () {
         name: name,
         color: colors[colorIndex],
         data: terms[i].magDataApprox,
-        dashStyle: dashStyle
+        dashStyle: dashStyle,
+        lineWidth: 2
       });
       phaseSeries.push({
         name: name,
         color: colors[colorIndex],
         data: terms[i].phaseDataApprox,
-        dashStyle: dashStyle
+        dashStyle: dashStyle,
+        lineWidth: 2
       });
       if (exp > 1) {
         exp=exp.toString();
@@ -690,13 +709,15 @@ function getData () {
         name: name,
         color: colors[colorIndex],
         data: terms[i].magDataApprox,
-        dashStyle: dashStyle
+        dashStyle: dashStyle,
+        lineWidth: 2
       });
       phaseSeries.push({
         name: name,
         color: colors[colorIndex],
         data: terms[i].phaseDataApprox,
-        dashStyle: dashStyle
+        dashStyle: dashStyle,
+        lineWidth: 2
       });
       if (exp > 1) {
         exp=exp.toString();
@@ -755,13 +776,15 @@ function getData () {
         name: name,
         color: colors[colorIndex],
         data: terms[i].magDataApprox,
-        dashStyle: dashStyle
+        dashStyle: dashStyle,
+        lineWidth: 2
       });
       phaseSeries.push({
         name: name,
         color: colors[colorIndex],
         data: terms[i].phaseDataApprox,
-        dashStyle: dashStyle
+        dashStyle: dashStyle,
+        lineWidth: 2
       });
       if (exp > 1) {
         exp=exp.toString();
@@ -812,7 +835,7 @@ function getData () {
     name: 'Total Magnitude',
     color: blackRGBA,//I like black. colors[colorIndex],
     data: BDO.allMag, 
-    dashStyle: 'Solid' 
+    dashStyle: 'Solid'
   });
   magSeries.push({
     name: 'Total Magnitude Approximation',
@@ -832,6 +855,7 @@ function getData () {
     data: BDO.allPhaseApprox,
     dashStyle: 'shortdot'
   });
+  let placeHolder;
   let magLen = magSeries.length, phaseLen = phaseSeries.length;
   togetherMagSeries = copyObject(topMagSeries);
   togetherMagSeries.push(copyObject(magSeries[magLen-2]));
@@ -846,6 +870,20 @@ function getData () {
   bothTotalPhaseSeries[0] = phaseSeries[magLen-2];
   bothTotalPhaseSeries[1] = phaseSeries[magLen-1];
   
+  // could do this w/ together as well? might make plot generation faster on page.
+  //constant, origins are straight lines, replace individual plots w/ first & last points.
+  topMagSeries[0].data = getEndpoints(topMagSeries[0]);
+  topPhaseSeries[0].data = getEndpoints(topPhaseSeries[0]);
+  for (let i=1; i<iLen; i++) {//temrs.length
+    if (terms[i].termType == 'OriginZero' || terms[i].termType == 'OriginPole') {
+      topMagSeries[i].data = getEndpoints(topMagSeries[i]);
+      topPhaseSeries[i].data = getEndpoints(topPhaseSeries[i]);
+    }
+    /*if (terms[i].termType == 'RealZero' || terms[i].termType == 'RealPole') {
+      
+    }*/
+  }
+
   let lastMag = togetherMagSeries.length-1, lastPhase = togetherPhaseSeries.length-1;
   togetherPhaseSeries[lastPhase].dashStyle = 'Solid';
   togetherPhaseSeries.splice(lastPhase-1, 1);//remove total exact.
@@ -895,6 +933,9 @@ function getData () {
   BDO.phi.addEventListener('#phaseInput', updateSinusoidInput2);*/
   //only want to plot constant by default on top graph.
   //highchartsPlot(magSeries, 'mag', 'Magnitude Plot', 'Magnitude dB');
+}
+function getEndpoints(seriesItem) {
+  return [seriesItem.data[0], seriesItem.data[seriesItem.data.length-1]];
 }
 function setEventListeners() {
   const freqSource = document.getElementById('freqInput');
@@ -1146,24 +1187,12 @@ function topButtonHandler (termNum, last) {//1st try w/ zero at origin, p at ori
   //highchartsPlot(series2, 'phase', '<b>Phase Plot</b>', xAxis, 'Phase in Degrees', 'logarithmic', 90);
   let start = new Date().getTime();//1553 ms.
   magChart.series[termNum].update({color: series[termNum].color, lineWidth: 4});
-  phaseChart.series[termNum].update({color: series2[termNum].color, lineWidth: 4});
   magChart.series[last].update({color: series[last].color, lineWidth: 2});
+  phaseChart.series[termNum].update({color: series2[termNum].color, lineWidth: 4});
   phaseChart.series[last].update({color: series2[last].color, lineWidth: 2});
   let time = new Date().getTime() - start;
   console.log(time.toString() + ' ms');
   //~ 960 ms
-  /*magChart.series[termNum].options.color = series[termNum].color;
-  magChart.series[termNum].update(series[termNum].color);
-  phaseChart.series[termNum].options.color = series[termNum].color;
-  phaseChart.series[termNum].update(series[termNum].color);
-  
-  magChart.series[last].options.color = series2[last].color;
-  magChart.series[last].update(series[last].color);
-  phaseChart.series[last].options.color = series2[last].color;
-  phaseChart.series[last].update(series[last].color);*/
-
-  //magChart.series[last].options.color.update(series[last].options.color);
-  //phaseChart.series[last].options.color.update(series[last].options.color);
   document.getElementById('topDescription').innerHTML = magDescShown+'<br>'+phaseDescShown;
 
 }
