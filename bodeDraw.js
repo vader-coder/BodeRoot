@@ -409,7 +409,7 @@ function getData () {
   }
   if (!w.length) {//if w is an empty array.
     w.push(wMin);//so looks like extends to almost 0
-    for (let i=1; i<10001; i++) {
+    for (let i=1; i<1001; i++) {//was 10001
       w.push(roundDecimal(i*0.1, 1));//w.push(roundDecimal(1+ i*0.1, 1)); might want multiple versions of this.
     }
   }
@@ -442,9 +442,6 @@ function getData () {
   checkHtml = "<div id='checkboxes' style='float:left;'><br>Elements Detected: <br>";
   checkHtml += "<input type='radio' id='" + id + "0' onclick=\"onTopCheckOne(this.id)\" checked></input>";
   checkHtml += "<label for='" + id + "0'>"+ name +"</label>";
-  /*graphHtml =  "<div id='mag' style='float:right;'></div>";
-  graphHtml += "<div id='phase' style='float:right;'></div><br>";
-  graphHtml += "<p id='topDescription' style='float:left;'></p><br>";*/
 
   magDescs.push('The constant term is K= ~'+roundDecimal(constantK, 3).toString()+' = '+terms[0].magData[0][1].toPrecision(3)+' dB = 20log10(|K|).');
   //1 description, 1 graph
@@ -627,9 +624,9 @@ function getData () {
       else {
         desc = '';
       }
-      phaseRestDesc += '<li>Add slope of line connecting ('+w1+', 0)'+desc+' and ('+w2+', '+yEnd+')';
+      phaseRestDesc += '<li>Add slope of line connecting ('+w1+', 0&deg;)'+desc+' and ('+w2+', '+yEnd+'&deg;)';
       phaseRestDesc += ' to overall slope between &omega; = '+w1 + ' and &omega; = '+w2; 
-      phaseRestDesc += ' and add '+ yEnd +' to the &omega; > ' + w2 + ' section due to '+termDesc+'.</li>';    
+      phaseRestDesc += ' and add '+ yEnd +'&deg; to the &omega; > ' + w2 + ' section due to '+termDesc+'.</li>';    
       colorIndex++;
     }
     else if (terms[i].termType == "RealPole") {
@@ -690,9 +687,9 @@ function getData () {
       }
       w1 = terms[i].lowerBound.toPrecision(3), w2 = terms[i].upperBound.toPrecision(3);
       yEnd = (-90*terms[i].mult).toPrecision(3);
-      phaseRestDesc += '<li>Add slope of line connecting ('+w1+', 0)'+desc+' and ('+w2+', '+yEnd+')';
+      phaseRestDesc += '<li>Add slope of line connecting ('+w1+', 0&deg;)'+desc+' and ('+w2+', '+yEnd+'&deg;)';
       phaseRestDesc += ' to overall slope between &omega; = '+w1 + ' and &omega; = '+w2; 
-      phaseRestDesc += ' and add '+ yEnd +' to the &omega; > ' + w2 + ' section due to '+termDesc+'.</li>';    
+      phaseRestDesc += ' and add '+ yEnd +'&deg; to the &omega; > ' + w2 + ' section due to '+termDesc+'.</li>';    
       colorIndex++;
     }
     else if (terms[i].termType == "ComplexZero") {
@@ -757,9 +754,9 @@ function getData () {
       }
       w1 = terms[i].lowerBound.toPrecision(3), w2 = terms[i].upperBound.toPrecision(3);
       yEnd = (180*terms[i].mult).toPrecision(3);
-      phaseRestDesc += '<li>Add slope of line connecting ('+w1+', 0) and ('+w2+', '+yEnd+')';
+      phaseRestDesc += '<li>Add slope of line connecting ('+w1+', 0&deg;) and ('+w2+', '+yEnd+'&deg;)';
       phaseRestDesc += ' to overall slope between &omega; = '+w1 + ' and &omega; = '+w2; 
-      phaseRestDesc += ' and add '+ yEnd +' to the &omega; > ' + w2 + ' section due to '+termDesc+'.</li>';
+      phaseRestDesc += ' and add '+ yEnd +'&deg; to the &omega; > ' + w2 + ' section due to '+termDesc+'.</li>';
       colorIndex++;
     }
     else if (terms[i].termType == "ComplexPole") {
@@ -824,9 +821,9 @@ function getData () {
       }
       w1 = terms[i].lowerBound.toPrecision(3), w2 = terms[i].upperBound.toPrecision(3);
       yEnd = (-180*terms[i].mult).toPrecision();
-      phaseRestDesc += '<li>Add slope of line connecting ('+w1+', 0) and ('+w2+', '+yEnd+')';
+      phaseRestDesc += '<li>Add slope of line connecting ('+w1+', 0&deg;) and ('+w2+', '+yEnd+'&deg;)';
       phaseRestDesc += ' to overall slope between &omega; = '+w1 + ' and &omega; = '+w2; 
-      phaseRestDesc += ' and add '+ yEnd +' to the &omega; > ' + w2 + ' section due to '+termDesc+'.</li>';
+      phaseRestDesc += ' and add '+ yEnd +'&deg; to the &omega; > ' + w2 + ' section due to '+termDesc+'.</li>';
       colorIndex++;
     }
   }
@@ -951,12 +948,12 @@ function setEventListeners() {
 function freqInputHandler(e) {
   let omega = e.target.value;
   let phi = document.getElementById('phaseInput').value;
-  document.getElementById('sinusoidInput').innerHTML = 'cos('+omega+' rad &middot; t + '+phi+'&deg;)';  
+  document.getElementById('sinusoidInput').innerHTML = 'cos('+omega+' rad/S &middot; t + '+phi+'&deg;)';  
 }
 function phaseInputHandler(e) {
   let omega = document.getElementById('freqInput').value;
   let phi = e.target.value;
-  document.getElementById('sinusoidInput').innerHTML = 'cos('+omega+' rad &middot; t + '+phi+'&deg;)';
+  document.getElementById('sinusoidInput').innerHTML = 'cos('+omega+' rad/S &middot; t + '+phi+'&deg;)';
 }
 function sinusoidEnterHandler(e) {
   if (e.keyCode == 13) {//enter key
@@ -980,11 +977,11 @@ function graphSinusoid () {
     phase = normalize(theta + phi);
     if (phase > 0) {
       phase = phase.toPrecision(3);
-      html = mag+' dB &middot; cos('+BDO.omega.value+' rad &middot; t + '+phase+'&deg;)';
+      html = mag+' dB &middot; cos('+BDO.omega.value+' rad/S &middot; t + '+phase+'&deg;)';
     }
     else {
       phase = phase.toPrecision(3);
-      html = mag+' dB &middot; cos('+BDO.omega.value+' rad &middot; t - '+Math.abs(phase)+'&deg;)';
+      html = mag+' dB &middot; cos('+BDO.omega.value+' rad/S &middot; t - '+Math.abs(phase)+'&deg;)';
     }
   }
   else {
@@ -1698,7 +1695,7 @@ function omega0(s) { //get omega0 of complex number
 }
 
 function zeta(s) {//zeta(BDO.terms[i].value)
-    return (Math.abs(s.im / s.abs()).toPrecision(BDO.prec));
+    return (Math.acos(Math.abs(s.im / s.abs())).toPrecision(BDO.prec));
 }
 
 function to_m(m, html) { // a string for raising to the mth power (show nothing if m=1).
