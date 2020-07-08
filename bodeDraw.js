@@ -314,7 +314,7 @@ function getTerms() {
           realPart = parseFloat(terms[i].value.re);
           imagPart = parseFloat(terms[i].value.im);
           w0 = Math.sqrt(realPart*realPart + imagPart*imagPart);
-          zetaTemp = zeta(terms[i].value);
+          zetaTemp = parseFloat(zeta(terms[i].value));
           lowerBound = w0/(Math.pow(10, Math.abs(zetaTemp)));
           terms[i].w0 = w0;
           terms[i].zeta = zetaTemp;
@@ -344,7 +344,7 @@ function getTerms() {
           realPart = parseFloat(terms[i].value.re);
           imagPart = parseFloat(terms[i].value.im);
           w0 = Math.sqrt(realPart*realPart + imagPart*imagPart);
-          zetaTemp = zeta(terms[i].value);
+          zetaTemp = parseFloat(zeta(terms[i].value));
           lowerBound = w0/(Math.pow(10, Math.abs(zetaTemp)));
           terms[i].w0 = w0;
           terms[i].zeta = zetaTemp;
@@ -1356,7 +1356,6 @@ function compConjugateData (w, sign, termIndex) {
   let exp = BDO.terms[termIndex].mult, zetaTemp = BDO.terms[termIndex].zeta,
   jMax = BDO.wLen, x, base, peak, lowerBound, upperBound,
   middleDenominator, a, b, theta, breakW = 1;
-  BDO.terms[termIndex].zeta = parseFloat(zetaTemp);
   BDO.terms[termIndex].magBreakpt = 1;
   BDO.terms[termIndex].magSlope = sign*20*exp;
   if (zetaTemp < 0) {
@@ -1374,8 +1373,11 @@ function compConjugateData (w, sign, termIndex) {
       }//w0Rounded pushes the asymptote so it is more in sync w/ exact function.
       else if (w[j] == breakW) {//might ask prof cheever about his peak at some point.
         base = sign*40*exp*Math.log10(x);
-        peak = 20*Math.abs(Math.log10(2*Math.abs(zetaTemp)))*Math.sign(base);
+        peak = 20*sign*-1*Math.abs(Math.log10(2*Math.abs(zetaTemp)));
+        //the peak will be opposite in sign to the base.
+        magApproxData.push([w[j]-0.0001, base]);
         magApproxData.push([w[j], base+peak]);
+        magApproxData.push([w[j]+0.0001, base]);
       }
     }
   }
