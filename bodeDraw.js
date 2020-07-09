@@ -40,7 +40,8 @@ function BDO_Obj() {
     this.bothPhaseChart;
     this.bothTotalMagSeries;
     this.bothTotalPhaseSeries;
-    this.lowerBounds = [];
+    this.lowerBounds = [];//list of lowerBounds
+    this.upperBounds = [];//list of upperBounds
 };//way to just reference chart from id?
 
 // Create the object that has information needed for each "term"
@@ -252,7 +253,7 @@ function getTerms() {
   // the "terms" array for all real poles (increment j each time we find one). 
   // Repeat for real zeros...
   let j = 1;
-
+  let realPart, imagPart, w0, zetaTemp, lowerBound, upperBound;
   // The '0' term is constant, it stays put, so start loop at 1.
   // This first loop will add all of the real poles to our array.
   let idx = 0;
@@ -269,9 +270,14 @@ function getTerms() {
           // we'll use this phrase whenever the situation arises that includes a multiple pole or zero.
           terms[i].mH = m == 1 ? '' : `, of muliplicity ${m}`;
           BDO.terms[j++] = terms[i];
-          terms[i].w0 = Math.abs(parseFloat(terms[i].value));
-          terms[i].lowerBound = 0.1*terms[i].w0;
-          BDO.lowerBounds.push(terms[i].lowerBound);
+          w0 = Math.abs(parseFloat(terms[i].value));
+          lowerBound = 0.1*w0;
+          upperBound = 10*w0;
+          terms[i].w0 = w0;
+          terms[i].lowerBound = lowerBound;
+          terms[i].upperBound = upperBound;
+          BDO.lowerBounds.push(lowerBound);
+          BDO.upperBounds.push(upperBound);//upperBound = 10*w0. 
       }
   }
   // Now add the zeros.
@@ -288,13 +294,17 @@ function getTerms() {
           terms[i].t2H = `(1 + s/${terms[i].tHw})${to_m(m, 1)}`;
           terms[i].mH = m == 1 ? '' : `, of muliplicity ${m}`; // multiplicity phrase
           BDO.terms[j++] = terms[i];
-          terms[i].w0 = Math.abs(parseFloat(terms[i].value));
-          terms[i].lowerBound = 0.1*terms[i].w0;
-          BDO.lowerBounds.push(terms[i].lowerBound);
+          w0 = Math.abs(parseFloat(terms[i].value));
+          lowerBound = 0.1*w0;
+          upperBound = 10*w0;
+          terms[i].w0 = w0;
+          terms[i].lowerBound = lowerBound;
+          terms[i].upperBound = upperBound;
+          BDO.lowerBounds.push(lowerBound);
+          BDO.upperBounds.push(upperBound);//upperBound = 10*w0. 
       }
   }
   idx = 0;
-  let realPart, imagPart, w0, zetaTemp, lowerBound;
   for (let i = 1; i < BDO.numTerms; i++) {
       if (terms[i].termType == 'ComplexPole') {
           idx++;
@@ -316,12 +326,15 @@ function getTerms() {
           w0 = Math.sqrt(realPart*realPart + imagPart*imagPart);
           zetaTemp = parseFloat(zeta(terms[i].value));
           lowerBound = w0/(Math.pow(10, Math.abs(zetaTemp)));
+          upperBound = w0*Math.pow(10, Math.abs(zetaTemp));
           terms[i].w0 = w0;
           terms[i].zeta = zetaTemp;
           terms[i].realPart = realPart;
           terms[i].imagPart = imagPart;
           terms[i].lowerBound = lowerBound;
+          terms[i].upperBound = upperBound;
           BDO.lowerBounds.push(lowerBound);
+          BDO.upperBounds.push(upperBound);        
       }
   }
   idx = 0;
@@ -346,10 +359,16 @@ function getTerms() {
           w0 = Math.sqrt(realPart*realPart + imagPart*imagPart);
           zetaTemp = parseFloat(zeta(terms[i].value));
           lowerBound = w0/(Math.pow(10, Math.abs(zetaTemp)));
+          upperBound = w0*Math.pow(10, Math.abs(zetaTemp));
           terms[i].w0 = w0;
           terms[i].zeta = zetaTemp;
+          terms[i].realPart = realPart;
+          terms[i].imagPart = imagPart;
           terms[i].lowerBound = lowerBound;
-          BDO.lowerBounds.push(lowerBound);        }
+          terms[i].upperBound = upperBound;
+          BDO.lowerBounds.push(lowerBound);
+          BDO.upperBounds.push(upperBound);            
+      }
   }
   for (let i = 1; i < BDO.numTerms; i++) {
       if (terms[i].termType == 'OriginPole') {
@@ -388,7 +407,7 @@ function getTerms() {
   */
 function getData () {
   let terms = BDO.terms;
-  let constantK = parseFloat(BDO.K), w1, w2, yEnd, w0, zeta_, exp;
+  let constantK = parseFloat(BDO.K), w1, w2, yEnd, w0, zeta_, exp, iMax;
   let constMag = [], constPhase = [], magSeries = [], phaseSeries = [],
   topMagSeries = [], topPhaseSeries = [], desc, magDescs = [], phaseDescs = [],
   togetherMagSeries = [], togetherPhaseSeries = [], w0Mag, zMag, print, print2, name,
@@ -413,13 +432,20 @@ function getData () {
   let id = 'topTerm:', bothTotalMagSeries = [0, 0], bothTotalPhaseSeries = [0, 0], dashStyle = 'Solid';
   magLeftMostPointDesc = 'Since we have a constant C='+BDO.C.toString();
   let w = BDO.w, slopeDB, phaseLine, halfPhaseLine;
-  let min = Math.min(BDO.lowerBounds), wMin = 0.01;//min = lowest frequency at which a term's slope becomes > 0
-  while (wMin >= min) {//ensure lowest frequency on graph wMin is < min
+  let lowerBoundMin = Math.min(BDO.lowerBounds), wMin = 0.01;//min = lowest frequency at which a term's slope becomes > 0
+  let upperBoundMax = Math.max(BDO.upperBounds), wMax = 1000;
+  //make smallest frequency on graph to be smaller than the lowest lowerBound by a factor of 10
+  while (wMin >= lowerBoundMin) {//ensure lowest frequency on graph wMin is < lowerBoundMin
     wMin *= 0.1;
+  }
+  //make largest frequency on graph larger than largest upperBound by a factor of 10;
+  while (wMax <= upperBoundMax) {
+    wMax *= 10;
   }
   if (!w.length) {//if w is currently empty, add all the frequency coordinates we will be graphing to it.
     w.push(wMin);//so looks like extends to almost 0
-    for (let i=1; i<1001; i++) {
+    iMax = wMax*10+1;
+    for (let i=1; i<iMax; i++) {
       if (i*0.1 == 1) {//1 is where the peak of a complex conjugate magnitude graph will be
         w.push(1-0.0001);//ensure that there are points immediately next to the peak
         w.push(roundDecimal(i*0.1, 1));
@@ -1000,11 +1026,11 @@ function graphSinusoid () {
   //phi is input; theta is phase outputted from function, & phae is phi+theta
   //if within confines of input & not more than 1 decimal place, then just use the data we made.
   if (isNaN(omega) || isNaN(phi) || omega <= 0) {
-    alert('You must specify a value for frequency and phase. The frequency must be positive.');
+    alert('You must specify a numerical value for frequency and phase. The frequency must be positive.');
     return;
   }
-  if (omega <= BDO.w[BDO.wLen-1] && (omega*10) == Math.round(omega*10)) {
-    wIndex = BDO.w.indexOf(roundDecimal(omega, 1));
+  wIndex = BDO.w.indexOf(roundDecimal(omega, 1));
+  if (wIndex > -1 && (omega*10) == Math.trunc(omega*10)) {
     mag = BDO.allMag[wIndex][1].toPrecision(3);
     theta = BDO.allPhase[wIndex][1];
     phase = normalize(theta + phi);
@@ -1021,7 +1047,7 @@ function graphSinusoid () {
     [html, mag, phase] = getSinusoid(omega, phi);
   }
   let phiRad = deg2Radians(phi);
-  let phaseRad = deg2Radians(phi);
+  let phaseRad = deg2Radians(phase);//was phi earlier.
   /*let outputStr = mag+'cos('+omega+'*t '+phase+')';
   let inputStr = mag+'cos('+omega+'*t '+phi+')';
   maxDiff(mag, omega, phi, phase)*/
@@ -1062,13 +1088,21 @@ function graphSinusoid () {
   phase = bothTotalPhaseSeries[0].data;
   let phaseApprox = bothTotalPhaseSeries[1].data;
   wIndex = getWIndex(omega);
-  if (bothTotalMagSeries[2]) {
-    bothTotalMagSeries[2].data = [[omega, mag[wIndex][1]]];
+  if (bothTotalMagSeries[3]) {//if red dot already exists, remove it.
+    bothTotalMagSeries.pop();
+    bothTotalMagSeries.pop();
+    bothTotalPhaseSeries.pop();
+    bothTotalPhaseSeries.pop();
+    BDO.bothMagChart.series[3].remove();
+    BDO.bothMagChart.series[2].remove();
+    BDO.bothPhaseChart.series[3].remove();
+    BDO.bothPhaseChart.series[2].remove();//remove previous
+    /*bothTotalMagSeries[2].data = [[omega, mag[wIndex][1]]];
     bothTotalMagSeries[3].data = [[omega, magApprox[wIndex][1]]];
     bothTotalPhaseSeries[2].data = [[omega, phase[wIndex][1]]];
-    bothTotalPhaseSeries[3].data = [[omega, phaseApprox[wIndex][1]]];
+    bothTotalPhaseSeries[3].data = [[omega, phaseApprox[wIndex][1]]];*/
   }
-  else {
+  if (!bothTotalMagSeries[3] && wIndex > -1) {// if no red dot in series, add one.
     bothTotalMagSeries.push({
       name: "point",
       data: [[omega, mag[wIndex][1]]], 
@@ -1089,8 +1123,14 @@ function graphSinusoid () {
       data: [[omega, phaseApprox[wIndex][1]]], 
       color: 'rgba(255,99,71, 1)'
     });
+    if (chart) {
+      BDO.bothMagChart.addSeries(bothTotalMagSeries[2]);
+      BDO.bothMagChart.addSeries(bothTotalMagSeries[3]);
+      BDO.bothPhaseChart.addSeries(bothTotalPhaseSeries[2]);
+      BDO.bothPhaseChart.addSeries(bothTotalPhaseSeries[3]);  
+    }
   }
-  if (chart) {//already made 
+  if (chart) {//sinusoid chart already made, then update it.
     //  let xMax = data[data.length-1][0], xMin = data[0][0];
     tMin = inputData[0][0];//should this still work? 
     tMax = inputData[inputData.length-1][0];
@@ -1101,30 +1141,10 @@ function graphSinusoid () {
     bothTotalPhaseSeries[2].data = [[omega, phase[wIndex][1]]];
     bothTotalPhaseSeries[3].data = [[omega, phaseApprox[wIndex][1]]];*/
     chart.update({series: series, xAxis: {min: tMin, max: tMax}, yAxis: {min: yMin, max: yMax}});
-    BDO.bothMagChart.update({series: bothTotalMagSeries});
-    BDO.bothPhaseChart.update({series: bothTotalPhaseSeries});
+    //BDO.bothMagChart.update({series: bothTotalMagSeries});
+    //BDO.bothPhaseChart.update({series: bothTotalPhaseSeries});
   }
-  else {
-    /*bothTotalMagSeries.push({
-      name: "point",
-      data: [[omega, mag[wIndex][1]]], 
-      color: 'rgba(255,99,71, 1)'
-    });
-    bothTotalMagSeries.push({
-      name: "point Approx",
-      data: [[omega, magApprox[wIndex][1]]], 
-      color: 'rgba(255,99,71, 1)'
-    });
-    bothTotalPhaseSeries.push({
-      name: "point",
-      data: [[omega, phase[wIndex][1]]], 
-      color: 'rgba(255,99,71, 1)'
-    });
-    bothTotalPhaseSeries.push({
-      name: "point Approx",
-      data: [[omega, phaseApprox[wIndex][1]]], 
-      color: 'rgba(255,99,71, 1)'
-    });*/
+  else {//make a new chart.
     BDO.sinusoidChart = highchartsPlot(series, 'sinusoidPlot', '<b>Sinusoids</b>', 'Time', 'Dependent Variable', 'linear');
     BDO.bothMagChart = highchartsPlot(bothTotalMagSeries, 'bothTotalMag', '<b>Total Magnitude Plot</b>', '&omega;, rad', '|H(j&omega;)|, dB');
     BDO.bothPhaseChart = highchartsPlot(bothTotalPhaseSeries, 'bothTotalPhase', '<b>Total Phase Plot</b>', '&omega;, rad', '&ang;H(j&omega;), &deg;', 'logarithmic', 90);
@@ -1258,7 +1278,15 @@ function getZeta (img, real) {
 //indecies from 0 to 9,999.
 //i from 1 to 10001
 function getWIndex (w) {//w values from 0.1 to 1001. 
-  return w*10-1;
+  let wArray = BDO.w;
+  let len = wArray.length;
+  let search = roundDecimal(w, 1);
+  for (let i=0; i<len; i++) {
+    if (search == wArray[i]) {
+      return i;
+    }
+  }
+  return -1;
 }
 function normalize(angle) {
     while (angle <= -180) {
@@ -1314,12 +1342,10 @@ lowerBound = 0.1*w0;
 function realData (w, sign, termIndex) {
   let w0 = BDO.terms[termIndex].w0;
   let magApproxData = [], phaseApproxData = [], magExactData = [], phaseExactData = [], wLen = BDO.wLen;
-  let exp = BDO.terms[termIndex].mult, lowerBound = 0.1*w0, upperBound = 10*w0,
-  middleDenominator = Math.log10(upperBound/lowerBound), theta, x;
-  BDO.terms[termIndex].midPhaseSlope = '90*'+exp.toString()+'/'+middleDenominator.toString();//how to calculate? want a per-decade measurement.
-  BDO.terms[termIndex].endPhaseSlope = '90*'+exp.toString();
-  BDO.terms[termIndex].upperBound = upperBound;
-  lowerBound = BDO.terms[termIndex].lowerBound;
+  let exp = BDO.terms[termIndex].mult, lowerBound =  BDO.terms[termIndex].lowerBound, upperBound = BDO.terms[termIndex].upperBound;//0.1*w0 & 10*w0
+  let middleDenominator = Math.log10(upperBound/lowerBound), theta, x;
+  BDO.terms[termIndex].midPhaseSlope = '90&middot;'+exp.toString()+'/'+middleDenominator.toString();//how to calculate? want a per-decade measurement.
+  BDO.terms[termIndex].endPhaseSlope = '90&middot;'+exp.toString();
   /*if (lowerBound <= 0.1) {
     phaseApproxData.push([0.00001, 0]);
   }*/
@@ -1387,7 +1413,7 @@ function compConjugateData (w, sign, termIndex) {
   let w0Rounded = roundDecimal(w0, 1);//round to 1 decimal place.
   let magApproxData = [], phaseApproxData = [], magExactData = [], phaseExactData = [];
   let exp = BDO.terms[termIndex].mult, zetaTemp = BDO.terms[termIndex].zeta,
-  jMax = BDO.wLen, x, base, peak, lowerBound, upperBound,
+  jMax = BDO.wLen, x, base, peak, lowerBound = BDO.terms[termIndex].lowerBound, upperBound = BDO.terms[termIndex].upperBound,
   middleDenominator, a, b, theta, breakW = 1;
   BDO.terms[termIndex].magBreakpt = 1;
   BDO.terms[termIndex].magSlope = sign*20*exp;
@@ -1435,13 +1461,11 @@ function compConjugateData (w, sign, termIndex) {
     magExactData.push([w[j], sign*20*exp*Math.log10(x)]);
     //approx & exact are closer when both 20 or 40.
   }
-  lowerBound = BDO.terms[termIndex].lowerBound;//(x,y) = (lowerBound, 0)
-  upperBound = w0*Math.pow(10, Math.abs(zetaTemp));//(x,y) = (upperBound, sign*180)
+  //lowerBound = BDO.terms[termIndex].lowerBound;//(x,y) = (lowerBound, 0)
+  //upperBound = BDo.terms[termIndex].upperBound;//w0*Math.pow(10, Math.abs(zetaTemp));//(x,y) = (upperBound, sign*180)
   middleDenominator = Math.log10(upperBound/lowerBound);
   BDO.terms[termIndex].midPhaseSlope = '180*'+exp.toString()+'/'+middleDenominator.toString();//how to calculate? want a per-decade measurement.
   BDO.terms[termIndex].endPhaseSlope = '180*'+exp.toString();
-  BDO.terms[termIndex].upperBound = upperBound;
-  BDO.terms[termIndex].lowerBound = lowerBound;
   //phase approximation
   /*if (lowerBound <= 0.1) {
     phaseApproxData.push([0.00001, 0]);
@@ -1777,7 +1801,6 @@ function highchartsPlot (series, id, title, xAxis, yAxis, logOrLinear, tickInt) 
   let chart = Highcharts.chart(id, {
     chart: {
         type: 'line',
-        zoomType: 'xy',//width: width
         spacing: [10, 0, 15, 0],//top, right, bottom, left,
         height: height
     },
@@ -1830,7 +1853,7 @@ function highchartsPlot (series, id, title, xAxis, yAxis, logOrLinear, tickInt) 
             floating: true,
             draggable: true,
             zIndex: 20,
-            useHTML: true,
+            //useHTML: true,
             enabled: legend
         },
     plotOptions: {

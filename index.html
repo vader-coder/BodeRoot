@@ -70,7 +70,7 @@
 #MathJax_MSIE_Frame {position: absolute; top: 0; left: 0; width: 0px; z-index: 101; border: 0px; margin: 0px; padding: 0px}
 .MathJax_Error {color: #CC0000; font-style: italic}
 </style>
-<style>
+<style type="text/css">
   .wrapper {
     display:grid;
     grid-template-columns: 1fr 3fr;
@@ -111,7 +111,6 @@
     /*max-width: 400px;*/
     font-size: 0.75em;
   }
-  
 </style>
   <script src="https://lpsa.swarthmore.edu/complex/complex.js"></script>
 
@@ -414,11 +413,11 @@
       The dotted lines are straight-line approximations of the exact plots, which are solid.<br>
       The red dots show the location of the input frequency on the overal chart.
     </div>
-    <div class="stackedEven" style="background-color: crimson;" class="stackedEven"><!--Right div-->
+    <div class="stackedEven"> <!--style="background-color: crimson;">--><!--Right div-->
       <div id='sinusoidPlot'></div>
       <div class="sideBySideEven">
-        <div id='bothTotalMag' style="background-color: greenyellow;"></div>
-        <div id='bothTotalPhase' style="background-color: skyblue;"></div>
+        <div id='bothTotalMag' ><!--style="background-color: greenyellow;">--></div>
+        <div id='bothTotalPhase'><!-- style="background-color: skyblue;">--></div>
       </div>
     </div>
   </div>
