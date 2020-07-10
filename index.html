@@ -71,17 +71,24 @@
 .MathJax_Error {color: #CC0000; font-style: italic}
 </style>
 <style type="text/css">
-  .wrapper {
+  .wrapper {/* Individual plot window.*/
     display:grid;
-    grid-template-columns: 1fr 3fr;
+    grid-template-columns: 4fr 7fr;/*1fr 3fr;*/
     min-height: 70vh;/*500/720 = .69. 70% of screen height.*/
     max-height: 83vh;
     overflow:scroll;
   }
-  .wrapper2 {
+  .wrapper2 {/* Together plot window.*/
     display: grid;
-    grid-template-columns: 1fr 2fr;
+    grid-template-columns: 4fr 7fr;/* was 1ft 2fr I think */
     min-height: 70vh;
+    max-height: 83vh;
+    overflow:scroll;
+  }
+  .wrapper3 {/* Individual plot window.*/
+    display:grid;
+    grid-template-columns: 1fr 3fr;
+    min-height: 70vh;/*500/720 = .69. 70% of screen height.*/
     max-height: 83vh;
     overflow:scroll;
   }
@@ -106,6 +113,9 @@
   }
   .bottomDesc {
     background: #FFC0CB;
+  }
+  #individualDescs {
+    font-size: 1em;
   }
   #togetherDescs {
     /*max-width: 400px;*/
@@ -350,7 +360,7 @@
     </div>
   </div>
   <div class="wrapper">
-    <div class="stackedEven">
+    <div class="stackedEven" id="individualDescs">
       <div id="individualGraphOptions" class="topDesc"></div>
       <div id='topDescription' class="bottomDesc"></div>
     </div>
@@ -380,25 +390,8 @@
       </div> 
     </div>
   </div>
-  <!--<h2>Putting It All Together</h2>
-  <div class="wapper">
-    <div class="stackedEven" id="togetherDescs">
-      <div id="bigMagDesc">
-        <h5>Magnitude</h5>
-        <div id="togetherMagDesc"></div>  
-      </div>
-      <div id="bigPhaseDesc">
-        <h5>Phase</h5>
-        <div id="togetherPhaseDesc"></div>  
-      </div>  
-    </div>
-    <div class="stackedEven">
-      <div id='togetherMagPlot'></div>
-      <div id='togetherPhasePlot'></div> 
-    </div>
-  </div>-->
   <h2 style="text-align:center">Calculate Sinusoid</h2><br>
-  <div class="wrapper">
+  <div class="wrapper3">
     <div class="topDesc"><!--Left div-->
       Input sinusoid of form cos(&omega; rad/S &middot; t + &phi;&deg;)
       <br><label for='freqInput'>Input a frequency &omega; rad/S </label>
