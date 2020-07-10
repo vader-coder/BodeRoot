@@ -43,6 +43,7 @@ function BDO_Obj() {
     this.lowerBounds = [];//list of lowerBounds
     this.upperBounds = [];//list of upperBounds
     this.complexW0s = [];//list of w0s for complex #s. 
+    this.isAnSInNumerator = 1;
 };//way to just reference chart from id?
 
 // Create the object that has information needed for each "term"
@@ -87,12 +88,13 @@ $(function () {
 function BDOupdate(moreThanOnce) {
     /*getTerms();
     dispTerms();*/
-    let cheevStart, cheevStop, patStart, patStop, cheevTime, patTime;
+    let cheevStart, cheevStop, patStart, patStop, cheevTime, patTime, ret;
     if (!moreThanOnce) {
       getURLParams();//if this is the first time BDOupdate() has been called.
     }
     cheevStart = new Date().getTime();
-    getTerms();
+    ret = getTerms();
+    if (!ret) { return; }
     dispTerms();
     cheevStop = new Date().getTime();
     if (BDO.terms.length > 14) {
@@ -155,8 +157,15 @@ function getTerms() {
   if (BDO.num.indexOf("s") > -1) {
     zeros = nerdamer.roots(BDO.num);
   }
+  else {
+    BDO.isAnSInNumerator = 0;
+  }
   if (BDO.den.indexOf("s") > -1) {
     poles = nerdamer.roots(BDO.den);
+  }
+  else {
+    alert("You must include the variable 's' in the denominator.");
+    return false;
   }
 
   let numOrd = nerdamer.deg(BDO.num).valueOf();
@@ -397,6 +406,7 @@ function getTerms() {
       }
   }
   console.log(BDO);
+  return true;
 }
 /*getData() calculates the data points used to graph the magnitude
   and phase of each term. It creates a list of objects for the phase and the magnitude,
@@ -1646,8 +1656,11 @@ function dispTerms() {
   let oS = ''; // String for origin poles and zeros
   let lS = `<blockquote><p class="noindent">With:</p><ul style="margin-left:3em">
     <li>Constant: C=${BDO.C}</li>`;
+  let isAnSInNumerator = BDO.isAnSInNumerator;
   let lSHtml = '<blockquote><p class="noindent">With:</p><ul style="margin-left:3em"> <li>Constant: C='+BDO.C.toString()+'</li>';
   let K = BDO.C; // We'll calculate K as we go.
+  let numConst = parseFloat(BDO.num);
+  if (!isAnSInNumerator && numConst) { K *= numConst; }
   let pt = [0, 1, 2, 3, 4, 5], exp;
   //tHw & tHz instead of tXw & tXz
   //t1H & t2H 
@@ -1746,6 +1759,14 @@ function dispTerms() {
   let H1S = "\\[H(s)=C\\frac{"+BDO.num.toString()+"}{"+BDO.den+"}\\]";
   $('#H1').html(H1S);
 
+  if (!BDO.isAnSInNumerator) {
+    nS1 = BDO.num;
+    cnS = BDO.num;
+  }
+  if (nS1 == '') { nS1 = '1'; }
+  if (cnS == '') { cnS = '1'; }
+  if (nS2 == '') { nS2 = '1'; }
+  
   //let H2S = `H(s) = C${oS}\\frac{${nS1}}{${dS1}}`;
   let H2S = "\\[H(s) = C"+oS.toString()+"\\frac{"+nS1.toString()+"}{"+dS1.toString()+"}\\]";
   $('#H2').html(H2S);
@@ -1754,6 +1775,7 @@ function dispTerms() {
   $('#TermDisp').html(lSHtml);
 
   //let H3S = `H(s) = C\\frac{${cnS}}{${cdS}}${oS}\frac{${nS2}}{${dS2}}`;
+  
   let H3S = "\\[H(s) = C\\frac{"+cnS.toString()+"}{"+cdS.toString()+"}{"+oS.toString()+"}\\frac{"+nS2.toString()+"}{"+dS2.toString()+"}\\]";
   $('#H3').html(H3S);
 
