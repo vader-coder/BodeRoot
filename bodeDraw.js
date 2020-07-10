@@ -42,6 +42,7 @@ function BDO_Obj() {
     this.bothTotalPhaseSeries;
     this.lowerBounds = [];//list of lowerBounds
     this.upperBounds = [];//list of upperBounds
+    this.complexW0s = [];//list of w0s for complex #s. 
 };//way to just reference chart from id?
 
 // Create the object that has information needed for each "term"
@@ -79,6 +80,7 @@ function termObj() {
 $(function () {
     BDO = new BDO_Obj(); // Create object.
     BDOupdate();
+    setEventListeners();//setup event listeners.
 });
 
 // function called when polynomial is changed.
@@ -99,7 +101,7 @@ function BDOupdate(moreThanOnce) {
     }
     getData();
     graphSinusoid();
-    setEventListeners();
+    //setEventListeners();
     patStop = new Date().getTime();
     patStart = cheevStop;
     cheevTime = cheevStop - cheevStart;
@@ -334,7 +336,8 @@ function getTerms() {
           terms[i].lowerBound = lowerBound;
           terms[i].upperBound = upperBound;
           BDO.lowerBounds.push(lowerBound);
-          BDO.upperBounds.push(upperBound);        
+          BDO.upperBounds.push(upperBound);
+          BDO.complexW0s.push(truncDecimal(w0, 1));        
       }
   }
   idx = 0;
@@ -367,7 +370,8 @@ function getTerms() {
           terms[i].lowerBound = lowerBound;
           terms[i].upperBound = upperBound;
           BDO.lowerBounds.push(lowerBound);
-          BDO.upperBounds.push(upperBound);            
+          BDO.upperBounds.push(upperBound);
+          BDO.complexW0s.push(truncDecimal(w0, 1));            
       }
   }
   for (let i = 1; i < BDO.numTerms; i++) {
@@ -442,17 +446,25 @@ function getData () {
   while (wMax <= upperBoundMax) {
     wMax *= 10;
   }
+  let complexW0s = BDO.complexW0s.sort(function(a, b){return a-b});
+  //sorted in ascending order so we can get them all.
+  let w0Index = 0, lastW0;
   if (!w.length) {//if w is currently empty, add all the frequency coordinates we will be graphing to it.
     w.push(wMin);//so looks like extends to almost 0
     iMax = wMax*10+1;
     for (let i=1; i<iMax; i++) {
-      if (i*0.1 == 1) {//1 is where the peak of a complex conjugate magnitude graph will be
-        w.push(1-0.0001);//ensure that there are points immediately next to the peak
-        w.push(roundDecimal(i*0.1, 1));
-        w.push(1.0001);
+      w0 = complexW0s[w0Index];
+      if (i*0.1 == w0) {//1 is where the peak of a complex conjugate magnitude graph will be
+        w.push(truncDecimal(w0-0.0001, 4));//ensure that there are points immediately next to the peak
+        w.push(truncDecimal(i*0.1, 1));
+        w.push(truncDecimal(w0 + 0.0001, 4));
+        lastW0 = w0;
+        while (complexW0s[w0Index] == lastW0) {//if next w0 is same as last, skip over it.
+          w0Index++;
+        }
       }
       else {
-        w.push(roundDecimal(i*0.1, 1));
+        w.push(truncDecimal(i*0.1, 1));
       }
     }
   }
@@ -994,6 +1006,13 @@ function getEndpoints(seriesItem) {
   return [seriesItem.data[0], seriesItem.data[seriesItem.data.length-1]];
 }
 function setEventListeners() {
+  const numerator = document.getElementById('N_of_s');
+  const denominator = document.getElementById('D_of_s');
+  const constant = document.getElementById('multConst');
+  numerator.addEventListener('keyup', bdoKeyupHandler);
+  denominator.addEventListener('keyup', bdoKeyupHandler);
+  constant.addEventListener('keyup', bdoKeyupHandler);
+
   const freqSource = document.getElementById('freqInput');
   const phaseSource = document.getElementById('phaseInput');
   freqSource.addEventListener('input', freqInputHandler);
@@ -1004,18 +1023,23 @@ function setEventListeners() {
   phaseSource.addEventListener('keyup', sinusoidEnterHandler);
 }
 //call when input Magnitude or phase changes.
-function freqInputHandler(e) {
-  let omega = e.target.value;
+function freqInputHandler(event) {
+  let omega = event.target.value;
   let phi = document.getElementById('phaseInput').value;
   document.getElementById('sinusoidInput').innerHTML = 'cos('+omega+' rad/S &middot; t + '+phi+'&deg;)';  
 }
-function phaseInputHandler(e) {
+function phaseInputHandler(event) {
   let omega = document.getElementById('freqInput').value;
-  let phi = e.target.value;
+  let phi = event.target.value;
   document.getElementById('sinusoidInput').innerHTML = 'cos('+omega+' rad/S &middot; t + '+phi+'&deg;)';
 }
-function sinusoidEnterHandler(e) {
-  if (e.keyCode == 13) {//enter key
+function bdoKeyupHandler() {
+  if (event.keyCode == 13) {//enter key pressed inside numerator, denominator, or constant input field
+    BDOupdate(1);
+  }
+}
+function sinusoidEnterHandler(event) {
+  if (event.keyCode == 13) {//enter key
     graphSinusoid();
   }
 }
@@ -1141,8 +1165,8 @@ function graphSinusoid () {
     bothTotalPhaseSeries[2].data = [[omega, phase[wIndex][1]]];
     bothTotalPhaseSeries[3].data = [[omega, phaseApprox[wIndex][1]]];*/
     chart.update({series: series, xAxis: {min: tMin, max: tMax}, yAxis: {min: yMin, max: yMax}});
-    //BDO.bothMagChart.update({series: bothTotalMagSeries});
-    //BDO.bothPhaseChart.update({series: bothTotalPhaseSeries});
+    BDO.bothMagChart.update({series: bothTotalMagSeries});
+    BDO.bothPhaseChart.update({series: bothTotalPhaseSeries});
   }
   else {//make a new chart.
     BDO.sinusoidChart = highchartsPlot(series, 'sinusoidPlot', '<b>Sinusoids</b>', 'Time', 'Dependent Variable', 'linear');
@@ -1414,28 +1438,32 @@ function compConjugateData (w, sign, termIndex) {
   let magApproxData = [], phaseApproxData = [], magExactData = [], phaseExactData = [];
   let exp = BDO.terms[termIndex].mult, zetaTemp = BDO.terms[termIndex].zeta,
   jMax = BDO.wLen, x, base, peak, lowerBound = BDO.terms[termIndex].lowerBound, upperBound = BDO.terms[termIndex].upperBound,
-  middleDenominator, a, b, theta, breakW = 1;
+  middleDenominator, a, b, theta, breakW = w0;//need to change to w0?
   BDO.terms[termIndex].magBreakpt = 1;
   BDO.terms[termIndex].magSlope = sign*20*exp;
   if (zetaTemp < 0) {
     alert('A negative damping ratio is not permitted');
   }
+  breakW = w0Rounded;
+  //0 undershoots offset, approx is below exact. breakW-1 might overshoot it?
+  let offset = breakW-1;//since logs normally intersects at x=1, to shift to breakW have to subtract breakW-1.s
   //approximate Magnitude:
   if (zetaTemp < 0.5) {
+    let afterBreak = truncDecimal(breakW + 0.0001, 4);
     for (let j=0; j<jMax; j++) {
       x = w[j];
-      if (w[j] < breakW) {//for phase w[j] <= w0/(Math.pow(10, zeta))) {
+      if (w[j] < breakW || w[j] == afterBreak) {//for phase w[j] <= w0/(Math.pow(10, zeta))) {
         magApproxData.push([w[j], 0]);
       }//was w0Rounded.
-      else if (w[j] > breakW && w[j] != breakW) { //might change to if so they will connect?
-        magApproxData.push([w[j], sign*40*exp*Math.log10(x)]);//-w0Rounded+1)]);
+      else if (w[j] > breakW) { //might change to if so they will connect?
+        magApproxData.push([w[j], sign*40*exp*Math.log10(x-offset)]);//-w0Rounded+1)]);
       }//w0Rounded pushes the asymptote so it is more in sync w/ exact function.
       else if (w[j] == breakW) {//might ask prof cheever about his peak at some point.
-        base = sign*40*exp*Math.log10(x);
+        //base = sign*40*exp*Math.log10(x-offset); //base should always be 0.
         peak = 20*sign*-1*Math.abs(Math.log10(2*Math.abs(zetaTemp)));
         //the peak will be opposite in sign to the base.
         //magApproxData.push([w[j]-0.0001, base]);
-        magApproxData.push([w[j], base+peak]);
+        magApproxData.push([w[j], peak]);
         //magApproxData.push([w[j]+0.0001, base]);
       }
     }
@@ -1447,7 +1475,7 @@ function compConjugateData (w, sign, termIndex) {
         magApproxData.push([w[j], 0]);
       }
       else if (w[j] > breakW) {//w0Rounded vs 1
-        magApproxData.push([w[j], sign*40*exp*Math.log10(x)]);
+        magApproxData.push([w[j], sign*40*exp*Math.log10(x-offset)]);//should we have breakW - 1 in this?
       }
     }
   }
