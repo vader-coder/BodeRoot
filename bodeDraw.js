@@ -75,6 +75,8 @@ function termObj() {
     this.endPhaseSlope = '';
     this.realPart;
     this.imagPart;
+    this.topMagData = [];
+    this.topPhaseData = [];
 }
 
 // Reset function
@@ -427,6 +429,7 @@ function getData () {
   togetherMagSeries = [], togetherPhaseSeries = [], w0Mag, zMag, print, print2, name,
   descIndex, bold = BDO.bold, faded = BDO.faded, checkBoxesHtml, graphHtml, graphs, graphCheck, iLen,
   names = [], togetherPhaseDesc, togetherMagDesc, blackRGBA = 'rgba(0, 0, 0, 1)';
+  //let topMagData = [], topPhaseData = [];//list of data for each item.
   var colors = ['rgba(0,114,189,'+bold+')',//list of colors for lines
   'rgba(217,83,25,'+bold+')',
   'rgba(237,177,32,'+bold+')',
@@ -501,6 +504,8 @@ function getData () {
   terms[0].phaseData = constPhase;
   terms[0].magDataApprox = constMag;
   terms[0].phaseDataApprox = constPhase;
+  terms[0].topMagData = [constMag[0], constMag[constMag.length-1]];
+  terms[0].topPhaseData = [constPhase[0], constPhase[constPhase.length-1]];  
   //start formulas for left most point in each graph.
   magLeftMostPointFormula = BDO.K;
   phaseLeftMostPointFormula = constPhase[0][1].toString();
@@ -542,6 +547,8 @@ function getData () {
       terms[i].sign = 1;
       terms[i].magDataApprox = terms[i].magData;//for terms at the origin, approximation is same as exact
       terms[i].phaseDataApprox = terms[i].phaseData;
+      terms[i].topMagData = [terms[i].magData[0], terms[i].magData[terms[i].magData.length-1]];
+      terms[i].topPhaseData = [terms[i].phaseData[0], terms[i].phaseData[terms[i].phaseData.length-1]];
       initialMagSlope += 20*terms[i].mult;
       name = 'Zero at Origin'+terms[i].mH;
       magSeries.push({
@@ -593,6 +600,8 @@ function getData () {
       terms[i].phaseDataApprox = terms[i].phaseData;
       initialMagSlope += -20*terms[i].mult;
       name = 'Pole at Origin' + terms[i].mH;
+      terms[i].topMagData = [terms[i].magData[0], terms[i].magData[terms[i].magData.length-1]];
+      terms[i].topPhaseData = [terms[i].phaseData[0], terms[i].phaseData[terms[i].phaseData.length-1]];
       magSeries.push({
         name: name,
         color: colors[colorIndex],
@@ -950,16 +959,10 @@ function getData () {
   
   // could do this w/ together as well? might make plot generation faster on page.
   //constant, origins are straight lines, replace individual plots w/ first & last points.
-  topMagSeries[0].data = getEndpoints(topMagSeries[0]);
-  topPhaseSeries[0].data = getEndpoints(topPhaseSeries[0]);
-  for (let i=1; i<iLen; i++) {//temrs.length
-    if (terms[i].termType == 'OriginZero' || terms[i].termType == 'OriginPole') {
-      topMagSeries[i].data = getEndpoints(topMagSeries[i]);
-      topPhaseSeries[i].data = getEndpoints(topPhaseSeries[i]);
-    }
-    /*if (terms[i].termType == 'RealZero' || terms[i].termType == 'RealPole') {
-      
-    }*/
+
+  for (let i=0; i<iLen; i++) {//terms.length
+    topMagSeries[i].data = terms[i].topMagData;
+    topPhaseSeries[i].data = terms[i].topPhaseData;
   }
 
   let lastMag = togetherMagSeries.length-1, lastPhase = togetherPhaseSeries.length-1;
@@ -985,9 +988,6 @@ function getData () {
   let xAxis = '&omega;, rad/S';
   let yAxisMag = '|H(j&omega;)|, dB';
   let yAxisPhase = '&ang;H(j&omega;), &deg;';
-  // highchartsPlot(series, id, title, xAxis, yAxis, logOrLinear, tickInt) {
-  //highchartsPlot(magSeries, 'bode', 'Magnitude Plot', xAxis, yAxisMag);
-  //highchartsPlot(phaseSeries, 'bodePhase', 'Phase Plot', xAxis, yAxisPhase, 'logarithmic', 90);
   let plotStart = new Date().getTime();
   BDO.individualMagChart = highchartsPlot(topMagSeries, 'individualMag', '<b>Magnitude Plot</b>', xAxis, yAxisMag);
   BDO.individualPhaseChart = highchartsPlot(topPhaseSeries, 'individualPhase', '<b>Phase Plot</b>', xAxis, yAxisPhase, 'logarithmic', 90);
@@ -1010,7 +1010,6 @@ function getData () {
   BDO.omega.addEventListener('#magInput', updateSinusoidInput);
   BDO.phi.addEventListener('#phaseInput', updateSinusoidInput2);*/
   //only want to plot constant by default on top graph.
-  //highchartsPlot(magSeries, 'mag', 'Magnitude Plot', 'Magnitude dB');
 }
 function getEndpoints(seriesItem) {
   return [seriesItem.data[0], seriesItem.data[seriesItem.data.length-1]];
@@ -1102,7 +1101,7 @@ function graphSinusoid () {
   for (let i=0; i<tLen; i++) {
     inputData.push([t[i], Math.cos(omega*t[i] + phiRad)]);
     outputData.push([t[i], mag*Math.cos(omega*t[i] + phaseRad)]);
-  }//function highchartsPlot(series, id, title, xAxis, yAxis, logOrLinear, tickInt) 
+  }
   series = [{
     name: 'Input',
     color: 'rgba(240, 52, 52, 1)',
@@ -1264,11 +1263,8 @@ function topButtonHandler (termNum, last) {//1st try w/ zero at origin, p at ori
   //series[last].lineWidth = 2;
   updateBox(series[last].color, lastBoxId);
   //plots the series with the ones not selected faded.
-  // highchartsPlot(series, id, title, xAxis, yAxis, logOrLinear, tickInt) {
   xAxis = '&omega;, rad/S';
-  
-  //highchartsPlot(series, 'mag', '<b>Magnitude Plot</b>', xAxis, 'Magnitude dB');
-  //highchartsPlot(series2, 'phase', '<b>Phase Plot</b>', xAxis, 'Phase in Degrees', 'logarithmic', 90);
+
   let start = new Date().getTime();//1553 ms.
   magChart.series[termNum].update({color: series[termNum].color, lineWidth: 4});
   magChart.series[last].update({color: series[last].color, lineWidth: 2});
@@ -1383,6 +1379,8 @@ function realData (w, sign, termIndex) {
   /*if (lowerBound <= 0.1) {
     phaseApproxData.push([0.00001, 0]);
   }*/
+  let topMagData = [[w[0], 0], [roundDecimal(w0, 1), 0]];
+  let topPhaseData = [[w[0], 0], [roundDecimal(lowerBound, 1), 0], [roundDecimal(upperBound, 1), sign*exp*90]];
   for (let j=0; j<wLen; j++) {
     //approximate fequency:
     x = w[j]/w0;
@@ -1415,6 +1413,11 @@ function realData (w, sign, termIndex) {
     theta = rad2Degrees(sign*exp*Math.atan2(w[j], w0));
     phaseExactData.push([w[j], theta]);
   }
+  topMagData.push(magApproxData[magApproxData.length-1]);
+  topPhaseData.push(phaseApproxData[phaseApproxData.length-1]);
+  BDO.terms[termIndex].topMagData = topMagData;
+  BDO.terms[termIndex].topPhaseData = topPhaseData;
+
   exp = exp.toString();
   w0 = w0.toString();
   lowerBound = lowerBound.toString();
@@ -1455,6 +1458,8 @@ function compConjugateData (w, sign, termIndex) {
     alert('A negative damping ratio is not permitted');
   }
   breakW = w0Rounded;
+  let topMagData = [[w[0], 0], [w0Rounded, 0]];
+  let topPhaseData = [[w[0], 0], [roundDecimal(lowerBound, 1), 0], [roundDecimal(upperBound, 1), sign*exp*90]];
   //0 undershoots offset, approx is below exact. breakW-1 might overshoot it?
   let offset = breakW-1;//since logs normally intersects at x=1, to shift to breakW have to subtract breakW-1.s
   //approximate Magnitude:
@@ -1474,6 +1479,9 @@ function compConjugateData (w, sign, termIndex) {
         //the peak will be opposite in sign to the base.
         //magApproxData.push([w[j]-0.0001, base]);
         magApproxData.push([w[j], peak]);
+        topMagData.push(magApproxData[j-1]);
+        topMagData.push(magApproxData[j]);
+        topMagData.push([w[j+1], 0]);
         //magApproxData.push([w[j]+0.0001, base]);
       }
     }
@@ -1511,7 +1519,7 @@ function compConjugateData (w, sign, termIndex) {
   for (let j=0; j<jMax; j++) {
     x = w[j];
     //lower & upper boundarises of line in x coordinates
-    if (w[j] <= lowerBound+0.1) {//for phase w[j] <= w0/(Math.pow(10, zeta))) {
+    if (w[j] <= lowerBound) {// lowerBound+0.1 for phase w[j] <= w0/(Math.pow(10, zeta))) {
       phaseApproxData.push([w[j], 0]);
     }
     else if (w[j] > upperBound) {
@@ -1533,6 +1541,11 @@ function compConjugateData (w, sign, termIndex) {
     phaseExactData.push([w[j], sign*exp*Math.abs(rad2Degrees(Math.atan2(2*zetaTemp*a, b)))]);//vs Math.atan2(x)
     //we need rad2Degrees bc graph is in degrees & Math.atan2() returns radians.
   }
+  topMagData.push(magApproxData[magApproxData.length-1]);
+  topPhaseData.push(phaseApproxData[phaseApproxData.length-1]);
+  BDO.terms[termIndex].topMagData = topMagData;
+  BDO.terms[termIndex].topPhaseData = topPhaseData;
+
   exp = exp.toString();
   w0 = w0.toString();
   lowerBound = lowerBound.toString();
@@ -1831,7 +1844,7 @@ function roundToPrec(r, n) { // n = digits of precision, r=nedamer object with r
     return (rArray);
 }
 function highchartsPlot (series, id, title, xAxis, yAxis, logOrLinear, tickInt) {
-  let legend = true, width = parseFloat(screen.width)/3, data = series[0].data;
+  let legend = false, width = parseFloat(screen.width)/3, data = series[0].data;
   let xMax = data[data.length-1][0], xMin = data[0][0], height = null;
   if (xAxis == undefined) {
     xAxis = '&omega;, rad';
@@ -1839,8 +1852,8 @@ function highchartsPlot (series, id, title, xAxis, yAxis, logOrLinear, tickInt) 
   if (logOrLinear == undefined) {
     logOrLinear = 'logarithmic';
   }
-  if (id == 'individualMag' || id == 'individualPhase' || id == 'bothTotalMag' || id=='bothTotalPhase') {
-    legend = false;//disable legend.
+  if (id == 'sinusoidPlot') {//(id == 'individualMag' || id == 'individualPhase' || id == 'bothTotalMag' || id=='bothTotalPhase') {
+    legend = true;//enable legend.
   }
   if (id.indexOf('individual') > -1 || id.indexOf('together') > -1) {
     height = Math.trunc(0.82*window.innerHeight/2);//83vh/2
