@@ -155,15 +155,21 @@ function getTerms() {
   window.history.replaceState(null, null, '/?c='+CStr+'&num='+nParam+'&den='+dParam);
 
   // Get poles and zeros
-  let zeros, poles;
+  let zeros, poles, numCoef = 1, denCoef = 1;
   if (BDO.num.indexOf("s") > -1) {
     zeros = nerdamer.roots(BDO.num);
+    let factors = nerdamer('factor('+BDO.num+')');
+    numCoef = factors.symbol.multiplier.num.value / factors.symbol.multiplier.den.value;
+    BDO.C *= numCoef;
   }
   else {
     BDO.isAnSInNumerator = 0;
   }
   if (BDO.den.indexOf("s") > -1) {
     poles = nerdamer.roots(BDO.den);
+    let factors = nerdamer('factor('+BDO.den+')');
+    denCoef = factors.symbol.multiplier.num.value / factors.symbol.multiplier.den.value;
+    BDO.C /= denCoef;
   }
   else {
     alert("You must include the variable 's' in the denominator.");
@@ -450,8 +456,8 @@ function getData () {
   let id = 'topTerm:', bothTotalMagSeries = [0, 0], bothTotalPhaseSeries = [0, 0], dashStyle = 'Solid';
   magLeftMostPointDesc = 'Since we have a constant C='+BDO.C.toString();
   let w = BDO.w, slopeDB, phaseLine, halfPhaseLine;
-  let lowerBoundMin = Math.min(BDO.lowerBounds), wMin = 0.01;//min = lowest frequency at which a term's slope becomes > 0
-  let upperBoundMax = Math.max(BDO.upperBounds), wMax = 1000;
+  let lowerBoundMin = Math.min(...BDO.lowerBounds), wMin = 0.01;//min = lowest frequency at which a term's slope becomes > 0
+  let upperBoundMax = Math.max(...BDO.upperBounds), wMax = 1000;
   //make smallest frequency on graph to be smaller than the lowest lowerBound by a factor of 10
   while (wMin >= lowerBoundMin) {//ensure lowest frequency on graph wMin is < lowerBoundMin
     wMin *= 0.1;
@@ -1070,16 +1076,16 @@ function graphSinusoid () {
   }
   wIndex = BDO.w.indexOf(roundDecimal(omega, 1));
   if (wIndex > -1 && (omega*10) == Math.trunc(omega*10)) {
-    mag = BDO.allMag[wIndex][1].toPrecision(3);
+    mag = dbToNumber(BDO.allMag[wIndex][1]).toPrecision(3);
     theta = BDO.allPhase[wIndex][1];
     phase = normalize(theta + phi);
     if (phase > 0) {
       phase = phase.toPrecision(3);
-      html = mag+' dB &middot; cos('+BDO.omega.value+' &middot; t + '+phase+')';
+      html = mag+' &middot; cos('+BDO.omega.value+' &middot; t + '+phase+')';
     }
     else {
       phase = phase.toPrecision(3);
-      html = mag+' dB &middot; cos('+BDO.omega.value+' &middot; t - '+Math.abs(phase)+')';
+      html = mag+' &middot; cos('+BDO.omega.value+' &middot; t - '+Math.abs(phase)+')';
     }
   }
   else {
@@ -1174,7 +1180,7 @@ function graphSinusoid () {
     tMin = inputData[0][0];//should this still work? 
     tMax = inputData[inputData.length-1][0];
     //y= acos(x), a=amplitude, or max height/depth.
-    let yMax = Math.abs(parseFloat(mag));//Math.round(maxSinusoid2(inputData, outputData));
+    let yMax = Math.max(1, Math.abs(parseFloat(mag)));//Math.round(maxSinusoid2(inputData, outputData));
     let yMin = -1*yMax;//shouldn't it be automatically doing this for us?
     /*bothTotalMagSeries[2].data = [[omega, mag[wIndex][1]]];
     bothTotalMagSeries[3].data = [[omega, magApprox[wIndex][1]]];
@@ -1306,6 +1312,9 @@ function rad2Degrees(rad) {//converts radians to degrees.
 }
 function deg2Radians(deg) {//converts degrees to radians.
   return (deg/180)*Math.PI;
+}
+function dbToNumber(db) {
+  return Math.pow(db/20, 10);
 }
 function getZeta (img, real) {
   var temp = Math.atan2(img, real);//y, x -> y/x, opposite/ajdacent
@@ -1466,7 +1475,7 @@ function compConjugateData (w, sign, termIndex) {
   }
   breakW = w0Rounded;
   let topMagData = [[w[0], 0], [w0Rounded, 0]];
-  let topPhaseData = [[w[0], 0], [roundDecimal(lowerBound, 1), 0], [roundDecimal(upperBound, 1), sign*exp*90]];
+  let topPhaseData = [[w[0], 0], [roundDecimal(lowerBound, 1), 0], [roundDecimal(upperBound, 1), sign*exp*180]];
   //0 undershoots offset, approx is below exact. breakW-1 might overshoot it?
   let offset = breakW-1;//since logs normally intersects at x=1, to shift to breakW have to subtract breakW-1.s
   //approximate Magnitude:
@@ -1658,10 +1667,10 @@ function getSinusoid(omega, phi) {
     }
   }
   phase = normalize(phi+theta);
-  mag = mag.toPrecision(3);
+  mag = dbToNumber(mag).toPrecision(3);
   omega = omega.toPrecision(3);
   phase.toPrecision(3);
-  return [mag+' &middot; dB cos('+omega+' rad &middot; t '+phase+'&deg;)', parseFloat(mag), parseFloat(phase)];
+  return [mag +' &middot; cos('+omega+' rad &middot; t '+phase+'&deg;)', parseFloat(mag), parseFloat(phase)];
 }
 
 /* This function creates all the TeX and html for displaying the equations.
