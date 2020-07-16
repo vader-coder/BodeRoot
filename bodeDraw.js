@@ -44,6 +44,7 @@ function BDO_Obj() {
     this.upperBounds = [];//list of upperBounds
     this.complexW0s = [];//list of w0s for complex #s. 
     this.isAnSInNumerator = 1;
+    this.peakWidth;
 };//way to just reference chart from id?
 
 // Create the object that has information needed for each "term"
@@ -148,7 +149,7 @@ function getTerms() {
   BDO.num = NStr;
   BDO.den = DStr;
   BDO.C = parseFloat(CStr);
-  
+  BDO.peakWidth = 0.00001;
   //every time updated, replace old query string with new one.
   let nParam = NStr.replace(/\+/g, '%2B');
   let dParam = DStr.replace(/\+/g, '%2B');
@@ -434,7 +435,7 @@ function getData () {
   topMagSeries = [], topPhaseSeries = [], desc, magDescs = [], phaseDescs = [],
   togetherMagSeries = [], togetherPhaseSeries = [], w0Mag, zMag, print, print2, name,
   descIndex, bold = BDO.bold, faded = BDO.faded, checkBoxesHtml, graphHtml, graphs, graphCheck, iLen,
-  names = [], togetherPhaseDesc, togetherMagDesc, blackRGBA = 'rgba(0, 0, 0, 1)';
+  names = [], togetherPhaseDesc, togetherMagDesc, blackRGBA = 'rgba(0, 0, 0, 1)', peakWidth = BDO.peakWidth;
   //let topMagData = [], topPhaseData = [];//list of data for each item.
   let w0Str = '&omega;<sub>0</sub>';
   var colors = ['rgba(0,114,189,'+bold+')',//list of colors for lines
@@ -475,9 +476,9 @@ function getData () {
     for (let i=1; i<iMax; i++) {
       w0 = complexW0s[w0Index];
       if (i*0.1 == w0) {//1 is where the peak of a complex conjugate magnitude graph will be
-        w.push(truncDecimal(w0-0.0001, 4));//ensure that there are points immediately next to the peak
+        w.push(truncDecimal(w0-peakWidth, 5));//ensure that there are points immediately next to the peak
         w.push(truncDecimal(i*0.1, 1));
-        w.push(truncDecimal(w0 + 0.0001, 4));
+        w.push(truncDecimal(w0 + peakWidth, 5));
         lastW0 = w0;
         while (complexW0s[w0Index] == lastW0) {//if next w0 is same as last, skip over it.
           w0Index++;
@@ -1078,7 +1079,7 @@ function graphSinusoid () {
   if (wIndex > -1 && (omega*10) == Math.trunc(omega*10)) {
     mag = dbToNumber(BDO.allMag[wIndex][1]).toPrecision(3);
     theta = BDO.allPhase[wIndex][1];
-    phase = normalize(theta + phi);
+    phase = convertToUnitCircleRange(theta + phi);
     if (phase > 0) {
       phase = phase.toPrecision(3);
       html = mag+' &middot; cos('+BDO.omega.value+' &middot; t + '+phase+')';
@@ -1142,10 +1143,6 @@ function graphSinusoid () {
     BDO.bothMagChart.series[2].remove();
     BDO.bothPhaseChart.series[3].remove();
     BDO.bothPhaseChart.series[2].remove();//remove previous
-    /*bothTotalMagSeries[2].data = [[omega, mag[wIndex][1]]];
-    bothTotalMagSeries[3].data = [[omega, magApprox[wIndex][1]]];
-    bothTotalPhaseSeries[2].data = [[omega, phase[wIndex][1]]];
-    bothTotalPhaseSeries[3].data = [[omega, phaseApprox[wIndex][1]]];*/
   }
   if (!bothTotalMagSeries[3] && wIndex > -1) {// if no red dot in series, add one.
     bothTotalMagSeries.push({
@@ -1298,31 +1295,30 @@ function truncDecimal (num, decimal) {
   var a = Math.pow(10, decimal);
   return (Math.trunc(num*a)/a);
 }
+//get number of decimal places
 //returns number of decimals in a number.
 function decimalNum (num) {
   let decimals = 0;
-  while (num % 10) {
+  while ((num % 10)%1) {
     num = num / 10;
     decimals++;
   }
   return decimals;
 }
-function rad2Degrees(rad) {//converts radians to degrees.
+//converts radians to degrees.
+function rad2Degrees(rad) {
   return (rad/Math.PI)*180;
 }
-function deg2Radians(deg) {//converts degrees to radians.
+//converts degrees to radians.
+function deg2Radians(deg) {
   return (deg/180)*Math.PI;
 }
+//converts decibals to a unitless number
 function dbToNumber(db) {
   return Math.pow(db/20, 10);
 }
-function getZeta (img, real) {
-  var temp = Math.atan2(img, real);//y, x -> y/x, opposite/ajdacent
-  return Math.cos(temp);
-}
-//w values from 0.1 to 1000
-//indecies from 0 to 9,999.
-//i from 1 to 10001
+/* If w exists in the array of input frequencies, return its
+  index in this array. Otherwise, return -1. */
 function getWIndex (w) {//w values from 0.1 to 1001. 
   let wArray = BDO.w;
   let len = wArray.length;
@@ -1334,17 +1330,19 @@ function getWIndex (w) {//w values from 0.1 to 1001.
   }
   return -1;
 }
-function normalize(angle) {
-    while (angle <= -180) {
-      angle += 360;
-    }
-    while (angle > 180) {
-      angle -= 360;
+//convert an angle < -179 or > 180 to
+//a value between -179 and 180
+//why not 0-360?
+function convertToUnitCircleRange(deg) {
+    while (deg > 180) {
+      deg -= 360;
     } 
-    return angle;
+    while (deg <= -180) {//why not < -180?
+      deg += 360;
+    }
+    return deg;
 }
-//turns an object of {re: 'a', im: 'b'} into 'a+bi'
-//this one assumes we are only making one graph for a pair of complex conjugates
+//turns an object {re: 'a', im: 'b'} into a string 'a+bi'
 function compToStr(comp) {
   let print, print2;
   let imagPart = parseFloat(comp.im);
@@ -1364,6 +1362,12 @@ function compToStr(comp) {
   }
   return [print, print2];
 }
+/*gets data points for zero at origin or pole at origin
+in a form that highcharts can graph
+w: array of values for independent variable (frequency)
+sign: 1 or -1 to signify if data is for a zero or pole at the origin.
+termIndex: index of the term whose data it finds.
+*/
 function originData(w, sign, termIndex) {
   let magData = [], phaseData = [], exp = BDO.terms[termIndex].mult, wLen = BDO.wLen;
   for (let i=0; i<wLen; i++) {
@@ -1381,9 +1385,11 @@ function originData(w, sign, termIndex) {
   BDO.phaseFormula += ('<br>'+sign +' '+exp+'*90 ');
   return [magData, phaseData];
 }
-/*
-let w0 = Math.abs(parseFloat(BDO.terms[termIndex].value));
-lowerBound = 0.1*w0;
+/*gets data points for real zero or real pole
+  in a form that highcharts can graph
+  w: array of values for independent variable (frequency)
+  sign: 1 or -1 to signify if data is for a zero or pole at the origin.
+  termIndex: index of the term whose data it finds.
 */
 function realData (w, sign, termIndex) {
   let w0 = BDO.terms[termIndex].w0;
@@ -1392,13 +1398,13 @@ function realData (w, sign, termIndex) {
   let middleDenominator = Math.log10(upperBound/lowerBound), theta, x;
   BDO.terms[termIndex].midPhaseSlope = '90&middot;'+exp.toString()+'/'+middleDenominator.toString();//how to calculate? want a per-decade measurement.
   BDO.terms[termIndex].endPhaseSlope = '90&middot;'+exp.toString();
-  /*if (lowerBound <= 0.1) {
-    phaseApproxData.push([0.00001, 0]);
-  }*/
   let topMagData = [[w[0], 0], [roundDecimal(w0, 1), 0]];
   let topPhaseData = [[w[0], 0], [roundDecimal(lowerBound, 1), 0], [roundDecimal(upperBound, 1), sign*exp*90]];
+  BDO.terms[termIndex].magBreakpt = w0;
+  BDO.terms[termIndex].magSlope = sign*20*exp;
+  
   for (let j=0; j<wLen; j++) {
-    //approximate fequency:
+    //magnitude (dB) approximation:
     x = w[j]/w0;
     if (w[j]<= w0) {
       magApproxData.push([w[j], 0]);
@@ -1406,11 +1412,11 @@ function realData (w, sign, termIndex) {
     else if (w[j]>w0) {
       magApproxData.push([w[j], sign*20*exp*Math.log10(x)]);
     }
-    BDO.terms[termIndex].magBreakpt = w0;//can we do this outside the loop?
+    BDO.terms[termIndex].magBreakpt = w0;
     BDO.terms[termIndex].magSlope = sign*20*exp;
-    //exact Magnitude
+    //exact magnitude (dB):
     magExactData.push([w[j], sign*20*exp*Math.log10(Math.pow((1 + x*x), 0.5))]);
-    //phase approximation
+    //phase (degrees) approximation
     if (w[j]<lowerBound) {
         phaseApproxData.push([w[j], 0]);
     }
@@ -1419,13 +1425,9 @@ function realData (w, sign, termIndex) {
     }
     else {
       theta = (Math.log10(w[j]/lowerBound)/middleDenominator)*sign*exp*90;
-      //y = m(Math.log10(w[j])-Math.log10(lowerBound)), m = sign*exp*90/middleDenominator
-      //middleDenominator = Math.log10(upperBound/lowerBound)
-      // y = m (log10(w/lowerBound)/(log10(upperBound/lowerBound)))
-      //log10(w/x)log10(x/y)
       phaseApproxData.push([w[j], theta]);
     }
-    //exact
+    //exact phase (degrees): 
     theta = rad2Degrees(sign*exp*Math.atan2(w[j], w0));
     phaseExactData.push([w[j], theta]);
   }
@@ -1449,113 +1451,108 @@ function realData (w, sign, termIndex) {
   BDO.phaseFormula += '<br>+ {&omega;<'+lowerBound+':0, '+'&omega;>'+upperBound+': '+sign+exp+'90, ';
   BDO.phaseFormula += lowerBound+'<&omega;<'+upperBound+': '+sign+exp+'*90log<sub>10</sub>(&omega;/'+lowerBound +')';
   BDO.phaseFormula += '/'+middleDenominator+'} ';
-  //might do together description here instead. might be faster. 
   return [magExactData, phaseExactData, magApproxData, phaseApproxData];
 }
-/*
-  let realPart = parseFloat(BDO.terms[termIndex].value.re);
-  let imagPart = parseFloat(BDO.terms[termIndex].value.im);
-  let w0 = Math.sqrt(realPart*realPart + imagPart*imagPart);
-  zetaTemp = zeta(BDO.terms[termIndex].value)
-  lowerBound = w0/(Math.pow(10, Math.abs(zetaTemp)));
+/*gets data points for a pair of complex conjugate zeros or 
+  a pair of complex conjuage poles in a form that highcharts can graph
+  w: array of values for independent variable (frequency)
+  sign: 1 or -1 to signify if data is for a zero or pole at the origin.
+  termIndex: index of the term whose data it finds.
 */
 function compConjugateData (w, sign, termIndex) {
-  let realPart = BDO.terms[termIndex].realPart;
-  let imagPart = BDO.terms[termIndex].imagPart;
-  let w0 = BDO.terms[termIndex].w0;
+  let realPart = BDO.terms[termIndex].realPart;//real part of zero or pole
+  let imagPart = BDO.terms[termIndex].imagPart;//imaginary part of zero or pole
+  let w0 = BDO.terms[termIndex].w0;//sqrt(realPart*realPart + imagPart*imagPart);
   let w0Rounded = roundDecimal(w0, 1);//round to 1 decimal place.
   let magApproxData = [], phaseApproxData = [], magExactData = [], phaseExactData = [];
   let exp = BDO.terms[termIndex].mult, zetaTemp = BDO.terms[termIndex].zeta,
-  jMax = BDO.wLen, x, base, peak, lowerBound = BDO.terms[termIndex].lowerBound, upperBound = BDO.terms[termIndex].upperBound,
-  middleDenominator, a, b, theta, breakW = w0;//need to change to w0?
-  BDO.terms[termIndex].magBreakpt = 1;
+  jMax = BDO.wLen, x, base, peak; 
+  let lowerBound = BDO.terms[termIndex].lowerBound;//lowerBound = w0/(10^|zeta|)
+  let upperBound = BDO.terms[termIndex].upperBound;//upperBound = w0*(10^|zeta|)
+  let middleDenominator = Math.log10(upperBound/lowerBound), a, b, theta, breakW;
+  BDO.terms[termIndex].magBreakpt = w0Rounded;
   BDO.terms[termIndex].magSlope = sign*20*exp;
   if (zetaTemp < 0) {
     alert('A negative damping ratio is not permitted');
   }
-  breakW = w0Rounded;
+  //breakW is w-coordinate where horizontal and slanted part of magnitude plot approximation meet
+  breakW = w0Rounded;//w coordinate where horizontal and slanted part meet
   let topMagData = [[w[0], 0], [w0Rounded, 0]];
   let topPhaseData = [[w[0], 0], [roundDecimal(lowerBound, 1), 0], [roundDecimal(upperBound, 1), sign*exp*180]];
   //0 undershoots offset, approx is below exact. breakW-1 might overshoot it?
   let offset = breakW-1;//since logs normally intersects at x=1, to shift to breakW have to subtract breakW-1.s
   //approximate Magnitude:
-  if (zetaTemp < 0.5) {
-    let afterBreak = truncDecimal(breakW + 0.0001, 4);
+  if (zetaTemp < 0.5) {//magnitude plot will have a peak
+    let afterBreak = truncDecimal(breakW + BDO.peakWidth, 5);
     for (let j=0; j<jMax; j++) {
       x = w[j];
-      if (w[j] < breakW || w[j] == afterBreak) {//for phase w[j] <= w0/(Math.pow(10, zeta))) {
+      if (w[j] < breakW || w[j] == afterBreak) {//horizontal part of magnitude plot approximation
         magApproxData.push([w[j], 0]);
       }//was w0Rounded.
-      else if (w[j] > breakW) { //might change to if so they will connect?
-        magApproxData.push([w[j], sign*40*exp*Math.log10(x-offset)]);//-w0Rounded+1)]);
-      }//w0Rounded pushes the asymptote so it is more in sync w/ exact function.
-      else if (w[j] == breakW) {//might ask prof cheever about his peak at some point.
-        //base = sign*40*exp*Math.log10(x-offset); //base should always be 0.
+      else if (w[j] > breakW) {//slanted part of magnitude plot approximation
+        magApproxData.push([w[j], sign*40*exp*Math.log10(x-offset)]);
+      }
+      else if (w[j] == breakW) {//peak where horizontal and santed line join
         peak = 20*sign*-1*Math.abs(Math.log10(2*Math.abs(zetaTemp)));
-        //the peak will be opposite in sign to the base.
-        //magApproxData.push([w[j]-0.0001, base]);
+        //the peak will be opposite in sign to the non-zero part of the equation.
         magApproxData.push([w[j], peak]);
-        topMagData.push(magApproxData[j-1]);
+        topMagData.push(magApproxData[j-1]);//breakW-BDO.peakWidth
         topMagData.push(magApproxData[j]);
-        topMagData.push([w[j+1], 0]);
-        //magApproxData.push([w[j]+0.0001, base]);
+        topMagData.push([w[j+1], 0]);//breakW+BDO.peakWidth
       }
     }
   }
-  else if (zetaTemp >= 0.5) {//don't draw peak. it would seem like in this case w[0] doesn't matter.
+  else if (zetaTemp >= 0.5) {//no peak for magnitude plot approximation
     for (let j=0; j<jMax; j++) {
       x = w[j];
-      if (w[j] <= breakW) {// w0Rounded for phase w[j] <= w0/(Math.pow(10, zeta))) {
+      if (w[j] <= breakW) {
         magApproxData.push([w[j], 0]);
       }
-      else if (w[j] > breakW) {//w0Rounded vs 1
-        magApproxData.push([w[j], sign*40*exp*Math.log10(x-offset)]);//should we have breakW - 1 in this?
+      else if (w[j] > breakW) {
+        magApproxData.push([w[j], sign*40*exp*Math.log10(x-offset)]);
       }
     }
   }
   //exact Magnitude version starts here:
-  //a + jb, a = 1-(w/w0)^2 b = 2*zeta*w/(w0) w[j]. 20*log10(|a+jb|)
-  for (let j=0; j<jMax; j++) {//should we have included this in both the other for loops or had there be only one?
+  //realPart + imagPart*i, realPart = 1-(w[j]/w0)^2, imagPart = 2*zeta*w[j]/(w0) 
+  for (let j=0; j<jMax; j++) {
     realPart = 1-Math.pow((w[j]/w0), 2);
-    imagPart = 2*zetaTemp*(w[j]/w0);//also j, j^2 = -1
-    //+ works, - doesn't.
-    x = Math.sqrt(realPart*realPart+imagPart*imagPart);//magnitude |a+jb|
+    imagPart = 2*zetaTemp*(w[j]/w0);
+    x = Math.sqrt(realPart*realPart+imagPart*imagPart);//numerical magnitude |a+jb|
     magExactData.push([w[j], sign*20*exp*Math.log10(x)]);
-    //approx & exact are closer when both 20 or 40.
   }
-  //lowerBound = BDO.terms[termIndex].lowerBound;//(x,y) = (lowerBound, 0)
-  //upperBound = BDo.terms[termIndex].upperBound;//w0*Math.pow(10, Math.abs(zetaTemp));//(x,y) = (upperBound, sign*180)
-  middleDenominator = Math.log10(upperBound/lowerBound);
   BDO.terms[termIndex].midPhaseSlope = '180*'+exp.toString()+'/'+middleDenominator.toString();//how to calculate? want a per-decade measurement.
   BDO.terms[termIndex].endPhaseSlope = '180*'+exp.toString();
-  //phase approximation
-  /*if (lowerBound <= 0.1) {
-    phaseApproxData.push([0.00001, 0]);
-  }*/
+  //phase approximation:
   for (let j=0; j<jMax; j++) {
     x = w[j];
     //lower & upper boundarises of line in x coordinates
-    if (w[j] <= lowerBound) {// lowerBound+0.1 for phase w[j] <= w0/(Math.pow(10, zeta))) {
+    if (w[j] <= lowerBound) {//add first horizontal componet
       phaseApproxData.push([w[j], 0]);
     }
-    else if (w[j] > upperBound) {
+    else if (w[j] > upperBound) {//add second horizontal componet
       phaseApproxData.push([w[j], sign*exp*180]);
     }
-    else {
+    else {//add slanted componet
       theta = (Math.log10(w[j]/lowerBound)/middleDenominator)*sign*exp*180;
       phaseApproxData.push([w[j], theta]);
     }
   }
-  //exact phase version starts here:
-  //a + jb, a = 1-(w/w0)^2 b = 2*zeta*w/(w0) w[j]. 20*log10(|a+jb|)
+  //exact phase version starts here: it's hard to understand.
+  //realPart + imagPart*i, realPart = 1-(w[j]/w0)^2, imagPart = 2*zeta*w[j]/(w0) 
+  //a + jb, a = 1-(w[j]/w0)^2, b = 2*zeta*w[j]/(w0). 20*log10(|a+jb|) seems innacurate.
   for (let j=0; j<jMax; j++) {//should we have included this in both the other for loops or had there be only one?
-    a = w[j]/w0;
+    /*a = w[j]/w0;
     b = 1-a*a;
-    x = (2*zetaTemp*a)/b;//magnitude |a+jb|
+    x = (2*zetaTemp*a)/b;
+    phaseExactData.push([w[j], sign*exp*Math.abs(rad2Degrees(Math.atan2(2*zetaTemp*a, b)))]);
+    *///magnitude |a+jb|
     //ends up being arctan(img/real)
     //should Math.abs() be necessary here, or are we doing somehting else wrong?
-    phaseExactData.push([w[j], sign*exp*Math.abs(rad2Degrees(Math.atan2(2*zetaTemp*a, b)))]);//vs Math.atan2(x)
-    //we need rad2Degrees bc graph is in degrees & Math.atan2() returns radians.
+    realPart = 1-Math.pow((w[j]/w0), 2);
+    imagPart = 2*zetaTemp*w[j]/w0;
+    //is Math.abs() because we didn't normalize the degrees?
+    phaseExactData.push([w[j], sign*exp*Math.abs(rad2Degrees(Math.atan2(imagPart, realPart)))]);
   }
   topMagData.push(magApproxData[magApproxData.length-1]);
   topPhaseData.push(phaseApproxData[phaseApproxData.length-1]);
@@ -1583,7 +1580,6 @@ function compConjugateData (w, sign, termIndex) {
   BDO.phaseFormula += '<br>+ {&omega;<'+lowerBound+':0, '+'&omega;>'+upperBound+': '+sign+exp+'90, ';
   BDO.phaseFormula += lowerBound+'<&omega;<'+upperBound+': '+sign+exp+'*90log<sub>10</sub>(&omega;/'+lowerBound +')';
   BDO.phaseFormula += '/'+middleDenominator+'} ';
-  //}//there is no way the exact way can be this easy.
   return [magExactData, phaseExactData, magApproxData, phaseApproxData];
 }
 //finds summary of data:
@@ -1666,7 +1662,7 @@ function getSinusoid(omega, phi) {
       theta += sign*exp*Math.abs(rad2Degrees(Math.atan2(2*zetaTemp*a, b)));
     }
   }
-  phase = normalize(phi+theta);
+  phase = convertToUnitCircleRange(phi+theta);
   mag = dbToNumber(mag).toPrecision(3);
   omega = omega.toPrecision(3);
   phase.toPrecision(3);
