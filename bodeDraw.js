@@ -474,7 +474,7 @@ function getData () {
     w.push(wMin);//so looks like extends to almost 0
     iMax = wMax*10+1;
     for (let i=1; i<iMax; i++) {
-      w0 = complexW0s[w0Index];
+      w0 = roundDecimal(complexW0s[w0Index], 1);
       if (i*0.1 == w0) {//1 is where the peak of a complex conjugate magnitude graph will be
         w.push(truncDecimal(w0-peakWidth, 5));//ensure that there are points immediately next to the peak
         w.push(truncDecimal(i*0.1, 1));
