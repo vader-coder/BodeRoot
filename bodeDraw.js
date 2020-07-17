@@ -476,7 +476,8 @@ function getData () {
     for (let i=1; i<iMax; i++) {
       w0 = roundDecimal(complexW0s[w0Index], 1);
       if (i*0.1 == w0) {//1 is where the peak of a complex conjugate magnitude graph will be
-        w.push(truncDecimal(w0-peakWidth, 5));//ensure that there are points immediately next to the peak
+        //w.push(truncDecimal(w0-peakWidth, 5));//ensure that there are points immediately next to the peak
+        w.push(truncDecimal(i*0.1, 1));
         w.push(truncDecimal(i*0.1, 1));
         w.push(truncDecimal(w0 + peakWidth, 5));
         lastW0 = w0;
@@ -935,25 +936,29 @@ function getData () {
     name: 'Total Magnitude',
     color: blackRGBA,//I like black. colors[colorIndex],
     data: BDO.allMag, 
-    dashStyle: 'Solid'
+    dashStyle: 'Solid',
+    lineWidth: 2
   });
   magSeries.push({
     name: 'Total Magnitude Approximation',
     color: blackRGBA,
     data: BDO.allMagApprox,
-    dashStyle: 'shortdot'
+    dashStyle: 'shortdot',
+    lineWidth: 2
   });
   phaseSeries.push({
     name: 'Total Phase',
     color: blackRGBA,
     data: BDO.allPhase,
-    dashStyle: 'Solid' 
+    dashStyle: 'Solid',
+    lineWidth: 2 
   });
   phaseSeries.push({
     name: 'Total Phase Approximation',
     color: blackRGBA,
     data: BDO.allPhaseApprox,
-    dashStyle: 'shortdot'
+    dashStyle: 'shortdot',
+    lineWidth: 2
   });
   let placeHolder;
   let magLen = magSeries.length, phaseLen = phaseSeries.length;
@@ -965,6 +970,8 @@ function getData () {
   togetherPhaseSeries.push(copyObject(phaseSeries[phaseLen-2]));
   togetherPhaseSeries.push(copyObject(phaseSeries[phaseLen-1]));
   togetherPhaseSeries[0] = updateAlpha(togetherPhaseSeries[0], faded);
+  togetherMagSeries[0].lineWidth = 2;
+  togetherPhaseSeries[0].lineWidth = 2;
   bothTotalMagSeries[0] = magSeries[magLen-2];
   bothTotalMagSeries[1] = magSeries[magLen-1];
   bothTotalPhaseSeries[0] = phaseSeries[magLen-2];
@@ -1118,11 +1125,13 @@ function graphSinusoid () {
   series = [{
     name: 'Input',
     color: 'rgba(240, 52, 52, 1)',
-    data: inputData
+    data: inputData,
+    lineWidth: 2
   }, {
     name: 'Output',
     color: 'rgba(0, 0, 0, 1)',
-    data: outputData
+    data: outputData,
+    lineWidth: 2
   }];
   let chart = BDO.sinusoidChart;
   let bothTotalMagSeries = BDO.bothTotalMagSeries;
@@ -1187,7 +1196,7 @@ function graphSinusoid () {
     BDO.bothMagChart.update({series: bothTotalMagSeries});
     BDO.bothPhaseChart.update({series: bothTotalPhaseSeries});
   }
-  else {//make a new chart.
+  else {//make a new chart. 
     BDO.sinusoidChart = highchartsPlot(series, 'sinusoidPlot', '<b>Sinusoids</b>', 'Time', 'Dependent Variable', 'linear');
     BDO.bothMagChart = highchartsPlot(bothTotalMagSeries, 'bothTotalMag', '<b>Total Magnitude Plot</b>', '&omega;, rad', '|H(j&omega;)|, dB');
     BDO.bothPhaseChart = highchartsPlot(bothTotalPhaseSeries, 'bothTotalPhase', '<b>Total Phase Plot</b>', '&omega;, rad', '&ang;H(j&omega;), &deg;', 'logarithmic', 90);
@@ -1469,7 +1478,8 @@ function compConjugateData (w, sign, termIndex) {
   jMax = BDO.wLen, x, base, peak; 
   let lowerBound = BDO.terms[termIndex].lowerBound;//lowerBound = w0/(10^|zeta|)
   let upperBound = BDO.terms[termIndex].upperBound;//upperBound = w0*(10^|zeta|)
-  let middleDenominator = Math.log10(upperBound/lowerBound), a, b, theta, breakW;
+  let middleDenominator = Math.log10(upperBound/lowerBound), lowerBoundRounded = roundDecimal(lowerBound, 1), upperBoundRounded = roundDecimal(upperBound, 1);
+  let a, b, theta, breakW;
   BDO.terms[termIndex].magBreakpt = w0Rounded;
   BDO.terms[termIndex].magSlope = sign*20*exp;
   if (zetaTemp < 0) {
@@ -1482,6 +1492,7 @@ function compConjugateData (w, sign, termIndex) {
   //0 undershoots offset, approx is below exact. breakW-1 might overshoot it?
   let offset = breakW-1;//since logs normally intersects at x=1, to shift to breakW have to subtract breakW-1.s
   //approximate Magnitude:
+  let wJIsPointAtTopOfVerticalLine = 0;
   if (zetaTemp < 0.5) {//magnitude plot will have a peak
     let afterBreak = truncDecimal(breakW + BDO.peakWidth, 5);
     for (let j=0; j<jMax; j++) {
@@ -1493,12 +1504,24 @@ function compConjugateData (w, sign, termIndex) {
         magApproxData.push([w[j], sign*40*exp*Math.log10(x-offset)]);
       }
       else if (w[j] == breakW) {//peak where horizontal and santed line join
-        peak = 20*sign*-1*Math.abs(Math.log10(2*Math.abs(zetaTemp)));
+        if (!wJIsPointAtTopOfVerticalLine) {
+          magApproxData.push([w[j], 0]);//bottom of line
+          topMagData.push(magApproxData[j]);
+          wJIsPointAtTopOfVerticalLine = 1;
+        }
+        else if (wJIsPointAtTopOfVerticalLine) {
+          peak = 20*sign*-1*Math.abs(Math.log10(2*Math.abs(zetaTemp)));//top of line.
+          //the peak will be opposite in sign to the non-zero part of the equation.
+          magApproxData.push([w[j], peak]);
+          topMagData.push(magApproxData[j]);
+          topMagData.push([w[j+1], 0]);
+        }
+        /*peak = 20*sign*-1*Math.abs(Math.log10(2*Math.abs(zetaTemp)));
         //the peak will be opposite in sign to the non-zero part of the equation.
         magApproxData.push([w[j], peak]);
         topMagData.push(magApproxData[j-1]);//breakW-BDO.peakWidth
         topMagData.push(magApproxData[j]);
-        topMagData.push([w[j+1], 0]);//breakW+BDO.peakWidth
+        topMagData.push([w[j+1], 0]);//breakW+BDO.peakWidth*/
       }
     }
   }
@@ -1527,10 +1550,10 @@ function compConjugateData (w, sign, termIndex) {
   for (let j=0; j<jMax; j++) {
     x = w[j];
     //lower & upper boundarises of line in x coordinates
-    if (w[j] <= lowerBound) {//add first horizontal componet
+    if (w[j] < lowerBoundRounded) {//add first horizontal componet
       phaseApproxData.push([w[j], 0]);
     }
-    else if (w[j] > upperBound) {//add second horizontal componet
+    else if (w[j] > upperBoundRounded) {//add second horizontal componet
       phaseApproxData.push([w[j], sign*exp*180]);
     }
     else {//add slanted componet
@@ -1860,13 +1883,21 @@ function roundToPrec(r, n) { // n = digits of precision, r=nedamer object with r
     return (rArray);
 }
 function highchartsPlot (series, id, title, xAxis, yAxis, logOrLinear, tickInt) {
-  let legend = false, width = parseFloat(screen.width)/3, data = series[0].data;
+  let legend = false, width = parseFloat(screen.width)/3, data = series[0].data, chartType, showMarkers;
   let xMax = data[data.length-1][0], xMin = data[0][0], height = null;
   if (xAxis == undefined) {
     xAxis = '&omega;, rad';
   }
   if (logOrLinear == undefined) {
     logOrLinear = 'logarithmic';
+  }
+  if (id == "bothTotalMag" || id == "bothTotalPhase") {
+    showMarkers = true;
+    chartType = 'line';
+  }
+  else {
+    chartType = 'scatter';
+    showMarkers = false;
   }
   if (id == 'sinusoidPlot') {//(id == 'individualMag' || id == 'individualPhase' || id == 'bothTotalMag' || id=='bothTotalPhase') {
     legend = true;//enable legend.
@@ -1879,10 +1910,11 @@ function highchartsPlot (series, id, title, xAxis, yAxis, logOrLinear, tickInt) 
   }
   let chart = Highcharts.chart(id, {
     chart: {
-        type: 'line',
+        type: chartType,//'line' or 'scatter'
         spacing: [10, 0, 15, 0],//top, right, bottom, left,
         height: height
     },
+    series: series,
     title: {
         text: title,
         useHTML: true,
@@ -1939,6 +1971,7 @@ function highchartsPlot (series, id, title, xAxis, yAxis, logOrLinear, tickInt) 
         scatter: {
             marker: {
                 radius: 5,
+                enabled: showMarkers,
                 states: {
                     hover: {
                         enabled: true,
@@ -1954,8 +1987,7 @@ function highchartsPlot (series, id, title, xAxis, yAxis, logOrLinear, tickInt) 
                 }
             },
         }
-    },
-    series: series
+    }
   });
   return chart;
 }
