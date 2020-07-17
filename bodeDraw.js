@@ -184,6 +184,23 @@ function getTerms() {
   zeros = roundToPrec(zeros, numOrd); // changes zeros from Nerdamer to complex
   poles = roundToPrec(poles, denOrd);
 
+  //reset all the BDO arrays to [];
+  BDO.w = [];
+  BDO.allMag = [];
+  BDO.allPhase = [];
+  BDO.allMagApprox = [];
+  BDO.allPhaseApprox = [];
+  BDO.namesOfIds = [];
+  BDO.magDescs = [];
+  BDO.phaseDescs = [];
+  BDO.topMagSeries = [];
+  BDO.topPhaseSeries = [];
+  BDO.magSeries = [];
+  BDO.phaseSeries = [];
+  BDO.lowerBounds = [];//list of lowerBounds
+  BDO.upperBounds = [];//list of upperBounds
+  BDO.complexW0s = [];//list of w0s for complex #s
+
   // We'll figure numTerms out as we go because, for example, a pair of complex
   // conjugate poles counts as a single term.
   BDO.numTerms = 0;
@@ -456,6 +473,7 @@ function getData () {
   let magLeftMostPointFormula, phaseLeftMostPointFormula, magLeftMostPointDesc, initialMagSlope = 0, magRestDesc = '', phaseRestDesc ='', termDesc;
   let id = 'topTerm:', bothTotalMagSeries = [0, 0], bothTotalPhaseSeries = [0, 0], dashStyle = 'Solid';
   magLeftMostPointDesc = 'Since we have a constant C='+BDO.C.toString();
+  BDO.w = [];//reset w every time updated.
   let w = BDO.w, slopeDB, phaseLine, halfPhaseLine;
   let lowerBoundMin = Math.min(...BDO.lowerBounds), wMin = 0.01;//min = lowest frequency at which a term's slope becomes > 0
   let upperBoundMax = Math.max(...BDO.upperBounds), wMax = 1000;
