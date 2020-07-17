@@ -42,7 +42,7 @@ function BDO_Obj() {
     this.bothTotalPhaseSeries;
     this.lowerBounds = [];//list of lowerBounds
     this.upperBounds = [];//list of upperBounds
-    this.complexW0s = [];//list of w0s for complex #s. 
+    this.complexW0s = [];//list of w0s for complex #s.
     this.isAnSInNumerator = 1;
     this.peakWidth;
 };//way to just reference chart from id?
@@ -468,13 +468,22 @@ function getData () {
     wMax *= 10;
   }
   let complexW0s = BDO.complexW0s.sort(function(a, b){return a-b});
+  let lowerBounds = BDO.lowerBounds.sort(function(a, b){return a-b});
+  let upperBounds = BDO.upperBounds.sort(function(a, b){return a-b});
   //sorted in ascending order so we can get them all.
-  let w0Index = 0, lastW0;
+  let lowerBound, upperBound;//look to spot any obvious flaws.
+  let w0Index = 0, lastW0, lowerBoundIndex = 0, lastLowerBound, upperBoundIndex = 0, lastUpperBound;
+  //what if equation changes? then we need to create new w. 
   if (!w.length) {//if w is currently empty, add all the frequency coordinates we will be graphing to it.
     w.push(wMin);//so looks like extends to almost 0
     iMax = wMax*10+1;
+    w0 = roundDecimal(complexW0s[w0Index], 1);
+    lowerBound =  roundDecimal(lowerBounds[lowerBoundIndex], 1);
+    upperBound = roundDecimal(upperBounds[upperBoundIndex], 1);
     for (let i=1; i<iMax; i++) {
       w0 = roundDecimal(complexW0s[w0Index], 1);
+      lowerBound = roundDecimal(lowerBounds[lowerBoundIndex], 1);
+      upperBound = roundDecimal(upperBounds[upperBoundIndex], 1);
       if (i*0.1 == w0) {//1 is where the peak of a complex conjugate magnitude graph will be
         //w.push(truncDecimal(w0-peakWidth, 5));//ensure that there are points immediately next to the peak
         w.push(truncDecimal(i*0.1, 1));
@@ -484,6 +493,20 @@ function getData () {
         while (complexW0s[w0Index] == lastW0) {//if next w0 is same as last, skip over it.
           w0Index++;
         }
+        w0 = roundDecimal(complexW0s[w0Index], 1);
+      }
+      else if (i*0.1 == lowerBound) {
+        w.push(lowerBounds[lowerBoundIndex]);
+        lastLowerBound = w[w.length-1];
+        while (lowerBounds[lowerBoundIndex] == lastLowerBound) {
+          lowerBoundIndex++;
+        }
+        lowerBound =  roundDecimal(lowerBounds[lowerBoundIndex], 1);
+      }
+      else if (i*0.1 == upperBound) {
+        w.push(upperBounds[upperBoundIndex]);
+        upperBoundIndex++;
+        upperBound = roundDecimal(upperBounds[upperBoundIndex], 1);
       }
       else {
         w.push(truncDecimal(i*0.1, 1));
@@ -523,7 +546,6 @@ function getData () {
   checkBoxesHtml = "<div id='checkboxes' style='float:left;'><br>Elements Detected: <br>";
   checkBoxesHtml += "<input type='radio' id='" + id + "0' onclick=\"onTopCheckOne(this.id)\" checked></input>";
   checkBoxesHtml += "<label for='" + id + "0'>"+ name +"</label>";
-
 
   magDescs.push('The constant term is K= ~'+roundDecimal(constantK, 3).toString()+' = '+terms[0].magData[0][1].toPrecision(3)+' dB = 20log10(|K|).');
   //1 description, 1 graph
@@ -1550,16 +1572,16 @@ function compConjugateData (w, sign, termIndex) {
   for (let j=0; j<jMax; j++) {
     x = w[j];
     //lower & upper boundarises of line in x coordinates
-    if (w[j] < lowerBoundRounded) {//add first horizontal componet
+    if (w[j] < lowerBound) {//add first horizontal componet
       phaseApproxData.push([w[j], 0]);
     }
-    else if (w[j] > upperBoundRounded) {//add second horizontal componet
+    else if (w[j] > upperBound) {//add second horizontal componet
       phaseApproxData.push([w[j], sign*exp*180]);
     }
     else {//add slanted componet
       theta = (Math.log10(w[j]/lowerBound)/middleDenominator)*sign*exp*180;
       phaseApproxData.push([w[j], theta]);
-    }
+    }//0 = log10(w[j]/lowerBound)/(middleDenominator)*sign*exp*180
   }
   //exact phase version starts here: it's hard to understand.
   //realPart + imagPart*i, realPart = 1-(w[j]/w0)^2, imagPart = 2*zeta*w[j]/(w0) 
