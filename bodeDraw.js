@@ -1718,7 +1718,7 @@ function compConjugateData (w, sign, termIndex) {
   let topMagData = [[w[0], 0], [w0Rounded, 0]];
   let topPhaseData = [[w[0], 0], [roundDecimal(lowerBound, 1), 0], [roundDecimal(upperBound, 1), sign*exp*180]];
   //0 undershoots offset, approx is below exact. breakW-1 might overshoot it?
-  let offset = breakW-1;//since logs normally intersects at x=1, to shift to breakW have to subtract breakW-1.s
+  let offset = w0-1;//since logs normally intersects at x=1, to shift to breakW have to subtract breakW-1.s
   //calculate approximate Magnitude:
   let wJIsPointAtTopOfVerticalLine = 0;
   if (zetaTemp < 0.5) {//magnitude plot will have a peak
@@ -1926,6 +1926,8 @@ function highchartsPlot (series, id, title, xAxis, yAxis, logOrLinear, tickInt) 
     logOrLinear = 'logarithmic';
   }
   if (id == "bothTotalMag" || id == "bothTotalPhase") {
+    //only bottommost graphs showing combined magnitude & phase plots (exact & linear approximation)
+    //show the markers on the graph & are a 'line' type. other charts are scatter plots.
     showMarkers = true;
     chartType = 'line';
   }
@@ -1933,19 +1935,22 @@ function highchartsPlot (series, id, title, xAxis, yAxis, logOrLinear, tickInt) 
     chartType = 'scatter';
     showMarkers = false;
   }
+  //only enable legend for plot of the sinusoid
   if (id == 'sinusoidPlot') {
-    legend = true;//enable legend.
+    legend = true;
   }
+  //calculate height of plot for individual (topmost) & 'Putting it all together' plot.
   if (id.indexOf('individual') > -1 || id.indexOf('together') > -1) {
     height = Math.trunc(0.82*window.innerHeight/2);//83vh/2
   }
   if (title.indexOf('Magnitude') > -1) {
-    tickInt = 20;
+    tickInt = 20;//interval between ticks for magnitude plots
   }
+  //make chart:
   let chart = Highcharts.chart(id, {
     chart: {
         type: chartType,//'line' or 'scatter'
-        spacing: [10, 0, 15, 0],//top, right, bottom, left,
+        spacing: [10, 0, 15, 0],//top, right, bottom, left spacing
         height: height
     },
     series: series,
@@ -1961,10 +1966,10 @@ function highchartsPlot (series, id, title, xAxis, yAxis, logOrLinear, tickInt) 
       enabled: false
     },
     xAxis: {
-      type: logOrLinear,//'logarithmic'. can't plot sub-zero values on a logarithmic axis
+      type: logOrLinear,//'logarithmic' or 'linear' for type
       title: {
           enabled: true,
-          text: xAxis,//ω, &#x03C9;
+          text: xAxis,
           useHTML: true
       },
       startOnTick: true,
@@ -1974,12 +1979,11 @@ function highchartsPlot (series, id, title, xAxis, yAxis, logOrLinear, tickInt) 
       max: xMax,
       min: xMin
     },
-    //type: 'linear','logarithmic'
     yAxis: {
       type: 'linear',
       tickInterval: tickInt,
         title: {
-            text: yAxis,//'Magnitude dB',
+            text: yAxis,
             useHTML: true
         }
     },
@@ -1998,7 +2002,6 @@ function highchartsPlot (series, id, title, xAxis, yAxis, logOrLinear, tickInt) 
             floating: true,
             draggable: true,
             zIndex: 20,
-            //useHTML: true,
             enabled: legend
         },
     plotOptions: {
