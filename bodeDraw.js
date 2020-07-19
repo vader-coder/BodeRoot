@@ -1718,7 +1718,7 @@ function compConjugateData (w, sign, termIndex) {
   let topMagData = [[w[0], 0], [w0Rounded, 0]];
   let topPhaseData = [[w[0], 0], [roundDecimal(lowerBound, 1), 0], [roundDecimal(upperBound, 1), sign*exp*180]];
   //0 undershoots offset, approx is below exact. breakW-1 might overshoot it?
-  let offset = breakW;//since logs normally intersects at x=1, to shift to breakW have to subtract breakW-1.s
+  let offset = breakW-1;//since logs normally intersects at x=1, to shift to breakW have to subtract breakW-1.s
   //calculate approximate Magnitude:
   let wJIsPointAtTopOfVerticalLine = 0;
   if (zetaTemp < 0.5) {//magnitude plot will have a peak
