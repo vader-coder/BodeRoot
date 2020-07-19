@@ -706,7 +706,7 @@ function getData () {
         w.push(w_iTrunc);
         /*add another point immediately to the bottom-right the peak 
         so it will appear as a vertical line*/
-        w.push(truncDecimal(w0 + peakWidth, 5));
+        w.push(roundDecimal(w0 + peakWidth, 5));
         //update w0 to reflect the next w0 in the list of complex w0s
         lastW0 = w0;
         while (complexW0s[w0Index] == lastW0) {
@@ -1718,7 +1718,7 @@ function compConjugateData (w, sign, termIndex) {
   let topMagData = [[w[0], 0], [w0Rounded, 0]];
   let topPhaseData = [[w[0], 0], [roundDecimal(lowerBound, 1), 0], [roundDecimal(upperBound, 1), sign*exp*180]];
   //0 undershoots offset, approx is below exact. breakW-1 might overshoot it?
-  let offset = breakW-1;//since logs normally intersects at x=1, to shift to breakW have to subtract breakW-1.s
+  let offset = breakW;//since logs normally intersects at x=1, to shift to breakW have to subtract breakW-1.s
   //calculate approximate Magnitude:
   let wJIsPointAtTopOfVerticalLine = 0;
   if (zetaTemp < 0.5) {//magnitude plot will have a peak
