@@ -411,7 +411,7 @@ function getTerms() {
           terms[i].upperBound = upperBound;
           BDO.lowerBounds.push(lowerBound);
           BDO.upperBounds.push(upperBound);
-          BDO.complexW0s.push(truncDecimal(w0, 1));            
+          BDO.complexW0s.push(roundDecimal(w0, 1));            
       }
   }
   for (let i = 1; i < BDO.numTerms; i++) {
@@ -1086,7 +1086,7 @@ function getData () {
       desc = 'For the magnitude plot we draw a straight line at 0 dB from up to '+w0Mag+', thereafter the line rises at '+slopeDB+'dB/decade.';
       if (parseFloat(zMag) < 0.5) {
         desc += '<br>Since '+zMag+'<0.5, we draw a peak of 20log<sub>10</sub>(2&zeta;) = ';//is this affected by mult?
-        desc += (20*Math.log10(2*parseFloat(zMag,10))).toString()+'dB at &omega; = '+w0Mag+'.';
+        desc += (20*Math.log10(2*parseFloat(zMag,10))).toPrecision(3)+'dB at &omega; = '+w0Mag+'.';
       }
       magDescs.push(desc);
 
@@ -1156,7 +1156,7 @@ function getData () {
       desc += w0Mag+', thereafter the line drops at '+slopeDB+' dB/decade.';
       if (zMag < 0.5) {
         desc+= '<br>Since '+zMag+'<0.5, we draw a peak of -20log<sub>10</sub>(2&zeta;) = ';
-        desc += (-20*Math.log10(2*parseFloat(zMag,10))).toString()+'db at &omega; = '+w0Mag;
+        desc += (-20*Math.log10(2*parseFloat(zMag,10))).toPrecision(3)+'db at &omega; = '+w0Mag;
       }
       magDescs.push(desc);
       desc = 'The phase plot is 0&deg; up to '+w0Mag+'/10<sup>'+zMag+'</sup>, ';
@@ -1729,7 +1729,7 @@ function compConjugateData (w, sign, termIndex) {
         magApproxData.push([x, 0]);
       }
       else if (x > breakW) {//slanted part of magnitude plot approximation
-        magApproxData.push([x, sign*40*exp*Math.log10(x-offset)]);
+        magApproxData.push([x, sign*40*exp*Math.log10(x/w0)]);//x-offset
       }
       else if (x == breakW) {//peak where horizontal and slanted line join
         if (!wJIsPointAtTopOfVerticalLine) {
@@ -1753,8 +1753,8 @@ function compConjugateData (w, sign, termIndex) {
       if (x <= breakW) {
         magApproxData.push([x, 0]);
       }
-      else if (x > breakW) {
-        magApproxData.push([x, sign*40*exp*Math.log10(x-offset)]);
+      else if (x > breakW) {//x-offset
+        magApproxData.push([x, sign*40*exp*Math.log10(x/w0)]);
       }
     }
   }
