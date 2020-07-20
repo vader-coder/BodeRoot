@@ -269,18 +269,35 @@ function getTerms() {
   let i = 0;
   // Check against all following terms (no term follows last one, so
   // we don't need to include it.)
-  while (i < (BDO.numTerms - 1)) {
+  while (i < (BDO.numTerms - 1)) {//for each item in terms except last, compare it to the other items in the series.
       for (let j = i + 1; j < BDO.numTerms; j++) {
           if (terms[i].termType == terms[j].termType) { // if type is the same
-              if (terms[i].value == terms[j].value) { // and value is the same
-                  terms[i].mult++; // increase multiplicity
-                  terms.splice(j, 1); // delete repeated term
-                  BDO.numTerms--; // decrease number of terms
+            if (terms[i].termType.indexOf('Comp') > -1) {
+              //terms[i].value == terms[j].value returns false evein if .im & .re are equal.
+              if ((terms[i].value.im == terms[j].value.im) && (terms[i].value.re == terms[j].value.re)) {//real part & imaginary part are same
+                terms[i].mult++; // increase multiplicity
+                terms.splice(j, 1); // delete repeated term
+                BDO.numTerms--; // decrease number of terms
+                j--;
               }
+            }
+            else if (terms[i].value == terms[j].value) {//type & value are same
+              terms[i].mult++; // increase multiplicity
+              terms.splice(j, 1); // delete repeated term
+              BDO.numTerms--; // decrease number of terms
+              j--;
+            }
           }
-          i++;
+          //i++;
       }
+      i++;
   }
+  //my version:
+  /*let i=0; 
+  while (i< BDO.numTemrs -1) {
+    for (let j=i+1; j<BDO.numTerms; j++)
+  }*/
+
 
   // Sort terms into order they will be displayed:
   // Constant, real poles, real zeros, complex poles, complex zeros, origin poles, origin zeros.
@@ -669,7 +686,7 @@ function getData () {
   magLeftMostPointDesc = 'Since we have a constant C='+BDO.C.toString();
   BDO.w = [];//reset w every time updated.
   let w = BDO.w, slopeDB, phaseLine, halfPhaseLine;
-  let lowerBoundMin = Math.min(...BDO.lowerBounds), wMin = 0.01;//min = lowest frequency at which a term's slope becomes > 0
+  let lowerBoundMin = Math.min(...BDO.lowerBounds), wMin = 0.1;//min = lowest frequency at which a term's slope becomes > 0
   let upperBoundMax = Math.max(...BDO.upperBounds), wMax = 1000;
   /*lowerBound & upperBound are the w-coordinates of the two inflection points 
   in a phase graph approximation, with lowerBound > its corresponding upperBound*/
@@ -843,7 +860,7 @@ function getData () {
       //add the term's description for checkbox to the variable that stores it and the term's description for
       //the individual plots to the array that stores them.
       checkBoxesHtml+= "<input type='radio' id='"+id+i.toString()+"' onclick=\"onTopCheckOne(this.id)\"></input>";
-      checkBoxesHtml+="<label for='"+id+i.toString()+"'>Zero at Origin</label>"
+      checkBoxesHtml+="<label for='"+id+i.toString()+"'>"+name+"</label>"
       checkBoxesHtml += getBox(topMagSeries[topMagSeries.length-1].color, id+i.toString())+"<br>";
       magDescs.push('The magnitude plot rises '+slopeDB+'dB/decade and goes through 0 dB at 1 rad sec.<br>');
       colorIndex++;
@@ -891,7 +908,7 @@ function getData () {
       topPhaseSeries.push(copyObject(phaseSeries[phaseSeries.length-1]));
       topPhaseSeries[topPhaseSeries.length-1] = updateTransparency(topPhaseSeries[topPhaseSeries.length-1], faded);
       checkBoxesHtml+="<input type='radio' id='"+id+i.toString()+"' onclick=\"onTopCheckOne(this.id)\"></input>";
-      checkBoxesHtml+="<label for='"+id+i.toString()+"'>Pole at Origin</label>";
+      checkBoxesHtml+="<label for='"+id+i.toString()+"'>"+name+"</label>";
       checkBoxesHtml += getBox(topMagSeries[topMagSeries.length-1].color, id+i.toString())+"<br>";
       desc = 'The magnitude plot drops '+slopeDB+'dB/decade and goes through 0 dB at 1 rad sec.<br>';
       magDescs.push(desc);
@@ -1738,7 +1755,7 @@ function compConjugateData (w, sign, termIndex) {
           wJIsPointAtTopOfVerticalLine = 1;
         }
         else if (wJIsPointAtTopOfVerticalLine) {
-          peak = 20*sign*-1*Math.abs(Math.log10(2*Math.abs(zetaTemp)));//top of vertical line.
+          peak = 20*sign*-1*exp*Math.abs(Math.log10(2*Math.abs(zetaTemp)));//top of vertical line.
           //the peak will be opposite in sign to the non-zero part of the equation.
           magApproxData.push([x, peak]);
           topMagData.push(magApproxData[j]);
