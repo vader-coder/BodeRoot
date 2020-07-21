@@ -30,7 +30,9 @@ function BDO_Obj() {
     this.phaseFormula = '';
     this.omega;
     this.phi;
+    this.magInput;
     this.sinusoidInput;
+    this.sinusoidOutput;
     this.bold = '1.0';
     this.faded = '0.5';
     this.individualMagChart = '';
@@ -678,14 +680,16 @@ function getData () {
   magLeftMostPointDesc = 'Since we have a constant K='+BDO.K.toString();
   BDO.w = [];//reset w every time updated.
   let w = BDO.w, slopeDB, phaseLine, halfPhaseLine;
-  let lowerBoundMin = Math.min(...BDO.lowerBounds), wMin = 0.1;//min = lowest frequency at which a term's slope becomes > 0
+  let lowerBoundMin = Math.min(...BDO.lowerBounds), wMin = 0.1, prec = 1;//min = lowest frequency at which a term's slope becomes > 0
   let upperBoundMax = Math.max(...BDO.upperBounds), wMax = 100;
   /*lowerBound & upperBound are the w-coordinates of the two inflection points 
   in a phase graph approximation, with lowerBound > its corresponding upperBound*/
   //ensure smallest frequency on graph is < than the lowest inflection point frequency by a factor of 10
   while (wMin >= lowerBoundMin) {
     wMin *= 0.1;
+    prec++;
   }
+  wMin = truncDecimal(wMin, prec);
   //ensure largest frequency on graph is > than the highest inflection point frequency by a factor of 10
   while (wMax <= upperBoundMax) {
     wMax *= 10;
@@ -755,7 +759,7 @@ function getData () {
       constPhase.push([w[i], 0]);
       constMag.push([w[i], 20*Math.log10(Math.abs(constantK))]);
     }
-    desc = 'Since the constant is positive, its phase is 0&deg;.';
+    desc = 'Since the constant K is positive, its phase is 0&deg;.';
     BDO.phaseFormula += 'Phase: <br>0&deg; ';
   }
   else if (constantK < 0) {
@@ -763,7 +767,7 @@ function getData () {
       constPhase.push([w[i], 180]);
       constMag.push([w[i], 20*Math.log10(Math.abs(constantK))]);
     }
-    desc =  'Since the constant is positive, its phase is &plusmn; 180&deg;.<br>We have chosen to represent it as +180&deg;.';
+    desc =  'Since the constant K is negative, its phase is &plusmn; 180&deg;.<br>We have chosen to represent it as +180&deg;.';
     BDO.phaseFormula += '180&deg; ';
   }
   terms[0].magData = constMag;
@@ -846,7 +850,7 @@ function getData () {
       checkBoxesHtml+= "<input type='radio' id='"+id+i.toString()+"' onclick=\"onTopCheckOne(this.id)\"></input>";
       checkBoxesHtml+="<label for='"+id+i.toString()+"'>"+name+"</label>"
       checkBoxesHtml += getBox(magSeries[magSeries.length-1].color, id+i.toString())+"<br>";
-      magDescs.push('The magnitude plot rises '+slopeDB+'dB/decade and goes through 0 dB at 1 rad/s.<br>');
+      magDescs.push('The magnitude plot rises '+slopeDB+' dB/decade and goes through 0 dB at 1 rad/s.<br>');
       colorIndex++;
       desc = 'The phase plot of a zero at the origin is a horizontal line at +'+phaseLine+'&deg;.';
       desc += '<br><a href="https://lpsa.swarthmore.edu/Bode/BodeHow.html#A%20Zero%20at%20the%20Origin">Details</a>';
@@ -1006,7 +1010,7 @@ function getData () {
       checkBoxesHtml += getBox(magSeries[magSeries.length-1].color, id+i.toString())+"<br>";
       desc = 'The real pole is at '+w0Str+' = '+w0Mag+' rad/s.';
       desc+= ' For the magnitude plot we draw a straight line from';
-      desc += ' 0 dB to '+w0Str+' = '+w0Mag+', thereafter the line falls at '+slopeDB+'dB/decade.';
+      desc += ' 0 dB to '+w0Str+' = '+w0Mag+', thereafter the line falls at '+slopeDB+' dB/decade.';
       magDescs.push(desc);
       
       w0Mag = parseFloat(w0Mag);
@@ -1141,7 +1145,7 @@ function getData () {
       }
       magDescs.push(desc);
       desc = 'The phase plot is 0&deg; up to '+w0Mag+'/10<sup>'+zMag+'</sup>, ';
-      desc += 'then climbs to '+phaseLine+'&deg; at '+w0Mag+'&middot;10<sup>'+zMag+'</sup> going through '+halfPhaseLine+'&deg; at '+w0Mag+'.';
+      desc += 'then falls to -'+phaseLine+'&deg; at '+w0Mag+'&middot;10<sup>'+zMag+'</sup> going through -'+halfPhaseLine+'&deg; at '+w0Mag+'.';
       desc += '<br><a href="https://lpsa.swarthmore.edu/Bode/BodeHow.html#A%20Complex%20Conjugate%20Pair%20of%20Zeros">Details</a>';
       phaseDescs.push(desc);
       names.push(name);
@@ -1187,6 +1191,13 @@ function getData () {
   togetherPhaseSeries = updateSeriesTransparency(copyObject(phaseSeries), bold, 1);
   togetherMagSeries[0].lineWidth = 2;
   togetherPhaseSeries[0].lineWidth = 2;
+  /* Uncomment this loop to display the data points used to make all of them in the together plot:*/
+  ///*
+  for (let i=0; i<iLen; i++) {
+    togetherMagSeries[i].data = terms[i].magDataApprox;//magData
+    togetherPhaseSeries[i].data = terms[i].phaseDataApprox;//phaseData
+  }//*/
+
   //bothTotalMagSeries only contains the combined (or 'total') series.
   bothTotalMagSeries.push({
     name: 'Total Magnitude',
@@ -1230,7 +1241,7 @@ function getData () {
   highchartsPlot(togetherPhaseSeries, 'togetherPhasePlot', '<b>Phase Plot</b>', xAxis, yAxisPhase, 'logarithmic', 90);
   console.log((new Date().getTime() - plotStart).toString()+ " ms for plot")
 
-  /*add series and descriptoins to BDO object 
+  /*add series and descriptions to BDO object 
   so we can use them in other functions*/
   BDO.magSeries = magSeries;
   BDO.phaseSeries = phaseSeries;
@@ -1241,8 +1252,11 @@ function getData () {
   BDO.magDescs = magDescs;
   BDO.phaseDescs = phaseDescs;
   BDO.namesOfIds = names;
-  BDO.omega = document.querySelector('#freqInput');
-  BDO.phi = document.querySelector('#phaseInput');
+  BDO.omega = document.getElementById('freqInput');
+  BDO.phi = document.getElementById('phaseInput');
+  BDO.magInput = document.getElementById('magInput');
+  BDO.sinusoidInput = document.getElementById('sinusoidInput');
+  BDO.sinusoidOutput = document.getElementById('sinusoidOutput');
 }
 //returns array containing the endpoints of an array.
 function getEndpoints (arr) {
@@ -1263,24 +1277,38 @@ function setEventListeners() {
   //frequency or phase input next to the sinusoid graph
   const freqSource = document.getElementById('freqInput');
   const phaseSource = document.getElementById('phaseInput');
+  const magSource = document.getElementById('magInput');
   freqSource.addEventListener('input', freqInputHandler);
   freqSource.addEventListener('propertychange', freqInputHandler);
   freqSource.addEventListener('keyup', sinusoidEnterHandler);
   phaseSource.addEventListener('input', phaseInputHandler);
   phaseSource.addEventListener('propertychange', phaseInputHandler);
   phaseSource.addEventListener('keyup', sinusoidEnterHandler);
+  magSource.addEventListener('input', magInputHandler);
+  magSource.addEventListener('propertychange', magInputHandler);
+  magSource.addEventListener('keyup', sinusoidEnterHandler);
 }
 //when value in frequency field changes, update the thml showing the potential input.
 function freqInputHandler(event) {
   let omega = event.target.value;
-  let phi = document.getElementById('phaseInput').value;
-  document.getElementById('sinusoidInput').innerHTML = 'cos('+omega+' &middot; t + '+phi+')';  
+  let phi = BDO.phi.value;
+  let mag = BDO.magInput.value;
+  BDO.sinusoidInput.innerHTML = mag+' &middot cos('+omega+' &middot; t + '+phi+')'; 
+  //store 'sinusoidInput' in object?
 }
 //when value in phase field changes, update the thml showing the potential input.
 function phaseInputHandler(event) {
-  let omega = document.getElementById('freqInput').value;
+  let omega = BDO.omega.value;
   let phi = event.target.value;
-  document.getElementById('sinusoidInput').innerHTML = 'cos('+omega+' &middot; t + '+phi+')';
+  let mag = BDO.magInput.value;
+  BDO.sinusoidInput.innerHTML = mag+' &middot cos('+omega+' &middot; t + '+phi+')';
+}
+//when value in magnitude field changes, update the thml showing the potential input.
+function magInputHandler(event) {
+  let omega = BDO.omega.value;
+  let phi = BDO.phi.value;
+  let mag = event.target.value;
+  BDO.sinusoidInput.innerHTML = mag+' &middot cos('+omega+' &middot; t + '+phi+')';
 }
 //handle keyup event in input field 
 //for numerator, denominator, or constant 
@@ -1301,16 +1329,19 @@ function sinusoidEnterHandler(event) {
   combined into one series. add red dot to mag & phase plots to indicate the frequency inputted by the user.*/
 function graphSinusoid () {
   let start = new Date().getTime();
-  let wIndex, mag, phase, html, theta, phi = parseFloat(BDO.phi.value), omega = parseFloat(BDO.omega.value);
-  let inputData = [], outputData = [], t = [], series, period, tMin, tMax, tInterval, tCount, tLen, ptNum;//wish I had malloc.
+  let wIndex, mag, phase, html, theta, phi = parseFloat(BDO.phi.value), omega = parseFloat(BDO.omega.value), magInput = parseFloat(BDO.magInput.value);
+  let inputData = [], outputData = [], t = [], series, period, tMin, tMax, tInterval, tCount, tLen, ptNum, omegaHasOneDecimalPlace = 0;//wish I had malloc.
+  let w = BDO.w;
   /*omega stores inputted frequency, phi stores input phase; theta stores phase calculated 
   from transfer function at the inputted frequency, & phase is phi+theta.*/
   if (isNaN(omega) || isNaN(phi) || omega <= 0) {
     alert('You must specify a numerical value for frequency and phase. The frequency must be positive.');
     return;
   }
-  if (omega*10 == Math.trunc(omega*10)) {//will this ever not work?
-    wIndex = BDO.w.indexOf(roundDecimal(omega, 1));
+  //if has one decimal place & within the frequency array, search for its index.
+  if (omega*10 == Math.trunc(omega*10) && omega >= w[0] && omega <= w[w.length-1]) {
+    wIndex = searchSorted(0, w.length-1, omega, w);//BDO.w.indexOf(roundDecimal(omega, 1));
+    omegaHasOneDecimalPlace = 1;
   }
   else {
     wIndex = -1;
@@ -1319,7 +1350,8 @@ function graphSinusoid () {
   then just use the data points we generated in getData() to get the magnitude and phase from the transfer function.
   (would it be easier to just say BDO.w.indexOf(omega), or check if it has 1 decimal first.)*/
   if (wIndex > -1) {
-    mag = dbToNumber(BDO.allMag[wIndex][1]).toPrecision(3);
+    mag = (dbToNumber(BDO.allMag[wIndex][1])*magInput).toPrecision(3);
+    //(BDO.allMag[wIndex][1]*magInput).toPrecision(3);
     theta = BDO.allPhase[wIndex][1];
     phase = convertToUnitCircleRange(theta + phi);
     if (phase > 0) {
@@ -1332,21 +1364,23 @@ function graphSinusoid () {
     }
   }
   else {
-    /*if omega is not inside our frequency input point list, 
-    use this function to get the magnitude & phase */
-    [html, mag, phase] = getSinusoid(omega, phi);
+    /*if omega is within our input, use this function to get the magnitude & phase */
+    [html, mag, phase] = getSinusoid(omega, phi, magInput);
+    if (omega >= w[0] && omega <= w[w.length-1]) {
+      if (omega != w[0]) { omega = roundDecimal(omega, 1); }
+      wIndex = searchSorted(0, BDO.w.length-1, omega, BDO.w);
+    }
   }
   //convert phase from input & phase combining transfer function phase & input phase to radians
   let phiRad = deg2Radians(phi);
   let phaseRad = deg2Radians(phase);
-  html+= '<br><br>Magnitude: ' + mag + ' dB<br>' + 'Phase: '+phase+' &deg;';
-  document.getElementById('sinusoidOutput').innerHTML = html;
+  html+= '<br><br>Magnitude: ' + mag + ' <br>' + 'Phase: '+phase+' &deg;';
+  BDO.sinusoidOutput.innerHTML = html;
   //construct array of input values (t) for sinusoid graph: #1184-1193
   tMax = parseFloat((20/(Math.pow(10, (Math.round(Math.log10(omega)))))).toPrecision(3));//Math.ceil(period*3);
   ptNum = 1000;
   tInterval = truncDecimal(tMax/ptNum, 10);
   tCount = 0;
-  //while(tCount<tMax) {
   for (let i=0; i<ptNum; i++) {
     tCount = truncDecimal(tCount + tInterval, 10);
     t.push(tCount);
@@ -1371,13 +1405,11 @@ function graphSinusoid () {
   let chart = BDO.sinusoidChart;
   let bothTotalMagSeries = BDO.bothTotalMagSeries;
   let bothTotalPhaseSeries = BDO.bothTotalPhaseSeries;
-  omega = roundDecimal(omega, 1);
 
   let magExact = bothTotalMagSeries[0].data;
   let magApprox = bothTotalMagSeries[1].data;
   let phaseExact = bothTotalPhaseSeries[0].data;
   let phaseApprox = bothTotalPhaseSeries[1].data;
-  wIndex = getWIndex(omega);
   //if red dot already exists, remove it. don't want to retain red dot from last series we graphed.
   if (bothTotalMagSeries[3]) {
     bothTotalMagSeries.pop();
@@ -1528,18 +1560,35 @@ function deg2Radians(deg) {
 function dbToNumber(db) {
   return Math.pow(db/20, 10);
 }
-/* If number w exists in the array of input frequencies, return its
-  index in this array. Otherwise, return -1. */
-function getWIndex (w) {//w values from 0.1 to 1001. 
-  let wArray = BDO.w;
-  let len = wArray.length;
-  let search = roundDecimal(w, 1);
-  for (let i=0; i<len; i++) {
-    if (search == wArray[i]) {
-      return i;
-    }
+//searches an array sorted from least to greatest using recursion,
+//returns index of an array arr where num is found.
+//assumes array is sorted from least to greatest.
+//even w/ repeated values, would still return an index where one of those values was.
+function searchSorted(start, end, num, arr) {
+  let len = end-start+1;//5-0+1 = 6. end & start are indecies.
+  if (len <= 2) {//base case
+      if (arr[start] == num) {
+          return start;
+      }
+      else if (arr[end] == num) {
+          return end;
+      }
+      else {
+          return -1;
+      }
   }
-  return -1;
+  else {
+      let mid = parseInt(len/2)+start;
+      if (num > arr[mid]) {
+          return searchSorted(mid+1, end, num, arr);
+      }
+      else if (num < arr[mid]) {//num is in first half.
+          return searchSorted(start, mid-1, num, arr);
+      }
+      else {//arr[mid] == num
+          return mid;
+      }
+  }
 }
 //convert an angle < -179 degrees or > 180 degrees to
 //a value between -179 degrees and 180 degrees
@@ -1853,7 +1902,7 @@ function updateBox(rgba, boxId) {
 }
 /*uses frequency & phase input from the user (omega, phi) to calculate magnitude & phase values for output sinusoid
   and the html string to describe it*/  
-function getSinusoid(omega, phi) {
+function getSinusoid(omega, phi, magInput) {
   let terms = BDO.terms, phase, sign, exp, w0, x, a, b, realPart, imagPart, zetaTemp;
   let mag = terms[0].magData[0][1];
   let theta = terms[0].phaseData[0][1];
@@ -1886,7 +1935,7 @@ function getSinusoid(omega, phi) {
     }
   }
   phase = convertToUnitCircleRange(phi+theta);
-  mag = dbToNumber(mag).toPrecision(3);
+  mag = dbToNumber(mag*magInput).toPrecision(3);//(mag*magInput).toPrecision(3);
   omega = omega.toPrecision(3);
   phase.toPrecision(3);
   return [mag +' &middot; cos('+omega+' rad &middot; t '+phase+'&deg;)', parseFloat(mag), parseFloat(phase)];
@@ -1933,6 +1982,7 @@ function highchartsPlot (series, id, title, xAxis='&omega;, rad', yAxis, logOrLi
     },
     xAxis: {
       type: logOrLinear,//'logarithmic' or 'linear' for type
+      tickInterval: 1,
       title: {
           enabled: true,
           text: xAxis,
