@@ -1204,13 +1204,6 @@ function getData () {
   });
   bothTotalMagSeries.push(magSeries[magLen-1]);
   bothTotalPhaseSeries.push(phaseSeries[phaseLen-1]);
-  
-  //loop through terms to give series for topmost graph the data that includes the 
-  //minimum number of necessary points.
-  /*for (let i=0; i<iLen; i++) {
-    topMagSeries[i].data = terms[i].topMagData;
-    topPhaseSeries[i].data = terms[i].topPhaseData;
-  }*/
 
   //set html for descriptions for the topmost graph (individual plots),
   //the plot of all term data combined, and the checkboxes for the topmost graph.
