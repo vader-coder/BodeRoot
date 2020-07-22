@@ -459,7 +459,8 @@ function getTerms() {
           terms[i].mH = m == 1 ? '' : `, of muliplicity ${m}`; // multiplicity phrase
           BDO.terms[j++] = terms[i];
           if (m > 1 && !areMultiplePolesAtOrigin) {
-            $('#alertBox').dialog({
+            let dialog = $('#alertBox');
+            dialog.dialog({
               closeOnEscape: true,
               position: {
                 my: "center top",
@@ -468,10 +469,12 @@ function getTerms() {
                 collision: "none"
               }
             });
-            let button = $('#alertBox button:first');
+            //dialog.removeAttr('hidden');
+            /*let button = $('#alertBox button:first');
+            button.hidden = false;
             button.css('position', 'absolute');
             button.css('top', '0');
-            button.css('right', '0');
+            button.css('right', '0');*/
             //alert("System has multiple poles or zeros at origin. <a href= '"+errorLink+"' >Caveats</a>");
             areMultiplePolesAtOrigin = 1;
           }
