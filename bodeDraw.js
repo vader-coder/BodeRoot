@@ -167,18 +167,30 @@ function getTerms() {
   //only get zeros or poles if a variable 's' is included in the respective input field
   if (BDO.num.indexOf("s") > -1) {
     zeros = nerdamer.roots(BDO.num);
-    let factors = nerdamer('factor('+BDO.num+')');
+    /*let factors = nerdamer('factor('+BDO.num+')');
     numCoef = factors.symbol.multiplier.num.value / factors.symbol.multiplier.den.value;
-    BDO.C *= numCoef;
+    BDO.C *= numCoef;*/
   }
   else {
     BDO.isAnSInNumerator = 0;
   }
+  let factors = nerdamer('factor('+BDO.num+')');
+  numCoef = factors.symbol.multiplier.num.value / factors.symbol.multiplier.den.value;
+  BDO.C *= numCoef;
+  
   if (BDO.den.indexOf("s") > -1) {
     poles = nerdamer.roots(BDO.den);
     let factors = nerdamer('factor('+BDO.den+')');
     denCoef = factors.symbol.multiplier.num.value / factors.symbol.multiplier.den.value;
     BDO.C /= denCoef;
+    if (denCoef == 1) {
+      let elem = poles.symbol.elements;
+      let elemLen = elem.length;
+      for (let j=0; j<elemLen; j++) {
+        BDO.C *= Math.abs(elem[j].multiplier.num.value);
+        BDO.C /= Math.abs(elem[j].multiplier.den.value);
+      }
+    }
   }
   else {
     alert("You must include the variable 's' in the denominator.");
@@ -193,6 +205,8 @@ function getTerms() {
   zeros = roundToPrec(zeros, numOrd); 
   poles = roundToPrec(poles, denOrd);
 
+  //BDO.phi, BDO.omega, BDO.magInput, BDO.allMag, BDO.allPhase, BDO.w, BDO.sinusoidOutput, BDO.sinusoidInput, 
+  //BDO.sinusoidChart, BDO.bothMagChart, BDO.bothPhaseChart, BDO.bothTotalMagSeries, BDO.bothTotalPhaseSeries
   //reset all the BDO arrays to [];
   BDO.w = [];
   BDO.allMag = [];
@@ -204,6 +218,11 @@ function getTerms() {
   BDO.phaseDescs = [];
   BDO.topMagSeries = [];
   BDO.topPhaseSeries = [];
+  BDO.bothTotalMagSeries = [];
+  BDO.bothTotalPhaseSeries = [];
+  BDO.sinusoidChart = 0;
+  BDO.bothPhaseChart = 0;
+  BDO.bothMagChart = 0;
   BDO.magSeries = [];
   BDO.phaseSeries = [];
   BDO.lowerBounds = [];
@@ -1369,7 +1388,7 @@ function graphSinusoid () {
     [html, mag, phase] = getSinusoid(omega, phi, magInput);
     if (omega >= w[0] && omega <= w[w.length-1]) {
       if (omega != w[0]) { omega = roundDecimal(omega, 1); }
-      wIndex = searchSorted(0, BDO.w.length-1, omega, BDO.w);
+      wIndex = searchSorted(0, w.length-1, omega, w);
     }
   }
   //convert phase from input & phase combining transfer function phase & input phase to radians
@@ -1658,8 +1677,8 @@ function realData (w, sign, termIndex) {
   let middleDenominator = Math.log10(upperBound/lowerBound), theta, x;
   BDO.terms[termIndex].midPhaseSlope = '90&middot;'+exp.toString()+'/'+middleDenominator.toString();//how to calculate? want a per-decade measurement.
   BDO.terms[termIndex].endPhaseSlope = '90&middot;'+exp.toString();
-  let topMagData = [[w[0], 0], [roundDecimal(w0, 1), 0]];
-  let topPhaseData = [[w[0], 0], [roundDecimal(lowerBound, 1), 0], [roundDecimal(upperBound, 1), sign*exp*90]];
+  let topMagData = [[w[0], 0], [w0, 1, 0]];
+  let topPhaseData = [[w[0], 0], [lowerBound, 0], [upperBound, sign*exp*90]];
   BDO.terms[termIndex].magBreakpt = w0;
   BDO.terms[termIndex].magSlope = sign*20*exp;
   
@@ -1677,7 +1696,7 @@ function realData (w, sign, termIndex) {
     //calculate exact magnitude (dB):
     magExactData.push([w[j], sign*20*exp*Math.log10(Math.pow((1 + x*x), 0.5))]);
     //calculate phase (degrees) approximation
-    if (w[j]<lowerBound) {
+    if (w[j]<=lowerBound) {
         phaseApproxData.push([w[j], 0]);
     }
     else if (w[j]>upperBound) {
@@ -1741,7 +1760,7 @@ function compConjugateData (w, sign, termIndex) {
   //breakW is w-coordinate for inflection poiont where horizontal and slanted part of magnitude plot approximation meet
   breakW = w0Rounded;//w coordinate where horizontal and slanted part meet
   let topMagData = [[w[0], 0], [w0Rounded, 0]];
-  let topPhaseData = [[w[0], 0], [roundDecimal(lowerBound, 1), 0], [roundDecimal(upperBound, 1), sign*exp*180]];
+  let topPhaseData = [[w[0], 0], [lowerBound, 0], [upperBound, sign*exp*180]];
   //0 undershoots offset, approx is below exact. breakW-1 might overshoot it?
   let offset = w0-1;//since logs normally intersects at x=1, to shift to breakW have to subtract breakW-1.s
   //calculate approximate Magnitude:
@@ -1798,7 +1817,7 @@ function compConjugateData (w, sign, termIndex) {
   for (let j=0; j<jMax; j++) {
     x = w[j];
     //calculate three componets of approximation using w-coordinates of inflection points (lowerBound, upperBound)
-    if (x < lowerBound) {//first horizontal componet
+    if (x <= lowerBound) {//first horizontal componet
       phaseApproxData.push([x, 0]);
     }
     else if (x > upperBound) {//second horizontal componet
