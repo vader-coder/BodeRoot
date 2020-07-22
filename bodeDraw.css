@@ -1,0 +1,70 @@
+/* This CSS was written by Patrick Wheeler*/
+
+.wrapper {/* Individual plot window.*/
+    display:grid;
+    grid-template-columns: 4fr 7fr;/*1fr 3fr;*/
+    min-height: 70vh;/*500/720 = .69. 70% of screen height.*/
+    max-height: 83vh;
+    overflow:scroll;
+  }
+  .wrapper2 {/* Together plot window.*/
+    display: grid;
+    grid-template-columns: 4fr 7fr;/* was 1ft 2fr I think */
+    min-height: 70vh;
+    max-height: 83vh;
+    overflow:scroll;
+  }
+  .wrapper3 {/* Individual plot window.*/
+    display:grid;
+    grid-template-columns: 1fr 3fr;
+    min-height: 70vh;/*500/720 = .69. 70% of screen height.*/
+    max-height: 83vh;
+    overflow:scroll;
+  }
+  /*.wrapper > div{
+    background: #eee;
+    padding: 1em;
+  }*/
+  .stacked {/*Two elements stacked on top of one another*/
+    display:grid;
+    grid-template-rows: 2fr 1fr;
+  }
+  .stackedEven {
+    display:grid;
+    grid-template-rows: 1fr 1fr;
+  }
+  .sideBySideEven {
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .topDesc {
+    background: #F3E5AB;
+  }
+  .bottomDesc {
+    background: #FFC0CB;
+  }
+  #individualDescs {
+    font-size: 1em;
+  }
+  #togetherDescs {
+    /*max-width: 400px;*/
+    font-size: 0.75em;
+  }
+  .ui-dialog {/*#alertBox, .ui-dialog-titlebar {*/
+    background: #add8e6;
+    z-index: 100;
+  }
+  .dialog-link {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+  }
+  .ui-dialog .caveatDescription {
+    margin: 25px;
+  }
+  .ui-dialog span {
+    text-align: right;
+  }
+  .ui-dialog button {
+      float: right;
+  }

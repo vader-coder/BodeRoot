@@ -183,14 +183,14 @@ function getTerms() {
     let factors = nerdamer('factor('+BDO.den+')');
     denCoef = factors.symbol.multiplier.num.value / factors.symbol.multiplier.den.value;
     BDO.C /= denCoef;
-    if (denCoef == 1) {
+    /*if (denCoef == 1) {
       let elem = poles.symbol.elements;
       let elemLen = elem.length;
       for (let j=0; j<elemLen; j++) {
         BDO.C *= Math.abs(elem[j].multiplier.num.value);
         BDO.C /= Math.abs(elem[j].multiplier.den.value);
       }
-    }
+    }*/
   }
   else {
     alert("You must include the variable 's' in the denominator.");
@@ -446,6 +446,9 @@ function getTerms() {
           BDO.complexW0s.push(roundDecimal(w0, 1));            
       }
   }
+  let areMultiplePolesAtOrigin = 0;
+  //let errorLink = 'https://vader-coder.github.io/BodeRoot/multZPAtOrigin.html';
+  let errorLink = 'multzPAtOrigin.html';
   for (let i = 1; i < BDO.numTerms; i++) {
       if (terms[i].termType == 'OriginPole') {
           let m = terms[i].mult
@@ -455,6 +458,23 @@ function getTerms() {
           terms[i].t2H = `(1 + s/${terms[i].tHw})${to_m(m, 1)}`;
           terms[i].mH = m == 1 ? '' : `, of muliplicity ${m}`; // multiplicity phrase
           BDO.terms[j++] = terms[i];
+          if (m > 1 && !areMultiplePolesAtOrigin) {
+            $('#alertBox').dialog({
+              closeOnEscape: true,
+              position: {
+                my: "center top",
+                at: "center top",
+                of: window,
+                collision: "none"
+              }
+            });
+            let button = $('#alertBox button:first');
+            button.css('position', 'absolute');
+            button.css('top', '0');
+            button.css('right', '0');
+            //alert("System has multiple poles or zeros at origin. <a href= '"+errorLink+"' >Caveats</a>");
+            areMultiplePolesAtOrigin = 1;
+          }
       }
   }
   for (let i = 1; i < BDO.numTerms; i++) {
@@ -466,6 +486,10 @@ function getTerms() {
           terms[i].t2H = `(1 + s/${terms[i].tHw})${to_m(m, 1)}`;
           terms[i].mH = m == 1 ? '' : `, of muliplicity ${m}`; // multiplicity phrase
           BDO.terms[j++] = terms[i];
+          if (m > 1 && !areMultiplePolesAtOrigin) {
+            $('#alertBox').dialog({closeOnEscape: true});
+            //alert("System has multiple poles or zeros at origin. <a href= '"+errorLink+"' >Caveats</a>");
+          }
       }
   }
   console.log(BDO);
