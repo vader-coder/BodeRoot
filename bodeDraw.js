@@ -43,9 +43,7 @@ function BDO_Obj() {
     this.bothTotalMagSeries;
     this.bothTotalPhaseSeries;
     this.lowerBounds = [];//list of lower inflection points
-    this.compLowerBounds = [];//list of lower inflection points for complex conjugates
     this.upperBounds = [];//list of upper inflection points
-    this.compUpperBounds = [];//list of upper inflection points for complex conjugates
     this.complexW0s = [];//list of w0s for complex #s.
     this.isAnSInNumerator = 1;
     this.peakWidth;
@@ -210,8 +208,6 @@ function getTerms() {
   BDO.phaseSeries = [];
   BDO.lowerBounds = [];
   BDO.upperBounds = [];
-  BDO.compLowerBounds = [];
-  BDO.compUpperBounds = [];
   BDO.complexW0s = [];
 
   // We'll figure numTerms out as we go because, for example, a pair of complex
@@ -396,8 +392,6 @@ function getTerms() {
           terms[i].upperBound = upperBound;
           BDO.lowerBounds.push(lowerBound);
           BDO.upperBounds.push(upperBound);
-          BDO.compLowerBounds.push(lowerBound);
-          BDO.compUpperBounds.push(upperBound);
           BDO.complexW0s.push(roundDecimal(w0, 1));        
       }
   }
@@ -430,8 +424,6 @@ function getTerms() {
           terms[i].upperBound = upperBound;
           BDO.lowerBounds.push(lowerBound);
           BDO.upperBounds.push(upperBound);
-          BDO.compLowerBounds.push(lowerBound);
-          BDO.compUpperBounds.push(upperBound);
           BDO.complexW0s.push(roundDecimal(w0, 1));            
       }
   }
@@ -677,6 +669,7 @@ function getData () {
   let lastSolidTermIndex = colors.length/2-1;//index of last term whose line is solid.
   let magLeftMostPointFormula, phaseLeftMostPointFormula, magLeftMostPointDesc, initialMagSlope = 0, magRestDesc = '', phaseRestDesc ='', termDesc;
   let id = 'topTerm:', bothTotalMagSeries = [], bothTotalPhaseSeries = [], dashStyle = 'Solid';
+  //description for leftmost point of all the linear approximations combined in the 'Putting It All Together' section.
   magLeftMostPointDesc = 'Since we have a constant K='+BDO.K.toString();
   BDO.w = [];//reset w every time updated.
   let w = BDO.w, slopeDB, phaseLine, halfPhaseLine;
@@ -697,8 +690,8 @@ function getData () {
   /*sort inflection points for magnitude plots of complex conjugates 
   and for phase plots of real and complex terms in ascending order*/
   let complexW0s = BDO.complexW0s.sort(function(a, b){return a-b});
-  let lowerBounds = BDO.compLowerBounds.sort(function(a, b){return a-b});
-  let upperBounds = BDO.compUpperBounds.sort(function(a, b){return a-b});
+  let lowerBounds = BDO.lowerBounds.sort(function(a, b){return a-b});
+  let upperBounds = BDO.upperBounds.sort(function(a, b){return a-b});
   let lowerBound, upperBound;
   let w0Index = 0, lastW0, lowerBoundIndex = 0, lastLowerBound, upperBoundIndex = 0, lastUpperBound, w_iTrunc;
 
@@ -708,44 +701,47 @@ function getData () {
   //as we build array of frequency input points, we encounter the w-coordinates for
   //these inflection points. when we reach one, we ensure that the necessary w-coordinates are added
   //to the array so we can properly graph the relevant terms.
-  w0 = roundDecimal(complexW0s[w0Index], 1);
-  lowerBound =  roundDecimal(lowerBounds[lowerBoundIndex], 1);
-  upperBound = roundDecimal(upperBounds[upperBoundIndex], 1);
+  w0 = complexW0s[w0Index];
+  lowerBound =  lowerBounds[lowerBoundIndex];
+  upperBound = upperBounds[upperBoundIndex];
   for (let i=1; i<iMax; i++) {
     w_iTrunc = truncDecimal(i*0.1, 1);
-    if (w_iTrunc == w0) {
+    if (w_iTrunc == w0 || (w[i-1] < w0 && w_iTrunc > w0) ) {
       //to graph a peak on the magnitude plot, we will need twp of the same w-coordinate
-      w.push(w_iTrunc);
-      w.push(w_iTrunc);
+      w.push(w0);
+      w.push(w0);
       /*add another point immediately to the bottom-right the peak 
       so it will appear as a vertical line*/
       w.push(roundDecimal(w0 + peakWidth, 5));
+      if (w0 != w_iTrunc) { w.push(w_iTrunc); }
       //update w0 to reflect the next w0 in the list of complex w0s
       lastW0 = w0;
       while (complexW0s[w0Index] == lastW0) {
         w0Index++;
       }
-      w0 = roundDecimal(complexW0s[w0Index], 1);
+      w0 = complexW0s[w0Index];
     }
-    else if (w_iTrunc == lowerBound) {
+    else if (w_iTrunc == lowerBound || (w[i-1] < lowerBound && w_iTrunc > lowerBound)) {
       //plot will develop kinks if we include a phase inflection point rounded to the 
       //tenths place, so we must use the exact value.
       w.push(lowerBounds[lowerBoundIndex]);
+      if (lowerBound != w_iTrunc) { w.push(w_iTrunc); }
       //update lowerBound to contain the next of the lower phase inflection points in the list
       lastLowerBound = w[w.length-1];
       while (lowerBounds[lowerBoundIndex] == lastLowerBound) {
         lowerBoundIndex++;
       }
-      lowerBound =  roundDecimal(lowerBounds[lowerBoundIndex], 1);
+      lowerBound = lowerBounds[lowerBoundIndex];
     }
-    else if (w_iTrunc == upperBound) {
+    else if (w_iTrunc == upperBound || (w[i-1] < upperBound && w_iTrunc > upperBound)) {
       w.push(upperBounds[upperBoundIndex]);
+      if (upperBound != w_iTrunc) { w.push(w_iTrunc); }
       //update lowerBound to contain the next of the higher phase inflection points in the list
       lastUpperBound = w[w.length-1];
       while (upperBounds[upperBoundIndex] == lastUpperBound) {
         upperBoundIndex++
       }
-      upperBound = roundDecimal(upperBounds[upperBoundIndex], 1);
+      upperBound = upperBounds[upperBoundIndex];
     }
     else {
       w.push(w_iTrunc);
@@ -774,8 +770,11 @@ function getData () {
   terms[0].phaseData = constPhase;
   terms[0].magDataApprox = constMag;
   terms[0].phaseDataApprox = constPhase;
+  //topMagData & topPhaseData will only contain the minimum number of points from each term necessary to 
+  //graph it in highcharts. 
   terms[0].topMagData = getEndpoints(constMag);
   terms[0].topPhaseData = getEndpoints(constPhase);  
+  //html for the left-most point that is being graphed in highcharts:
   magLeftMostPointFormula = constMag[0][1].toPrecision(3) + ' dB';
   phaseLeftMostPointFormula = constPhase[0][1].toPrecision(3) + ' &deg;';
   name = 'Constant K=' + constantK.toString();
@@ -784,10 +783,11 @@ function getData () {
   checkBoxesHtml = "<div id='checkboxes' style='float:left;'><br>Elements Detected: <br>";
   checkBoxesHtml += "<input type='radio' id='" + id + "0' onclick=\"onTopCheckOne(this.id)\" checked></input>";
   checkBoxesHtml += "<label for='" + id + "0'>"+ name +"</label>";
-
+  
+  //magDescs: list of html for individual (topmost graph) descriptions of the magnitude of each term 
   magDescs.push('The constant term is K= '+constantK.toPrecision(3)+' = '+terms[0].magData[0][1].toPrecision(3)+' dB = 20log10(|K|).');
   BDO.lastClickedTopBoxTermNum = 0;//stores the box # that was last selected. 1st box to be checked is the constant, of term number zero
-  //add name, color, and list of data points for constant graph to its magnitude and phase series
+  //add name, color, and list of data points for constant graph to its magnitude and phase series:
   magSeries.push({
     name: 'Constant ' + constantK.toString(),
     color: colors[colorIndex],
@@ -803,6 +803,7 @@ function getData () {
   checkBoxesHtml += getBox(magSeries[magSeries.length-1].color, id+'0')+"<br>";
   colorIndex++;
   desc += '<br><a href="https://lpsa.swarthmore.edu/Bode/BodeHow.html#A%20Constant%20Term">Details</a>';
+  //phaseDescs: list of html for individual (topmost graph) descriptions of the magnitude of each term 
   phaseDescs.push(desc);
   BDO.termsLen = terms.length;
   iLen = BDO.termsLen;
@@ -1558,7 +1559,7 @@ function deg2Radians(deg) {
 }
 //converts decibals to a unitless number
 function dbToNumber(db) {
-  return Math.pow(db/20, 10);
+  return Math.pow(10, db/20);//Math.pow(db/(20*exp), 10);
 }
 //searches an array sorted from least to greatest using recursion,
 //returns index of an array arr where num is found.
@@ -1903,7 +1904,7 @@ function updateBox(rgba, boxId) {
 /*uses frequency & phase input from the user (omega, phi) to calculate magnitude & phase values for output sinusoid
   and the html string to describe it*/  
 function getSinusoid(omega, phi, magInput) {
-  let terms = BDO.terms, phase, sign, exp, w0, x, a, b, realPart, imagPart, zetaTemp;
+  let terms = BDO.terms, phase, sign, exp, w0, x, realPart, imagPart, zetaTemp;
   let mag = terms[0].magData[0][1];
   let theta = terms[0].phaseData[0][1];
   let iLen = BDO.termsLen;
@@ -1912,17 +1913,18 @@ function getSinusoid(omega, phi, magInput) {
   for (let i=1; i<iLen; i++) {
     sign = terms[i].sign;
     exp = terms[i].mult;//term's multiplicity
-    w0 = terms[i].w0;
-    zetaTemp = terms[i].zeta;//damping ratio
     if (terms[i].termType.indexOf('Origin') > -1) {
       mag += 20*exp*sign*Math.log10(omega);
       theta += sign*exp*90;
     }
     else if (terms[i].termType.indexOf('Real') > -1) {
+      w0 = terms[i].w0;
       mag +=  sign*20*exp*Math.log10(Math.pow((1 + omega*omega), 0.5));
       theta += rad2Degrees(sign*exp*Math.atan2(omega, w0));
     }
     else if (terms[i].termType.indexOf('Complex') > -1) {
+      w0 = terms[i].w0;
+      zetaTemp = terms[i].zeta;//damping ratio
       realPart = 1-Math.pow(omega/w0, 2);
       imagPart = 2*zetaTemp*(omega/w0);
       x = Math.sqrt(realPart*realPart+imagPart*imagPart);//magnitude |a+jb|
@@ -1935,11 +1937,43 @@ function getSinusoid(omega, phi, magInput) {
     }
   }
   phase = convertToUnitCircleRange(phi+theta);
-  mag = dbToNumber(mag*magInput).toPrecision(3);//(mag*magInput).toPrecision(3);
+  mag = (dbToNumber(mag)*magInput).toPrecision(3);
   omega = omega.toPrecision(3);
   phase.toPrecision(3);
   return [mag +' &middot; cos('+omega+' rad &middot; t '+phase+'&deg;)', parseFloat(mag), parseFloat(phase)];
 }
+//would magnitude be the same as frequency?
+/*function getMagNumber(omega, wIndex) {
+  let terms = BDO.terms;
+  let iLen = BDO.termsLen;
+  let mag = dbToNumber(terms[0].magData[0][1]);
+  for (let i=1; i<iLen; i++) {
+    sign = terms[i].sign;
+    exp = terms[i].mult;//term's multiplicity
+    if (terms[i].termType.indexOf('Origin') > -1) {
+      mag += dbToNumber(terms[i], exp*20);//sign?
+    }
+    else if (terms[i].termType.indexOf('Real') > -1) {
+      w0 = terms[i].w0;
+      mag +=  sign*20*exp*Math.log10(Math.pow((1 + omega*omega), 0.5));
+      theta += rad2Degrees(sign*exp*Math.atan2(omega, w0));
+    }
+    else if (terms[i].termType.indexOf('Complex') > -1) {
+      w0 = terms[i].w0;
+      zetaTemp = terms[i].zeta;//damping ratio
+      realPart = 1-Math.pow(omega/w0, 2);
+      imagPart = 2*zetaTemp*(omega/w0);
+      x = Math.sqrt(realPart*realPart+imagPart*imagPart);//magnitude |a+jb|
+      mag += sign*20*exp*Math.log10(x);
+      x = w[j]
+      realPart = 1-Math.pow((x/w0), 2);
+      imagPart = 2*zetaTemp*x/w0;
+      //is Math.abs() because we didn't normalize the degrees?
+      theta += sign*exp*Math.abs(rad2Degrees(Math.atan2(imagPart, realPart)));
+    }
+  }
+}*/
+
 //plot a given series on an html element of an id of 'id'. 
 function highchartsPlot (series, id, title, xAxis='&omega;, rad', yAxis, logOrLinear='logarithmic', tickInt) {
   let legend = false, data = series[0].data, chartType = 'scatter', showMarkers = false;
