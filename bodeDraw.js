@@ -152,9 +152,33 @@ function getTerms() {
   let CStr = $('#multConst').val();
   let NStr = $('#N_of_s').val();
   let DStr = $('#D_of_s').val();
+  BDO.C = parseFloat(CStr);
+  let numMonotonicStr, largestNumCoef, denMonotonicStr, largestDenCoef;
+  let isAnSInNumerator, isAnSInDenominator;
+  if (NStr.indexOf('s') > -1) {
+    [numMonotonicStr, largestNumCoef] = getMonotonic(NStr);
+    if (numMonotonicStr) {
+      NStr = numMonotonicStr;
+      $('#N_of_s').val(NStr);
+      BDO.C *= largestNumCoef;
+    }
+    isAnSInNumerator = 1;
+  }
+  if (DStr.indexOf('s')> -1) {
+    [denMonotonicStr, largestDenCoef] = getMonotonic(DStr);
+    if (denMonotonicStr) {
+      DStr = denMonotonicStr;
+      $('#D_of_s').val(DStr);
+      BDO.C /= largestDenCoef;
+    }
+    isAnSInDenominator = 1;
+  }
+  if (denMonotonicStr || numMonotonicStr) {
+    $('#multConst').val(BDO.C.toString());
+  }
+
   BDO.num = NStr;
   BDO.den = DStr;
-  BDO.C = parseFloat(CStr);
   BDO.peakWidth = 0.00001;
   
   //replace old query string with new one.
@@ -165,8 +189,16 @@ function getTerms() {
   // Get poles and zeros
   let zeros, poles, numCoef = 1, denCoef = 1;
   //only get zeros or poles if a variable 's' is included in the respective input field
-  if (BDO.num.indexOf("s") > -1) {
+  if (isAnSInNumerator) {
     zeros = nerdamer.roots(BDO.num);
+    let coefs = nerdamer("coeffs("+NStr+",s)");
+    coefs = coefs.symbol.elements;
+    let cLen = coefs.length;
+    let largestCoef = (coefs[cLen-1].multiplier.num)/(coefs[cLen-1].multiplier.den);
+    if (largestCoef != 1) {
+      alert("Polynomials in numerator & denominator must be monotonic.");
+      location.reload();
+    }
     /*let factors = nerdamer('factor('+BDO.num+')');
     numCoef = factors.symbol.multiplier.num.value / factors.symbol.multiplier.den.value;
     BDO.C *= numCoef;*/
@@ -178,7 +210,7 @@ function getTerms() {
   numCoef = factors.symbol.multiplier.num.value / factors.symbol.multiplier.den.value;
   BDO.C *= numCoef;
   
-  if (BDO.den.indexOf("s") > -1) {
+  if (isAnSInDenominator) {
     poles = nerdamer.roots(BDO.den);
     let factors = nerdamer('factor('+BDO.den+')');
     denCoef = factors.symbol.multiplier.num.value / factors.symbol.multiplier.den.value;
@@ -358,6 +390,7 @@ function getTerms() {
           BDO.upperBounds.push(upperBound);
       }
   }
+  let positiveRealZeroNotFoundYet = 1;
   // Now add the zeros.
   idx = 0;
   for (let i = 1; i < BDO.numTerms; i++) {
@@ -379,7 +412,13 @@ function getTerms() {
           terms[i].lowerBound = lowerBound;
           terms[i].upperBound = upperBound;
           BDO.lowerBounds.push(lowerBound);
-          BDO.upperBounds.push(upperBound); 
+          BDO.upperBounds.push(upperBound);
+          if (positiveRealZeroNotFoundYet) {
+            if (parseFloat(terms[i].value) > 0) {
+              setCaveatAlert('#positiveRealZeros');
+              positiveRealZeroNotFoundYet = 0;
+            }
+          } 
       }
   }
   idx = 0;
@@ -459,23 +498,7 @@ function getTerms() {
           terms[i].mH = m == 1 ? '' : `, of muliplicity ${m}`; // multiplicity phrase
           BDO.terms[j++] = terms[i];
           if (m > 1 && !areMultiplePolesAtOrigin) {
-            let dialog = $('#alertBox');
-            dialog.dialog({
-              closeOnEscape: true,
-              position: {
-                my: "center top",
-                at: "center top",
-                of: window,
-                collision: "none"
-              }
-            });
-            //dialog.removeAttr('hidden');
-            /*let button = $('#alertBox button:first');
-            button.hidden = false;
-            button.css('position', 'absolute');
-            button.css('top', '0');
-            button.css('right', '0');*/
-            //alert("System has multiple poles or zeros at origin. <a href= '"+errorLink+"' >Caveats</a>");
+            setCaveatAlert('#multZerosOrPolesAtOrigin');
             areMultiplePolesAtOrigin = 1;
           }
       }
@@ -490,8 +513,7 @@ function getTerms() {
           terms[i].mH = m == 1 ? '' : `, of muliplicity ${m}`; // multiplicity phrase
           BDO.terms[j++] = terms[i];
           if (m > 1 && !areMultiplePolesAtOrigin) {
-            $('#alertBox').dialog({closeOnEscape: true});
-            //alert("System has multiple poles or zeros at origin. <a href= '"+errorLink+"' >Caveats</a>");
+            setCaveatAlert('#multZerosOrPolesAtOrigin');
           }
       }
   }
@@ -679,6 +701,50 @@ function roundToPrec(r, n) { // n = digits of precision, r=nedamer object with r
     return (rArray);
 }
 /* OWNERSHIP: Erik Cheever wrote most of the code above this line. Patrick Wheeler wrote all the code below it. */
+//this functions sets up the dialog box to alert the user to caveats in the graph
+function setCaveatAlert (selector) {
+  $(selector).dialog({
+    closeOnEscape: true,
+    position: {
+      my: "center top",
+      at: "center top",
+      of: window,
+      collision: "none"
+    }
+  });
+}
+function getMonotonic(Str) {
+  let coefs = nerdamer("coeffs("+Str+",s)");
+  coefs = coefs.symbol.elements;
+  let cLen = coefs.length;
+  let largestCoef = (coefs[cLen-1].multiplier.num)/(coefs[cLen-1].multiplier.den);
+  if (largestCoef != 1) {
+    let newStr = '', numVal;
+    numVal = coefs[0].multiplier.num.value;
+    if (numVal) {//if coefficient is zero
+      newStr += ((numVal)/(coefs[0].multiplier.den.value)/largestCoef).toString();
+    }
+    if (cLen > 1) {
+      numVal = coefs[1].multiplier.num.value;
+      if (numVal) {
+        newStr += ' + ' + ((numVal)/(coefs[1].multiplier.den.value)/largestCoef).toString()+'s';
+      }
+    }
+    if (cLen > 2) {
+      for (let i=2; i<cLen-1; i++) {
+        numVal = coefs[i].multiplier.num.value;
+        if (numVal) {
+          newStr += ' + ' + ((numVal)/(coefs[i].multiplier.den.value)/largestCoef).toString()+'s^'+i.toString();
+        }
+      }
+      newStr += ' + s^'+(cLen-1).toString();
+    }
+    return [newStr, largestCoef];
+  }
+  else {
+    return [0, 0];//don't do anything 
+  }
+}
 /*getData() calculates the data points used to graph the magnitude
   and phase of each term. It creates a list of objects for the phase and the magnitude,
   each item of which contains the name of the term, the term's data points, its color in rgba(), 
@@ -994,7 +1060,7 @@ function getData () {
       checkBoxesHtml+="<label for='"+id+i.toString()+"'>"+name+"</label>";
       checkBoxesHtml += getBox(magSeries[magSeries.length-1].color, id+i.toString())+"<br>";
       desc = 'The real zero is at '+w0Str+' = '+w0Mag+' rad/s.';
-      desc+= ' For the magnitude plot we draw a straight line from';
+      desc+= ' For the magnitude plot we draw a straight line from ';
       desc += ' 0 dB to '+w0Str+' = '+w0Mag+', thereafter the line rises at '+slopeDB+' dB/decade.';
       magDescs.push(desc);
       w0Mag = parseFloat(w0Mag);
