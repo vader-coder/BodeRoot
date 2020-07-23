@@ -21,10 +21,6 @@
     max-height: 83vh;
     overflow:scroll;
   }
-  /*.wrapper > div{
-    background: #eee;
-    padding: 1em;
-  }*/
   .stacked {/*Two elements stacked on top of one another*/
     display:grid;
     grid-template-rows: 2fr 1fr;
@@ -47,10 +43,9 @@
     font-size: 1em;
   }
   #togetherDescs {
-    /*max-width: 400px;*/
     font-size: 0.75em;
   }
-  .ui-dialog {/*#alertBox, .ui-dialog-titlebar {*/
+  .ui-dialog {
     background: #add8e6;
     z-index: 100;
   }
@@ -64,6 +59,9 @@
   }
   .ui-dialog span {
     text-align: right;
+  }
+  .ui-dialog span ol {
+      font-size: 0.75em;
   }
   .ui-dialog button {
       float: right;
