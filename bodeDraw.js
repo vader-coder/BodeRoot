@@ -1528,10 +1528,14 @@ function graphSinusoid () {
     /*use this function to get the magnitude & phase */
     [html, mag, phase] = getSinusoid(frequencyInput, phaseInput, magInput);
     if (frequencyInput >= w[0] && frequencyInput <= w[w.length-1]) {
+      let frequencyInputRounded = frequencyInput;
       if (frequencyInput != w[0]) { 
-        frequencyInput = roundDecimal(frequencyInput, 1); 
+        //if frequencyInput has > 1 decimal place like say 4.74, then round it to 4.7 
+        //so wIndex will be index of 4.7 for graphing the red dot.
+        //users won't be able to tell a difference < 0.1 in dot's position.
+        frequencyInputRounded = roundDecimal(frequencyInput, 1); 
       }
-      wIndex = searchSorted(0, w.length-1, frequencyInput, w);
+      wIndex = searchSorted(0, w.length-1, frequencyInputRounded, w);
     }
   }
   //convert phases to radians
@@ -1624,7 +1628,8 @@ function graphSinusoid () {
     //the largest amplitude between the input and output sinusoid.
     let yMax = Math.max(Math.abs(parseFloat(mag)), Math.abs(magInput));
     let yMin = -1*yMax;
-    chart.update({series: series, xAxis: {min: tMin, max: tMax}, yAxis: {min: yMin, max: yMax}});
+    let tAxisTickInterval = floatPrecision(tInterval, 1);
+    chart.update({series: series, xAxis: {min: tMin, max: tMax, tickInterval: tAxisTickInterval }, yAxis: {min: yMin, max: yMax, tickInterval: yMax}});
     BDO.bothMagChart.update({series: bothTotalMagSeries});
     BDO.bothPhaseChart.update({series: bothTotalPhaseSeries});
   }
@@ -1759,7 +1764,6 @@ function searchSorted(start, end, num, arr) {
 }
 //convert an angle < -179 degrees or > 180 degrees to
 //a value between -179 degrees and 180 degrees
-//why not 0-360?
 function convertToUnitCircleRange(deg) {
     while (deg > 180) {
       deg -= 360;
@@ -1975,7 +1979,6 @@ function compConjugateData (w, sign, termIndex) {
     x = w[j]
     realPart = 1-Math.pow((x/w0), 2);
     imagPart = 2*zetaTemp*x/w0;
-    //is Math.abs() because we didn't normalize the degrees?
     phaseExactData.push([x, sign*exp*Math.abs(rad2Degrees(Math.atan2(imagPart, realPart)))]);
   }
   topMagData.push(magApproxData[magApproxData.length-1]);
@@ -2093,7 +2096,6 @@ function getSinusoid(omega, phi, magInput) {
       mag += sign*20*exp*Math.log10(x);
       realPart = 1-Math.pow((omega/w0), 2);
       imagPart = 2*zetaTemp*omega/w0;
-      //is Math.abs() because we didn't normalize the degrees?
       theta += sign*exp*Math.abs(rad2Degrees(Math.atan2(imagPart, realPart)));
     }
   }
@@ -2108,8 +2110,8 @@ function getSinusoid(omega, phi, magInput) {
 function highchartsPlot (series, id, title, xAxis='&omega;, rad', yAxis, logOrLinear='logarithmic', tickInt) {
   let legend = false, data = series[0].data, chartType = 'scatter', showMarkers = false;
   let xMax = data[data.length-1][0], xMin = data[0][0], height = null;
-  if (id == "bothTotalMag" || id == "bothTotalPhase") {
-    //only bottommost graphs showing combined magnitude & phase plots (exact & linear approximation)
+  if (id == "bothTotalMag" || id == "bothTotalPhase" || id == "sinusoidPlot") {
+    //only 3 bottommost graphs showing sinusoid & combined magnitude & phase plots (exact & linear approximation)
     //show the markers on the graph & are a 'line' type. other charts are scatter plots.
     showMarkers = true;
     chartType = 'line';
