@@ -1062,7 +1062,7 @@ function getData () {
         exp=exp.toPrecision(3);
         slopeDB = (20*exp).toPrecision(3);
         phaseLine = (90*exp).toPrecision(3);
-        halfPhaseLine = (45*exp).toPrecision(3);//should it be +45 * exp?
+        halfPhaseLine = (45*exp).toPrecision(3);
       }
       else {
         slopeDB = '20';
@@ -1207,7 +1207,7 @@ function getData () {
       }
       else {
         slopeDB = '40';
-        phaseLine = '180';//should it be +90 * exp?
+        phaseLine = '180';
         halfPhaseLine = '90';
       }
       //get html of checkbox for this term: 
@@ -1220,7 +1220,7 @@ function getData () {
       //get description of this term for individual (topmost) plot: 
       desc = 'For the magnitude plot we draw a straight line at 0 dB from up to &omega; = '+w0Str+' = '+w0Mag+', thereafter the line rises at '+slopeDB+' dB/decade.';
       if (parseFloat(zMag) < 0.5) {
-        desc += '<br>Since &zeta; = '+zMag+'<0.5, we draw a peak of '+(-20*exp).toPrecision(3)+'|log<sub>10</sub>(2&zeta;)| = ';//is this affected by mult?
+        desc += '<br>Since &zeta; = '+zMag+'<0.5, we draw a peak of '+(-20*exp).toPrecision(3)+'|log<sub>10</sub>(2&zeta;)| = ';
         desc += terms[i].peakHeight +'dB at &omega; = '+w0Mag+'.';
       }
       magDescs.push(desc);
@@ -1768,7 +1768,7 @@ function convertToUnitCircleRange(deg) {
     while (deg > 180) {
       deg -= 360;
     } 
-    while (deg <= -180) {//why not < -180?
+    while (deg <= -180) {
       deg += 360;
     }
     return deg;
@@ -1957,7 +1957,7 @@ function compConjugateData (w, sign, termIndex) {
     x = Math.sqrt(realPart*realPart+imagPart*imagPart);
     magExactData.push([w[j], sign*20*exp*Math.log10(x)]);
   }
-  BDO.terms[termIndex].midPhaseSlope = '180*'+exp.toString()+'/'+middleDenominator.toString();//how to calculate? want a per-decade measurement.
+  BDO.terms[termIndex].midPhaseSlope = '180*'+exp.toString()+'/'+middleDenominator.toString();
   BDO.terms[termIndex].endPhaseSlope = '180*'+exp.toString();
   //calculate phase approximation (sigmoid linear approximation):
   for (let j=0; j<jMax; j++) {
