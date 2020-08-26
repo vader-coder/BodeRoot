@@ -188,7 +188,7 @@ function getTerms() {
   //replace old query string with new one based on current transfer function.
   let nParam = NStr.replace(/\+/g, '%2B');
   let dParam = DStr.replace(/\+/g, '%2B');
-  window.history.replaceState(null, null, '/?c='+CStr+'&num='+nParam+'&den='+dParam);
+  window.history.replaceState(null, null, '/BodeRoot/?c='+CStr+'&num='+nParam+'&den='+dParam);
 
   // Get poles and zeros
   let zeros, poles, numCoef = 1, denCoef = 1;
