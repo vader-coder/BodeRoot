@@ -692,7 +692,7 @@ function roundToPrec(r, n) { // n = digits of precision, r=nedamer object with r
     return (rArray);
 }
 /* OWNERSHIP: Erik Cheever wrote most of the code above this line. Patrick Wheeler wrote all the code below it. */
-//this functions sets up the dialog box to alert the user of caveats in the graph 
+//this function sets up the dialog box to alert the user of caveats in the graph 
 //(multiple poles/zeros at origin, positive real zeros)
 function setCaveatAlert (selector) {
   $(selector).dialog({
@@ -1517,11 +1517,11 @@ function graphSinusoid () {
     phase = convertToUnitCircleRange(phaseOutput + phaseInput);
     if (phase > 0) {
       phase = phase.toPrecision(3);
-      html = mag+' &middot; cos('+BDO.omega.value+' &middot; t + '+phase+')';
+      html = mag+' &middot; cos('+BDO.omega.value+' &middot; t + '+phase+'&deg;)';
     }
     else {
       phase = phase.toPrecision(3);
-      html = mag+' &middot; cos('+BDO.omega.value+' &middot; t - '+Math.abs(phase)+')';
+      html = mag+' &middot; cos('+BDO.omega.value+' &middot; t - '+Math.abs(phase)+'&deg;)';
     }
   }
   else {
@@ -1541,7 +1541,7 @@ function graphSinusoid () {
   //convert phases to radians
   let phaseInputRad = deg2Radians(phaseInput);
   let phaseRad = deg2Radians(phase);
-  html+= '<br><br>Magnitude: ' + mag + ' <br>' + 'Phase: '+phase+' &deg;';
+  html+= '<br><br>Magnitude: ' + mag + ' <br>' + 'Phase: '+phase+'&deg;';
   BDO.sinusoidOutput.innerHTML = html;
   //construct array of input values (t) for sinusoid graph:
   tMax = parseFloat((20/(Math.pow(10, (Math.round(Math.log10(frequencyInput)))))).toPrecision(3));//Math.ceil(period*3);
